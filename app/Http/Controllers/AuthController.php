@@ -43,8 +43,20 @@ class AuthController extends Controller
             return redirect()->route('change-password');
         }
     
-        // Log the user in and redirect to the dashboard
-        return redirect()->route('admin.pnph_users.admin-dashboard');
+        //Role based
+        switch ($user->user_role) {
+            case 'Admin':
+                return redirect()->route('admin.dashboard');
+            case 'Training':
+                return redirect()->route('training.dashboard');
+            case 'Educator':
+                return redirect()->route('educator.dashboard');
+            case 'Student':
+                return redirect()->route('student.dashboard');
+            default:
+                Auth::logout();
+                return redirect()->route('login')->withErrors(['error' => 'Unauthorized role.']);
+        }
     }
 
 
@@ -86,8 +98,22 @@ class AuthController extends Controller
             'user_password' => Hash::make($request->new_password),
             'is_temp_password' => false, // Mark the password as no longer temporary
         ]);
+        
 
-        // Redirect to the dashboard with a success message
-        return redirect()->route('admin.pnph_users')->with('success', 'Password updated successfully.');
-    }
+        // Redirect based on role
+        switch ($user->user_role) {
+            case 'Admin':
+                return redirect()->route('admin.dashboard')->with('success', 'Password updated successfully.');
+            case 'Training':
+                return redirect()->route('training.dashboard')->with('success', 'Password updated successfully.');
+            case 'Educator':
+                return redirect()->route('educator.dashboard')->with('success', 'Password updated successfully.');
+            case 'Student':
+                return redirect()->route('student.dashboard')->with('success', 'Password updated successfully.');
+            default:
+                Auth::logout();
+                return redirect()->route('login')->withErrors(['error' => 'Unauthorized role.']);
+        }
+
+}
 }

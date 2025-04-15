@@ -25,7 +25,18 @@
             </div>
             <button type="submit" class="btn btn-primary">Update Password</button>
         </form>
-    </div>
+</div>
+
+@if ($errors->any())
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li style="color: red;">{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+
+@endif
         
 </body>
 </html>

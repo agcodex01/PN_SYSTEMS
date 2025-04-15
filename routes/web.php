@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
+
         // Dashboard Route (Example)
         Route::get('/admin-dashboard', function () {
             return view('admin-dashboard');
@@ -43,3 +44,8 @@ Route::middleware('auth')->group(function () {
  });
 
 
+
+
+        Route::get('/training', function () {
+            return view('training.dashboard');
+        });

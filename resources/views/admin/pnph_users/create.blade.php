@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 c
+=======
+@extends('layouts.admin_layout')
+>>>>>>> 1e87ee7ff303ee4303dc0b5f62656b5da3e24aec
 @section('content')
 
 <div class="create-user-container">

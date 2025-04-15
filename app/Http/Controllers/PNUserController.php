@@ -102,4 +102,13 @@ class PNUserController extends Controller
 
         return redirect()->route('admin.pnph_users.index')->with('success', 'User deleted successfully.');
     }
+
+    public function show($user_id)
+{
+    // Find the user by user_id
+    $user = PNUser::findOrFail($user_id);
+
+    // Return a view to display user details
+    return view('admin.pnph_users.show', compact('user'));
+}
 }

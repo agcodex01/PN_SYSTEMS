@@ -48,3 +48,6 @@ Route::middleware('auth')->group(function () {
         });
 
 
+        Route::get('/training', function () {
+            return view('training.dashboard');
+        });

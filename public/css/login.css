@@ -47,14 +47,24 @@ body {
     border-radius: 5px;
     color: white;
     font-size: 16px;
+    cursor: pointer;
+}
+
+.login-container button:hover {
+    background-color: #ff9933;
 }
 .login-container a {
-    margin-top: 50px;
+    margin-top: 20px;
     font-size: 14px;
     color: #007bff;
     text-decoration: none;
-    text-align: center;
+    text-decoration: none;
+    display: block; /* Ensures the <a> behaves like a block element */
+    text-align: center; /* Centers the text inside the <a> */
+    width: 100%;
+ 
 }
 .login-container a:hover {
     text-decoration: underline;
 }
+

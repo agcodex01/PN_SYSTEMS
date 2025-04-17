@@ -12,17 +12,31 @@ use Illuminate\Support\Str;
 class PNUserController extends Controller
 {
     // Display the list of users
-    public function index()
-    {
-        $users = PNUser::all();
-        return view('admin.pnph_users.index', compact('users'));
+    public function index(Request $request)
+    {$roleFilter = $request->input('role');
+
+        $users = PNUser::when($roleFilter, function ($query, $roleFilter) {
+            return $query->where('user_role', $roleFilter);
+        })->get();
+    
+        // Get all distinct roles
+        $roles = PNUser::select('user_role')->distinct()->pluck('user_role');
+    
+        return view('admin.pnph_users.index', compact('users', 'roles', 'roleFilter'));
     }
+
+
+
+
 
     // Show the form for creating a new user
     public function create()
     {
         return view('admin.pnph_users.create');
     }
+
+
+
 
     // Store a newly created user in the database
     public function store(Request $request)
@@ -63,6 +77,7 @@ class PNUserController extends Controller
 
     
 
+
     // Show the form for editing an existing user
     public function edit($user_id)
     {
@@ -70,38 +85,37 @@ class PNUserController extends Controller
         return view('admin.pnph_users.edit', compact('user'));
     }
 
+
+
+
+
+
     // Update the user in the database
     public function update(Request $request, $user_id)
-    {
-        // Validate the user input
-        $request->validate([
-            'user_fname' => 'required',
-            'user_lname' => 'required',
-            'user_mInitial' => 'nullable',
-            'user_suffix' => 'nullable',
-            'user_email' => 'required|email|unique:pnph_users,user_email,' . $user_id . ',user_id',
-            'user_role' => 'required',
-            'status' => 'required|in:active,deactivated',
-        ]);
-    
-        // Find the user by user_id
-        $user = PNUser::findOrFail($user_id);
-    
-        // Update the user
-        $user->update($request->all());
-    
-        // Redirect back with a success message
-        return redirect()->route('admin.pnph_users.index')->with('success', 'User updated successfully.');
-    }
+{
+            $request->validate([
+                'user_fname' => 'required',
+                'user_lname' => 'required',
+                'user_email' => 'required|email',
+                'user_role' => 'required',
+                'status' => 'required|in:active,inactive',
+            ]);
 
-    // Delete a user
-    public function destroy($user_id)
-    {
-        $user = PNUser::find($user_id);
-        $user->delete();
+            $user = PNUser::findOrFail($user_id);
+            $user->update([
+                'user_fname' => $request->user_fname,
+                'user_lname' => $request->user_lname,
+                'user_email' => $request->user_email,
+                'user_mInitial' => $request->user_mInitial,
+                'user_suffix' => $request->user_suffix,
+                'user_role' => $request->user_role,
+                'status' => $request->status,
+            ]);
 
-        return redirect()->route('admin.pnph_users.index')->with('success', 'User deleted successfully.');
-    }
+            return redirect()->route('admin.pnph_users.index')->with('success', 'User updated successfully.');
+}
+
+
 
     public function show($user_id)
 {
@@ -111,4 +125,8 @@ class PNUserController extends Controller
     // Return a view to display user details
     return view('admin.pnph_users.show', compact('user'));
 }
+
+
+
+    
 }

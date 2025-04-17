@@ -43,9 +43,7 @@ Route::middleware('auth')->group(function () {
     // Admin routes
     Route::prefix('admin')->name('admin.')->middleware('can:admin-access')->group(function () {
         Route::resource('pnph_users', PNUserController::class);
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard', ['title' => 'Admin Dashboard']);
-        })->name('dashboard');
+        Route::get('/dashboard', [PNUserController::class, 'dashboard'])->name('dashboard');
     });
     
 

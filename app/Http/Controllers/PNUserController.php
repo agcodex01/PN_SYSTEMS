@@ -8,26 +8,25 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TempPasswordMail;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+
 
 class PNUserController extends Controller
 {
     // Display the list of users
     public function index(Request $request)
-    {$roleFilter = $request->input('role');
+    {
+        $roleFilter = $request->input('role');
 
         $users = PNUser::when($roleFilter, function ($query, $roleFilter) {
             return $query->where('user_role', $roleFilter);
-        })->get();
+        })->paginate(5);
     
         // Get all distinct roles
         $roles = PNUser::select('user_role')->distinct()->pluck('user_role');
     
         return view('admin.pnph_users.index', compact('users', 'roles', 'roleFilter'));
     }
-
-
-
-
 
     // Show the form for creating a new user
     public function create()
@@ -127,6 +126,19 @@ class PNUserController extends Controller
 }
 
 
+public function dashboard()
+{
+    // Get the count of users for each role
+    $rolesCount = \App\Models\PNUser::select('user_role', \DB::raw('count(*) as total'))
+                                    ->groupBy('user_role')
+                                    ->pluck('total', 'user_role')
+                                    ->toArray();
 
-    
+
+
+    return view('admin.dashboard', compact('rolesCount'));
+}
+
+
+
 }

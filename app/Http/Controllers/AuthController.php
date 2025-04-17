@@ -36,6 +36,13 @@ class AuthController extends Controller
             return back()->withErrors(['error' => 'Invalid User ID or Password']);
         }
 
+
+        // Check if the user is active
+        if ($user->status !== 'active') {
+            return back()->withErrors(['error' => 'Your account has been deactivated. Please contact the administrator.']);
+        }
+
+
         Auth::login($user);
         session(['user_id' => $user->user_id]);
         // Check if the password is temporary
@@ -58,9 +65,6 @@ class AuthController extends Controller
                 return redirect()->route('login')->withErrors(['error' => 'Unauthorized role.']);
         }
     }
-
-
-
 
     // Handle logout
     public function logout()
@@ -86,6 +90,8 @@ class AuthController extends Controller
             'new_password' => 'required|confirmed|min:8',
         ]);
 
+
+
         $user = Auth::user();
 
         // Check if the current password matches
@@ -98,6 +104,7 @@ class AuthController extends Controller
             'user_password' => Hash::make($request->new_password),
             'is_temp_password' => false, // Mark the password as no longer temporary
         ]);
+
         
 
         // Redirect based on role
@@ -116,4 +123,74 @@ class AuthController extends Controller
         }
 
 }
+
+    //Handle forgot password
+
+    public function verifyForgotPassword(Request $request)
+{
+    // Validate the input
+    $request->validate([
+        'user_id' => 'required',
+        'email' => 'required|email',
+    ]);
+
+    // Check if the user exists with the given user ID and email
+    $user = PNUser::where('user_id', $request->user_id)
+                  ->where('user_email', $request->email)
+                  ->first();
+
+    if (!$user) {
+        // If no match is found, redirect back with an error
+        return back()->withErrors(['error' => 'User ID or Email does not match our records.']);
+    }
+
+     // Set a persistent session variable to allow access to the change password page
+     session(['success' => true, 'user_id' => $user->user_id]);
+
+
+    // If the user is found, redirect to the change password page
+    return redirect()->route('reset-password')->with('success', 'You can now change your password.');
+}
+
+
+
+//Shows the reset password form
+public function showResetPasswordForm()
+{
+
+    return view('reset-password'); // new view just for reset
+}
+
+
+
+
+// Handle the password reset
+public function resetPassword(Request $request)
+{
+    // Validate the input
+    $request->validate([
+        'new_password' => 'required|confirmed|min:8',
+    ]);
+
+    // Get the user from the session
+    $user = PNUser::where('user_id', session('user_id'))->first();
+
+    if (!$user) {
+        return redirect()->route('forgot-password')->withErrors(['error' => 'User not found.']);
+    }
+
+    // Update the password
+    $user->update([
+        'user_password' => Hash::make($request->new_password),
+        'is_temp_password' => false, // Mark the password as no longer temporary
+    ]);
+
+    // Clear the session variables
+    session()->forget(['success', 'user_id']);
+
+    // Redirect to the login page with a success message
+    return redirect()->route('login')->with('success', 'Your password has been updated successfully. Please log in.');
+}
+
+
 }

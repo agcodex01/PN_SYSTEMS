@@ -16,9 +16,14 @@
                 <img src="{{ asset('images/pnlogo.png') }}" alt="Logo">
             </div>
             <div class="nav-links">
-                <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"/>
-                </svg>
+            <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="logout-btn" style="background: none; border: none; color: inherit; cursor: pointer;">
+                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"/>
+                        </svg>
+                    </button>
+                </form>
             </div>
         </div>
     </header>
@@ -40,6 +45,7 @@
             </div>
 
 
+            <a href="{{ route('admin.pnph_users.index') }}" style="text-decoration: none; color: inherit;">
             <div class="nav-name">
                 <div class="logo">
                     <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="40" height="50" fill="#ff9933" viewBox="0 0 24 24">
@@ -47,9 +53,12 @@
                     </svg>
 
                 </div>
-                <a href="{{ route('admin.pnph_users.index') }}" style="text-decoration: none; color: inherit;">
+              
                 <p>Manage Users</p>
             </div>
+            </a>
+
+            
 
             <div class="nav-name">
                 <div class="logo">

@@ -46,7 +46,7 @@
             <label for="status">Status</label>
             <select name="status" class="form-control" required>
                 <option value="active" {{ $user->status === 'active' ? 'selected' : '' }}>Active</option>
-                <option value="deactivated" {{ $user->status === 'deactivated' ? 'selected' : '' }}>Deactivated</option>
+                <option value="inactive" {{ $user->status === 'inactive' ? 'selected' : '' }}>Deactivated</option>
             </select>
         </div>
 

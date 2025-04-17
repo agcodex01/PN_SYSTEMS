@@ -8,7 +8,7 @@
     <p><strong>Last Name:</strong> {{ $user->user_lname }}</p>
     <p><strong>Email:</strong> {{ $user->user_email }}</p>
     <p><strong>Role:</strong> {{ $user->user_role }}</p>
-    <p><strong>Status:</strong> {{ $user->status }}</p>
+    <p><strong>Status:</strong> {{ $user->status === 'active' ? 'Activated' : 'Deactivated' }}</p>
     <a href="{{ route('admin.pnph_users.index') }}" class="btn btn-primary">Back to User List</a>
 </div>
 @endsection

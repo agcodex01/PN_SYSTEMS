@@ -1,0 +1,136 @@
+/* General Container */
+.students-container {
+    margin: 20px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Page Title */
+h1 {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Table Container */
+.table-container {
+    overflow-x: auto;
+    margin: 0 auto;
+    max-width: calc(100% - 40px);
+}
+
+/* Table Styling */
+.table {
+    width: 100%;
+    min-width: 800px;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table th, .table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+.table th {
+    background-color: #36c342;
+    font-weight: 500;
+    color: white;
+    position: sticky;
+    top: 0;
+}
+
+.table td {
+    color: #333;
+}
+
+/* Column Widths */
+.table th:nth-child(1), .table td:nth-child(1) { width: 10%; } /* ID */
+.table th:nth-child(2), .table td:nth-child(2) { width: 15%; } /* Last Name */
+.table th:nth-child(3), .table td:nth-child(3) { width: 15%; } /* First Name */
+.table th:nth-child(4), .table td:nth-child(4) { width: 5%; }  /* MI */
+.table th:nth-child(5), .table td:nth-child(5) { width: 5%; }  /* Suffix */
+.table th:nth-child(6), .table td:nth-child(6) { width: 25%; } /* Email */
+.table th:nth-child(7), .table td:nth-child(7) { width: 25%; } /* Action */
+
+.table tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    color: white;
+    transition: background-color 0.3s;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+/* Pagination */
+.pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.pagination li {
+    margin: 0 5px;
+}
+
+.pagination li a {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s;
+}
+
+.pagination li.active a {
+    background-color: #36c342;
+    color: white;
+    border-color: #36c342;
+}
+
+.pagination li a:hover {
+    background-color: #f5f5f5;
+} 

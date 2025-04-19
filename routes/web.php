@@ -50,9 +50,7 @@ Route::middleware('auth')->group(function () {
     
     // Training routes
     Route::prefix('training')->name('training.')->middleware('can:training-access')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('training.dashboard', ['title' => 'Training Dashboard']);
-        })->name('dashboard');
+        Route::get('/dashboard', [TrainingController::class, 'dashboard'])->name('dashboard');
 
         // Student Information Routes
         Route::get('/students', [TrainingController::class, 'index'])->name('students.index');

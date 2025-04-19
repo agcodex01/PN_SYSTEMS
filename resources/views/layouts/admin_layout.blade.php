@@ -15,10 +15,20 @@
             <div class="logo">
                 <img src="{{ asset('images/pnlogo.png') }}" alt="Logo">
             </div>
+
+            @php
+                $user = Auth::user();
+            @endphp
+
+            <div class="user-info" style="color: #333; font-weight: 500;">
+                Logged in as: &nbsp <span style="color: #ff9933;">{{ $user->user_fname }} {{ $user->user_mInitial }} {{ $user->user_lname }} {{ $user->suffix }} </span> | Role: <span style="color: #ff9933;">{{ ucfirst($user->user_role) }}</span>
+            </div>
+
             <div class="nav-links">
-            <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                <!-- Logout Button -->
+                <form action="{{ route('logout') }}" method="POST" id="logout-form" style="display: inline;">
                     @csrf
-                    <button type="submit" class="logout-btn" style="background: none; border: none; color: inherit; cursor: pointer;">
+                    <button type="button" class="logout-btn" style="background: none; border: none; color: inherit; cursor: pointer;" onclick="confirmLogout()">
                         <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"/>
                         </svg>
@@ -30,55 +40,42 @@
 
     <section>
         <div class="sidebar">
-            <div class="nav-name">
-                
-                <div class="logo">
-                    <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="40" height="50" fill="#ff9933" viewBox="0 0 24 24">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v14m6-8h-6m6 4h-6m-9-3h1.99093M4 19h16c.5523 0 1-.4477 1-1V6c0-.55228-.4477-1-1-1H4c-.55228 0-1 .44772-1 1v12c0 .5523.44772 1 1 1Zm8-7c0 1.1046-.8954 2-2 2-1.10457 0-2-.8954-2-2s.89543-2 2-2c1.1046 0 2 .8954 2 2Z"/>
-                    </svg>
-
-                  
+            <a href="{{ route('admin.dashboard') }}">
+                <div class="nav-name">
+                    <div class="logo">
+                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="40" height="50" fill="#ff9933" viewBox="0 0 24 24">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v14m6-8h-6m6 4h-6m-9-3h1.99093M4 19h16c.5523 0 1-.4477 1-1V6c0-.55228-.4477-1-1-1H4c-.55228 0-1 .44772-1 1v12c0 .5523.44772 1 1 1Zm8-7c0 1.1046-.8954 2-2 2-1.10457 0-2-.8954-2-2s.89543-2 2-2c1.1046 0 2 .8954 2 2Z"/>
+                        </svg>
+                    </div>
+                    <div class="label">
+                        <p>Dashboard</p>
+                    </div>
                 </div>
-                <div class="label">
-                    <p>Dashboard</p>
-                </div>
-            </div>
-
-
-            <a href="{{ route('admin.pnph_users.index') }}" style="text-decoration: none; color: inherit;">
-            <div class="nav-name">
-                <div class="logo">
-                    <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="40" height="50" fill="#ff9933" viewBox="0 0 24 24">
-                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 9h3m-3 3h3m-3 3h3m-6 1c-.306-.613-.933-1-1.618-1H7.618c-.685 0-1.312.387-1.618 1M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm7 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
-                    </svg>
-
-                </div>
-              
-                <p>Manage Users</p>
-            </div>
             </a>
 
-            
-
-            <div class="nav-name">
-                <div class="logo">
-                     <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="#ff9933" viewBox="0 0 24 24">
-                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a8.949 8.949 0 0 0 4.951-1.488A3.987 3.987 0 0 0 13 16h-2a3.987 3.987 0 0 0-3.951 3.512A8.948 8.948 0 0 0 12 21Zm3-11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
-                    </svg>
-
+            <a href="{{ route('admin.pnph_users.index') }}" style="text-decoration: none; color: inherit;">
+                <div class="nav-name">
+                    <div class="logo">
+                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="40" height="50" fill="#ff9933" viewBox="0 0 24 24">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 9h3m-3 3h3m-3 3h3m-6 1c-.306-.613-.933-1-1.618-1H7.618c-.685 0-1.312.387-1.618 1M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm7 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
+                        </svg>
+                    </div>
+                    <p>Manage Users</p>
                 </div>
-                <p>Profile</p>
-            </div>
-
-
+            </a>
         </div>
 
         <div class="content">
             @yield('content')
-           
         </div>
     </section>
 
-    
+    <script>
+        function confirmLogout() {
+            if (confirm("Are you sure you want to log out?")) {
+                document.getElementById('logout-form').submit();
+            }
+        }
+    </script>
 </body>
 </html>

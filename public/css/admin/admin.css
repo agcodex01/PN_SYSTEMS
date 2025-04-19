@@ -50,6 +50,10 @@ header {
     align-items: left;
 }
 
+.sidebar a{
+    text-decoration: none;
+}
+
 .nav-name {
     display: flex;
     align-items: center;
@@ -79,9 +83,6 @@ header {
     padding: 20px;
     margin-top: 60px; /* Adjust to account for the header height */
 }
-
-
-
 
 
 
@@ -175,6 +176,8 @@ header {
     text-align: center;
     color: black;
 }
+
+
 
 /* Table Styling */
 .users-table-container {

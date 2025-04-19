@@ -3,29 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ asset('css/admin/admin.css') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
     <title>{{ $title ?? 'Dashboard' }}</title>
+    <link rel="stylesheet" href="{{ asset('css/admin/dashboard2.css') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
 </head>
 <body>
-    <header>
-        <div class="nav">
-            <div class="logo">
-                <img src="{{ asset('images/pnlogo.png') }}" alt="Logo">
-            </div>
+    <div class="top-bar">
+        <img class="PN-logo" src="{{ asset('images/PN-logo.png') }}" alt="PN Logo">
 
+        {{-- Add Logged in as info and Logout --}}
+        @auth
             @php
                 $user = Auth::user();
             @endphp
 
-            <div class="user-info" style="color: #333; font-weight: 500;">
-                Logged in as: &nbsp <span style="color: #ff9933;">{{ $user->user_fname }} {{ $user->user_mInitial }} {{ $user->user_lname }} {{ $user->suffix }} </span> | Role: <span style="color: #ff9933;">{{ ucfirst($user->user_role) }}</span>
-            </div>
+            <div class="user-info" style="color: #333; font-weight: 500; display: flex; align-items: center; gap: 15px;">
+                Logged in as: 
+                <span style="color: #ff9933;">
+                    {{ $user->user_fname }} {{ $user->user_mInitial }} {{ $user->user_lname }} {{ $user->suffix }}
+                </span> 
+                | Role: 
+                <span style="color: #ff9933;">
+                    {{ ucfirst($user->user_role) }}
+                </span>
 
-            <div class="nav-links">
-                <!-- Logout Button -->
                 <form action="{{ route('logout') }}" method="POST" id="logout-form" style="display: inline;">
                     @csrf
                     <button type="button" class="logout-btn" style="background: none; border: none; color: inherit; cursor: pointer;" onclick="confirmLogout()">
@@ -35,40 +36,22 @@
                     </button>
                 </form>
             </div>
-        </div>
-    </header>
+        @endauth
+    </div>
 
-    <section>
-        <div class="sidebar">
-            <a href="{{ route('admin.dashboard') }}">
-                <div class="nav-name">
-                    <div class="logo">
-                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="40" height="50" fill="#ff9933" viewBox="0 0 24 24">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v14m6-8h-6m6 4h-6m-9-3h1.99093M4 19h16c.5523 0 1-.4477 1-1V6c0-.55228-.4477-1-1-1H4c-.55228 0-1 .44772-1 1v12c0 .5523.44772 1 1 1Zm8-7c0 1.1046-.8954 2-2 2-1.10457 0-2-.8954-2-2s.89543-2 2-2c1.1046 0 2 .8954 2 2Z"/>
-                        </svg>
-                    </div>
-                    <div class="label">
-                        <p>Dashboard</p>
-                    </div>
-                </div>
-            </a>
+    <div class="container">
+        <aside class="sidebar">
+            <ul class="menu">
+                <li><a href="{{ route('admin.dashboard') }}"><img src="{{ asset('images/Dashboard.png') }}" alt="Dashboard"> Dashboard</a></li>
+                <li><a href="{{ route('admin.pnph_users.index') }}"><img src="{{ asset('images/mu.png') }}" alt="Students Info"> Manage Users</a></li>
 
-            <a href="{{ route('admin.pnph_users.index') }}" style="text-decoration: none; color: inherit;">
-                <div class="nav-name">
-                    <div class="logo">
-                        <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="40" height="50" fill="#ff9933" viewBox="0 0 24 24">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 9h3m-3 3h3m-3 3h3m-6 1c-.306-.613-.933-1-1.618-1H7.618c-.685 0-1.312.387-1.618 1M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm7 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
-                        </svg>
-                    </div>
-                    <p>Manage Users</p>
-                </div>
-            </a>
-        </div>
+            </ul>
+        </aside>
 
-        <div class="content">
-            @yield('content')
-        </div>
-    </section>
+        <main class="content">
+                @yield('content')
+            </main>
+    </div>
 
     <script>
         function confirmLogout() {

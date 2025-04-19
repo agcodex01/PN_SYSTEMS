@@ -5,13 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\PNUser;
 use App\Models\StudentDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TrainingController extends Controller
 {
-    public function dashboard()
-    {
-        return view('training.dashboard', ['title' => 'Training Dashboard']);
-    }
+   
 
     public function index()
     {
@@ -37,6 +35,12 @@ class TrainingController extends Controller
 
         return view('training.students-info', compact('students', 'batches'));
     }
+
+
+
+
+
+
 
     public function edit($user_id)
     {
@@ -118,4 +122,28 @@ class TrainingController extends Controller
             'students' => $students
         ]);
     }
+
+
+//Training Dashboard Analytics 
+public function dashboard()
+{
+    // Count students per batch (include both active and inactive)
+    $batchCounts = StudentDetail::whereHas('user', function ($q) {
+            $q->where('user_role', 'Student');
+        })
+        ->select('batch')
+        ->selectRaw('count(*) as count')
+        ->groupBy('batch')
+        ->orderBy('batch')
+        ->pluck('count', 'batch');
+
+    return view('training.dashboard', [
+        'title' => 'Training Dashboard',
+        'batchCounts' => $batchCounts
+    ]);
+}
+
 } 
+
+
+

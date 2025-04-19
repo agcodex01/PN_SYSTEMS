@@ -13,7 +13,7 @@
         </div>
         <div class="detail-row">
             <span class="detail-label">Student ID:</span>
-            <span class="detail-value">{{ $student->student_id }}</span>
+            <span class="detail-value">{{ $student->studentDetail->student_id ?? 'N/A' }}</span>
         </div>
         <div class="detail-row">
             <span class="detail-label">Last Name:</span>
@@ -33,7 +33,19 @@
         </div>
         <div class="detail-row">
             <span class="detail-label">Batch:</span>
-            <span class="detail-value">{{ $student->batch }}</span>
+            <span class="detail-value">{{ $student->studentDetail->batch ?? 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Group:</span>
+            <span class="detail-value">{{ $student->studentDetail->group ?? 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Student Number:</span>
+            <span class="detail-value">{{ $student->studentDetail->student_number ?? 'N/A' }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Training Code:</span>
+            <span class="detail-value">{{ $student->studentDetail->training_code ?? 'N/A' }}</span>
         </div>
         <div class="detail-row">
             <span class="detail-label">Email:</span>

@@ -28,8 +28,6 @@ class PNUser extends Authenticatable
     // Specify which fields are mass assignable
     protected $fillable = [
         'user_id',
-        'student_id',
-        'batch',
         'user_fname',
         'user_lname',
         'user_mInitial',
@@ -40,4 +38,10 @@ class PNUser extends Authenticatable
         'status',
         'is_temp_password'
     ];
+
+    // Add this relationship method to the PNUser class
+    public function studentDetail()
+    {
+        return $this->hasOne(StudentDetail::class, 'user_id', 'user_id');
+    }
 }

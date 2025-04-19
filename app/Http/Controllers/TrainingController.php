@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PNUser;
+use App\Models\StudentDetail;
 use Illuminate\Http\Request;
 
 class TrainingController extends Controller
@@ -15,17 +16,18 @@ class TrainingController extends Controller
     public function index()
     {
         $query = PNUser::where('user_role', 'Student')
-            ->where('status', 'active');
+            ->where('status', 'active')
+            ->with('studentDetail');
 
         // Apply batch filter if selected
         if (request('batch')) {
-            $query->where('batch', request('batch'));
+            $query->whereHas('studentDetail', function($q) {
+                $q->where('batch', request('batch'));
+            });
         }
 
         // Get unique batches for the filter dropdown
-        $batches = PNUser::where('user_role', 'Student')
-            ->where('status', 'active')
-            ->distinct()
+        $batches = StudentDetail::distinct()
             ->pluck('batch')
             ->filter()
             ->sort()
@@ -38,13 +40,17 @@ class TrainingController extends Controller
 
     public function edit($user_id)
     {
-        $student = PNUser::where('user_id', $user_id)->firstOrFail();
+        $student = PNUser::with('studentDetail')
+            ->where('user_id', $user_id)
+            ->firstOrFail();
         return view('training.edit-student', compact('student'));
     }
 
     public function view($user_id)
     {
-        $student = PNUser::where('user_id', $user_id)->firstOrFail();
+        $student = PNUser::with('studentDetail')
+            ->where('user_id', $user_id)
+            ->firstOrFail();
         return view('training.view-student', compact('student'));
     }
 
@@ -53,24 +59,40 @@ class TrainingController extends Controller
         $student = PNUser::where('user_id', $user_id)->firstOrFail();
 
         $request->validate([
-            'student_id' => 'required',
             'user_lname' => 'required',
             'user_fname' => 'required',
             'user_mInitial' => 'nullable',
             'user_suffix' => 'nullable',
-            'batch' => 'required',
             'user_email' => 'required|email|unique:pnph_users,user_email,' . $user_id . ',user_id',
+            'batch' => 'required|digits:4',
+            'group' => 'required|size:2',
+            'student_number' => 'required|digits:4',
+            'training_code' => 'required|size:2',
         ]);
 
+        // Update user information
         $student->update([
-            'student_id' => $request->student_id,
             'user_lname' => $request->user_lname,
             'user_fname' => $request->user_fname,
             'user_mInitial' => $request->user_mInitial,
             'user_suffix' => $request->user_suffix,
-            'batch' => $request->batch,
             'user_email' => $request->user_email,
         ]);
+
+        // Generate student ID
+        $studentId = $request->batch . $request->group . $request->student_number . $request->training_code;
+
+        // Update or create student details
+        StudentDetail::updateOrCreate(
+            ['user_id' => $user_id],
+            [
+                'student_id' => $studentId,
+                'batch' => $request->batch,
+                'group' => $request->group,
+                'student_number' => $request->student_number,
+                'training_code' => $request->training_code,
+            ]
+        );
 
         return redirect()->route('training.students.index')
             ->with('success', 'Student information updated successfully.');
@@ -88,6 +110,7 @@ class TrainingController extends Controller
     public function manageStudents()
     {
         $students = PNUser::where('user_role', 'Student')
+            ->with('studentDetail')
             ->paginate(10);
 
         return view('training.manage-students', [

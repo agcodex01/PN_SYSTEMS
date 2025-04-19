@@ -55,12 +55,30 @@ select.form-control {
 .student-number-input {
     width: 100px;
 }
+
+.alert {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+}
 </style>
 
 <div class="edit-student-container">
     <h1>Edit Student Information</h1>
 
-    <form action="{{ route('training.students.update', $student->user_id) }}" method="POST">
+    <form action="{{ route('training.students.update', $student->user_id) }}" method="POST" id="studentForm" onsubmit="return validateForm()">
         @csrf
         @method('PUT')
 
@@ -70,7 +88,7 @@ select.form-control {
         </div>
 
         <div class="form-group">
-            <label for="batch">Batch</label>
+            <label for="batch">Batch Year</label>
             <input type="text" name="batch" id="batch" class="form-control" value="{{ $student->batch }}" required 
                    placeholder="Enter batch year (e.g. 2024)" pattern="[0-9]{4}" maxlength="4"
                    onchange="updateStudentId()">
@@ -102,6 +120,12 @@ select.form-control {
                         <option value="">Select Code</option>
                         <option value="C1">C1</option>
                         <option value="C2">C2</option>
+                        <option value="C3">C3</option>
+                        <option value="C4">C4</option>
+                        <option value="T1">T1</option>
+                        <option value="T2">T2</option>
+                        <option value="T3">T3</option>
+                        <option value="T4">T4</option>
                     </select>
                 </div>
             </div>
@@ -110,6 +134,8 @@ select.form-control {
                 Generated ID: <span id="generatedStudentId">-</span>
             </div> -->
         </div>
+
+        <input type="hidden" name="student_id" id="student_id" required>
 
         <div class="form-group">
             <label for="user_lname">Last Name</label>
@@ -135,8 +161,6 @@ select.form-control {
             <label for="user_email">Email</label>
             <input type="email" name="user_email" id="user_email" class="form-control" value="{{ $student->user_email }}" required>
         </div>
-
-        <input type="hidden" name="student_id" id="student_id">
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Update</button>
@@ -170,12 +194,19 @@ function updateStudentId() {
 
     if (batch && group && studentNumber && trainingCode) {
         const studentId = `${batch}${group}${studentNumber}${trainingCode}`;
-        document.getElementById('generatedStudentId').textContent = studentId;
         document.getElementById('student_id').value = studentId;
     } else {
-        document.getElementById('generatedStudentId').textContent = '-';
         document.getElementById('student_id').value = '';
     }
+}
+
+function validateForm() {
+    const studentId = document.getElementById('student_id').value;
+    if (!studentId) {
+        alert('Please fill in all Student ID components (Batch Year, Group, Student Number, and Training Code)');
+        return false;
+    }
+    return true;
 }
 
 // Set initial values if student_id exists
@@ -194,5 +225,31 @@ window.onload = function() {
         updateStudentId();
     }
 };
+
+// Add input validation for student number
+document.getElementById('student_number').addEventListener('input', function(e) {
+    let value = e.target.value;
+    // Remove any non-numeric characters
+    value = value.replace(/[^0-9]/g, '');
+    // Ensure it's not longer than 4 digits
+    if (value.length > 4) {
+        value = value.slice(0, 4);
+    }
+    e.target.value = value;
+    updateStudentId();
+});
+
+// Add input validation for batch year
+document.getElementById('batch').addEventListener('input', function(e) {
+    let value = e.target.value;
+    // Remove any non-numeric characters
+    value = value.replace(/[^0-9]/g, '');
+    // Ensure it's not longer than 4 digits
+    if (value.length > 4) {
+        value = value.slice(0, 4);
+    }
+    e.target.value = value;
+    updateStudentId();
+});
 </script>
 @endsection 

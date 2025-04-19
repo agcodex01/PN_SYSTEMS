@@ -89,7 +89,7 @@ select.form-control {
 
         <div class="form-group">
             <label for="batch">Batch Year</label>
-            <input type="text" name="batch" id="batch" class="form-control" value="{{ $student->batch }}" required 
+            <input type="text" name="batch" id="batch" class="form-control" value="{{ $student->studentDetail->batch ?? '' }}" required 
                    placeholder="Enter batch year (e.g. 2024)" pattern="[0-9]{4}" maxlength="4"
                    onchange="updateStudentId()">
         </div>
@@ -101,8 +101,8 @@ select.form-control {
                     <label for="group">Group</label>
                     <select name="group" id="group" class="form-control" required onchange="updateStudentId()">
                         <option value="">Select Group</option>
-                        <option value="01">Group 01</option>
-                        <option value="02">Group 02</option>
+                        <option value="01" {{ ($student->studentDetail->group ?? '') == '01' ? 'selected' : '' }}>Group 01</option>
+                        <option value="02" {{ ($student->studentDetail->group ?? '') == '02' ? 'selected' : '' }}>Group 02</option>
                     </select>
                 </div>
 
@@ -111,6 +111,7 @@ select.form-control {
                     <input type="text" name="student_number" id="student_number" 
                            class="form-control student-number-input" required
                            pattern="[0-9]{4}" maxlength="4" placeholder="0001"
+                           value="{{ $student->studentDetail->student_number ?? '' }}"
                            onchange="updateStudentId()">
                 </div>
 
@@ -118,14 +119,11 @@ select.form-control {
                     <label for="training_code">Training Code</label>
                     <select name="training_code" id="training_code" class="form-control" required onchange="updateStudentId()">
                         <option value="">Select Code</option>
-                        <option value="C1">C1</option>
-                        <option value="C2">C2</option>
-                        <option value="C3">C3</option>
-                        <option value="C4">C4</option>
-                        <option value="T1">T1</option>
-                        <option value="T2">T2</option>
-                        <option value="T3">T3</option>
-                        <option value="T4">T4</option>
+                        @foreach(['C1', 'C2', 'C3', 'C4', 'T1', 'T2', 'T3', 'T4'] as $code)
+                            <option value="{{ $code }}" {{ ($student->studentDetail->training_code ?? '') == $code ? 'selected' : '' }}>
+                                {{ $code }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
             </div>
@@ -194,37 +192,22 @@ function updateStudentId() {
 
     if (batch && group && studentNumber && trainingCode) {
         const studentId = `${batch}${group}${studentNumber}${trainingCode}`;
-        document.getElementById('student_id').value = studentId;
-    } else {
-        document.getElementById('student_id').value = '';
+        console.log('Generated Student ID:', studentId);
     }
 }
 
 function validateForm() {
-    const studentId = document.getElementById('student_id').value;
-    if (!studentId) {
+    const batch = document.getElementById('batch').value;
+    const group = document.getElementById('group').value;
+    const studentNumber = document.getElementById('student_number').value;
+    const trainingCode = document.getElementById('training_code').value;
+
+    if (!batch || !group || !studentNumber || !trainingCode) {
         alert('Please fill in all Student ID components (Batch Year, Group, Student Number, and Training Code)');
         return false;
     }
     return true;
 }
-
-// Set initial values if student_id exists
-window.onload = function() {
-    const studentId = '{{ $student->student_id }}';
-    if (studentId) {
-        const batch = studentId.substring(0, 4);
-        const group = studentId.substring(4, 6);
-        const studentNumber = studentId.substring(6, 10);
-        const trainingCode = studentId.substring(10);
-
-        document.getElementById('batch').value = batch;
-        document.getElementById('group').value = group;
-        document.getElementById('student_number').value = studentNumber;
-        document.getElementById('training_code').value = trainingCode;
-        updateStudentId();
-    }
-};
 
 // Add input validation for student number
 document.getElementById('student_number').addEventListener('input', function(e) {

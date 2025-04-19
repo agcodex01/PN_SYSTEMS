@@ -166,12 +166,12 @@ h1 {
                 @foreach ($students as $student)
                     <tr>
                         <td>{{ $student->user_id }}</td>
-                        <td>{{ $student->student_id }}</td>
+                        <td>{{ $student->studentDetail->student_id ?? 'N/A' }}</td>
                         <td>{{ $student->user_lname }}</td>
                         <td>{{ $student->user_fname }}</td>
                         <td>{{ $student->user_mInitial }}</td>
                         <td>{{ $student->user_suffix }}</td>
-                        <td>{{ $student->batch }}</td>
+                        <td>{{ $student->studentDetail->batch ?? 'N/A' }}</td>
                         <td>
                             <div class="action-buttons">
                                 <a href="{{ route('training.students.view', $student->user_id) }}" class="btn btn-info btn-sm">View</a>

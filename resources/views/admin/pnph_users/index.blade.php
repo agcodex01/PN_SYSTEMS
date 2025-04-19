@@ -1,11 +1,13 @@
 @extends('layouts.admin_layout')
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/admin/index.css') }}">
-    
 
 
-<div class="users-container">
-    <h1 class="text-center">Manage Users</h1>
+
+    <div class="users-container">
+        <h1 class="text-center">Manage Users</h1>
+
+        <hr>
 
     <!--  New User Button -->
     <div class="add-user-btn-container">
@@ -69,9 +71,7 @@
         </tbody>
     </table>
 
-    <div class="pagination-container">
-    {{ $users->links() }}
-</div>
+ 
 </div>
 
 @endsection

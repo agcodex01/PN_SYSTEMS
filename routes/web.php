@@ -61,10 +61,13 @@ Route::middleware('auth')->group(function () {
         })->name('dashboard');
     });
     
+    
     // Student routes
     Route::prefix('student')->name('student.')->middleware('can:student-access')->group(function () {
         Route::get('/dashboard', function () {
             return view('student.dashboard', ['title' => 'Student Dashboard']);
         })->name('dashboard');
+
+
     });
 });

@@ -28,6 +28,8 @@ class PNUser extends Authenticatable
     // Specify which fields are mass assignable
     protected $fillable = [
         'user_id',
+        'student_id',
+        'batch',
         'user_fname',
         'user_lname',
         'user_mInitial',

@@ -14,11 +14,26 @@ class TrainingController extends Controller
 
     public function index()
     {
-        $students = PNUser::where('user_role', 'Student')
-            ->where('status', 'active')
-            ->paginate(10);
+        $query = PNUser::where('user_role', 'Student')
+            ->where('status', 'active');
 
-        return view('training.students-info', compact('students'));
+        // Apply batch filter if selected
+        if (request('batch')) {
+            $query->where('batch', request('batch'));
+        }
+
+        // Get unique batches for the filter dropdown
+        $batches = PNUser::where('user_role', 'Student')
+            ->where('status', 'active')
+            ->distinct()
+            ->pluck('batch')
+            ->filter()
+            ->sort()
+            ->values();
+
+        $students = $query->paginate(10);
+
+        return view('training.students-info', compact('students', 'batches'));
     }
 
     public function edit($user_id)
@@ -27,19 +42,35 @@ class TrainingController extends Controller
         return view('training.edit-student', compact('student'));
     }
 
+    public function view($user_id)
+    {
+        $student = PNUser::where('user_id', $user_id)->firstOrFail();
+        return view('training.view-student', compact('student'));
+    }
+
     public function update(Request $request, $user_id)
     {
         $student = PNUser::where('user_id', $user_id)->firstOrFail();
 
         $request->validate([
+            'student_id' => 'required',
             'user_lname' => 'required',
             'user_fname' => 'required',
             'user_mInitial' => 'nullable',
             'user_suffix' => 'nullable',
+            'batch' => 'required',
             'user_email' => 'required|email|unique:pnph_users,user_email,' . $user_id . ',user_id',
         ]);
 
-        $student->update($request->all());
+        $student->update([
+            'student_id' => $request->student_id,
+            'user_lname' => $request->user_lname,
+            'user_fname' => $request->user_fname,
+            'user_mInitial' => $request->user_mInitial,
+            'user_suffix' => $request->user_suffix,
+            'batch' => $request->batch,
+            'user_email' => $request->user_email,
+        ]);
 
         return redirect()->route('training.students.index')
             ->with('success', 'Student information updated successfully.');

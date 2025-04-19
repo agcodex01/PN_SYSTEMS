@@ -45,6 +45,8 @@ Route::middleware('auth')->group(function () {
             return view('educator.dashboard', ['title' => 'Educator Dashboard']);
         })->name('dashboard');
     });
+
+    
     
     // Training routes
     Route::prefix('training')->name('training.')->middleware('can:training-access')->group(function () {
@@ -54,26 +56,10 @@ Route::middleware('auth')->group(function () {
 
         // Student Information Routes
         Route::get('/students', [TrainingController::class, 'index'])->name('students.index');
+        Route::get('/students/{user_id}/view', [TrainingController::class, 'view'])->name('students.view');
         Route::get('/students/{user_id}/edit', [TrainingController::class, 'edit'])->name('students.edit');
         Route::put('/students/{user_id}', [TrainingController::class, 'update'])->name('students.update');
         Route::delete('/students/{user_id}', [TrainingController::class, 'destroy'])->name('students.destroy');
-
-        // Manage Students
-        Route::get('/manage-students', [TrainingController::class, 'manageStudents'])->name('manage-students');
-        
-        // Grade Submission
-        Route::get('/grade-submission', [TrainingController::class, 'gradeSubmission'])->name('grade-submission');
-        Route::post('/grade-submission', [TrainingController::class, 'submitGrade'])->name('submit-grade');
-        
-        // Analytics
-        Route::get('/analytics', [TrainingController::class, 'analytics'])->name('analytics');
-        
-        // Intervention Status
-        Route::get('/intervention-status', [TrainingController::class, 'interventionStatus'])->name('intervention-status');
-        
-        // Profile
-        Route::get('/profile', [TrainingController::class, 'profile'])->name('profile');
-        Route::put('/profile', [TrainingController::class, 'updateProfile'])->name('update-profile');
     });
     
     // Student routes

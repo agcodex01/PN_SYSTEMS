@@ -1,11 +1,11 @@
 /* General Container */
-.students-container {
+/* .students-container {
     margin: 20px;
     padding: 20px;
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
+} */
 
 /* Page Title */
 h1 {
@@ -24,7 +24,7 @@ h1 {
 
 /* Table Styling */
 .table {
-    width: 100%;
+    width: 95%;
     min-width: 800px;
     border-collapse: collapse;
     margin-top: 20px;
@@ -83,19 +83,19 @@ h1 {
 }
 
 .btn-warning {
-    background-color: #ffc107;
+    background-color: #ff9933;
 }
 
 .btn-warning:hover {
     background-color: #e0a800;
 }
 
-.btn-danger {
-    background-color: #dc3545;
+.btn-info{
+    background-color: #1cdd3c;
 }
 
-.btn-danger:hover {
-    background-color: #c82333;
+.btn-info:hover{
+    background-color: #00b306;
 }
 
 /* Pagination */

@@ -3,62 +3,66 @@
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/admin/edit.css') }}">
 
+<div class="edit-user-container">
+    <h2 class="page-title">
+        Edit User:
+        <span class="highlight">{{ $user->user_fname }} {{ $user->user_lname }}</span>
+    </h2>
 
-<div class="container">
-        <h2>Edit User: &nbsp <span style="color: #ff9933; font-weight: 400;"> {{ $user->user_fname }} {{ $user->user_lname }}</span></h2>
+    <form action="{{ route('admin.pnph_users.update', $user->user_id) }}" method="POST" class="edit-form">
+        @csrf
+        @method('PUT')
 
-        <form action="{{ route('admin.pnph_users.update', $user->user_id) }}" method="POST">
-            @csrf
-            @method('PUT')
+        <div class="form-row">
+            <label>User ID</label>
+            <input type="text" value="{{ $user->user_id }}" disabled>
+            <small class="note">This field cannot be changed.</small>
+        </div>
 
+        <div class="form-grid">
             <div class="form-group">
-                <label for="user_id">User ID</label>
-                <input type="text" name="user_id" value="{{ $user->user_id }}" disabled>
-                <span class="text-muted">This field cannot be changed.</span>
-            </div>
-
-            <div class="form-group">
-                <label for="user_fname">First Name</label>
+                <label>First Name</label>
                 <input type="text" name="user_fname" value="{{ $user->user_fname }}" required>
             </div>
 
             <div class="form-group">
-                <label for="user_lname">Last Name</label>
+                <label>Last Name</label>
                 <input type="text" name="user_lname" value="{{ $user->user_lname }}" required>
             </div>
 
             <div class="form-group">
-                <label for="user_mInitial">Middle Initial</label>
+                <label>Middle Initial</label>
                 <input type="text" name="user_mInitial" value="{{ $user->user_mInitial }}">
             </div>
 
             <div class="form-group">
-                <label for="user_suffix">Suffix</label>
+                <label>Suffix</label>
                 <input type="text" name="user_suffix" value="{{ $user->user_suffix }}">
             </div>
 
             <div class="form-group">
-                <label for="user_email">Email</label>
+                <label>Email</label>
                 <input type="email" name="user_email" value="{{ $user->user_email }}" required>
             </div>
 
             <div class="form-group">
-                <label for="user_role">Role</label>
+                <label>Role</label>
                 <input type="text" name="user_role" value="{{ $user->user_role }}" required>
             </div>
 
             <div class="form-group">
-                <label for="status">Status</label>
+                <label>Status</label>
                 <select name="status" required>
                     <option value="active" {{ $user->status === 'active' ? 'selected' : '' }}>Activate</option>
                     <option value="inactive" {{ $user->status === 'inactive' ? 'selected' : '' }}>Deactivate</option>
                 </select>
             </div>
+        </div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-success">Update User</button>
-                <a href="{{ route('admin.pnph_users.index') }}" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form>
-    </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Update User</button>
+            <a href="{{ route('admin.pnph_users.index') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
 @endsection

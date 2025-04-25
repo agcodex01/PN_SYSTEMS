@@ -20,7 +20,7 @@ class PNUserController extends Controller
 
         $users = PNUser::when($roleFilter, function ($query, $roleFilter) {
             return $query->where('user_role', $roleFilter);
-        })->paginate(5);
+        })->paginate(8);
     
         // Get all distinct roles
         $roles = PNUser::select('user_role')->distinct()->pluck('user_role');

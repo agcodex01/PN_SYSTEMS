@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\PNUser;
+use App\Models\School;
+use App\Models\ClassModel;
 use App\Models\StudentDetail;
 use Illuminate\Http\Request;
 
@@ -10,32 +12,43 @@ class TrainingController extends Controller
 {
     public function dashboard()
     {
-        return view('training.dashboard', ['title' => 'Training Dashboard']);
+        $schoolsCount = \App\Models\School::count();
+        $classesCount = \App\Models\ClassModel::count();
+        $studentsCount = PNUser::where('user_role', 'Student')->where('status', 'active')->count();
+        
+        // Get gender distribution from student_details table
+        $maleCount = \App\Models\StudentDetail::where('gender', 'Male')->count();
+        $femaleCount = \App\Models\StudentDetail::where('gender', 'Female')->count();
+        
+        // Get students count by batch
+        $batchCounts = StudentDetail::select('batch')
+            ->selectRaw('count(*) as count')
+            ->groupBy('batch')
+            ->orderBy('batch')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->batch => $item->count];
+            });
+
+        return view('training.dashboard', [
+            'title' => 'Training Dashboard',
+            'schoolsCount' => $schoolsCount,
+            'classesCount' => $classesCount,
+            'studentsCount' => $studentsCount,
+            'maleCount' => $maleCount,
+            'femaleCount' => $femaleCount,
+            'batchCounts' => $batchCounts
+        ]);
     }
 
     public function index()
     {
-        $query = PNUser::where('user_role', 'Student')
+        $students = PNUser::where('user_role', 'Student')
             ->where('status', 'active')
-            ->with('studentDetail');
+            ->with('studentDetail')
+            ->paginate(10);
 
-        // Apply batch filter if selected
-        if (request('batch')) {
-            $query->whereHas('studentDetail', function($q) {
-                $q->where('batch', request('batch'));
-            });
-        }
-
-        // Get unique batches for the filter dropdown
-        $batches = StudentDetail::distinct()
-            ->pluck('batch')
-            ->filter()
-            ->sort()
-            ->values();
-
-        $students = $query->paginate(10);
-
-        return view('training.students-info', compact('students', 'batches'));
+        return view('training.students-info', compact('students'));
     }
 
     public function edit($user_id)
@@ -68,6 +81,7 @@ class TrainingController extends Controller
             'group' => 'required|size:2',
             'student_number' => 'required|digits:4',
             'training_code' => 'required|size:2',
+            'gender' => 'required|in:Male,Female',
         ]);
 
         // Update user information
@@ -91,6 +105,7 @@ class TrainingController extends Controller
                 'group' => $request->group,
                 'student_number' => $request->student_number,
                 'training_code' => $request->training_code,
+                'gender' => $request->gender,
             ]
         );
 
@@ -100,22 +115,42 @@ class TrainingController extends Controller
 
     public function destroy($user_id)
     {
-        $student = PNUser::where('user_id', $user_id)->firstOrFail();
-        $student->update(['status' => 'inactive']);
-
-        return redirect()->route('training.students.index')
-            ->with('success', 'Student deactivated successfully.');
+        try {
+            $user = PNUser::findOrFail($user_id);
+            $user->update(['status' => 'inactive']);
+            return redirect()->route('training.students.index')
+                ->with('success', 'Student deactivated successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error deactivating student: ' . $e->getMessage());
+        }
     }
 
-    public function manageStudents()
+    public function getStudentsList()
     {
-        $students = PNUser::where('user_role', 'Student')
-            ->with('studentDetail')
-            ->paginate(10);
+        try {
+            $students = PNUser::where('user_role', 'Student')
+                ->where('status', 'active')
+                ->with('studentDetail')
+                ->get()
+                ->map(function ($student) {
+                    $detail = $student->studentDetail;
+                    return [
+                        'user_id' => $student->user_id,
+                        'user_lname' => $student->user_lname,
+                        'user_fname' => $student->user_fname,
+                        'batch' => $detail ? $detail->batch : null,
+                        'group' => $detail ? $detail->group : null,
+                        'student_number' => $detail ? $detail->student_number : null,
+                        'training_code' => $detail ? $detail->training_code : null
+                    ];
+                })
+                ->filter(function ($student) {
+                    return $student['batch'] !== null;
+                });
 
-        return view('training.manage-students', [
-            'title' => 'Manage Students',
-            'students' => $students
-        ]);
+            return response()->json($students);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
-} 
+}

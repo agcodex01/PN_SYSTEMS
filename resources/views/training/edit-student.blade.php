@@ -151,6 +151,15 @@ select.form-control {
         </div>
 
         <div class="form-group">
+            <label for="gender">Gender</label>
+            <select name="gender" id="gender" class="form-control" required>
+                <option value="">Select Gender</option>
+                <option value="Male" {{ ($student->studentDetail->gender ?? '') == 'Male' ? 'selected' : '' }}>Male</option>
+                <option value="Female" {{ ($student->studentDetail->gender ?? '') == 'Female' ? 'selected' : '' }}>Female</option>
+            </select>
+        </div>
+
+        <div class="form-group">
             <label for="user_suffix">Suffix</label>
             <input type="text" name="user_suffix" id="user_suffix" class="form-control" value="{{ $student->user_suffix }}">
         </div>

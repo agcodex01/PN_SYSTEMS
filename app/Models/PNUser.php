@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
 
 class PNUser extends Authenticatable
 {
@@ -43,5 +45,11 @@ class PNUser extends Authenticatable
     public function studentDetail()
     {
         return $this->hasOne(StudentDetail::class, 'user_id', 'user_id');
+    }
+
+    // Add the role scope
+    public function scopeRole(Builder $query, string $role): Builder
+    {
+        return $query->where('user_role', $role);
     }
 }

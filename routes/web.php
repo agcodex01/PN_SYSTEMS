@@ -6,6 +6,8 @@ use App\Http\Controllers\PNUserController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TrainingController;
+use App\Http\Controllers\SchoolController;
+use App\Http\Controllers\ClassController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -49,17 +51,33 @@ Route::middleware('auth')->group(function () {
     
     
     // Training routes
-    Route::prefix('training')->name('training.')->middleware('can:training-access')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('training.dashboard', ['title' => 'Training Dashboard']);
-        })->name('dashboard');
+    Route::prefix('training')->name('training.')->middleware(['auth', 'can:training-access'])->group(function () {
+        Route::get('/dashboard', [TrainingController::class, 'dashboard'])->name('dashboard');
+
+        Route::get('/students-info', [TrainingController::class, 'index'])->name('students-info');
 
         // Student Information Routes
+        Route::get('/students/list', [TrainingController::class, 'getStudentsList'])->name('students.list');
         Route::get('/students', [TrainingController::class, 'index'])->name('students.index');
         Route::get('/students/{user_id}/view', [TrainingController::class, 'view'])->name('students.view');
         Route::get('/students/{user_id}/edit', [TrainingController::class, 'edit'])->name('students.edit');
         Route::put('/students/{user_id}', [TrainingController::class, 'update'])->name('students.update');
         Route::delete('/students/{user_id}', [TrainingController::class, 'destroy'])->name('students.destroy');
+
+        // School Management Routes
+        Route::get('/manage-students', [SchoolController::class, 'index'])->name('manage-students');
+        Route::get('/schools/create', [SchoolController::class, 'create'])->name('schools.create');
+        Route::post('/schools', [SchoolController::class, 'store'])->name('schools.store');
+        Route::get('/schools/{school}', [SchoolController::class, 'show'])->name('schools.show');
+        Route::get('/schools/{school}/edit', [SchoolController::class, 'edit'])->name('schools.edit');
+        Route::put('/schools/{school}', [SchoolController::class, 'update'])->name('schools.update');
+        Route::delete('/schools/{school}', [SchoolController::class, 'destroy'])->name('schools.destroy');
+
+        // Class routes with school context
+        Route::get('schools/{school}/classes/create', [ClassController::class, 'create'])->name('classes.create');
+        Route::post('schools/{school}/classes', [ClassController::class, 'store'])->name('classes.store');
+        Route::get('students/by-batch', [ClassController::class, 'getStudentsList'])->name('students.by-batch');
+        Route::resource('classes', ClassController::class)->except(['create', 'store']);
     });
     
     // Student routes

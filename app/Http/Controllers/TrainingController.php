@@ -93,9 +93,11 @@ class TrainingController extends Controller
                 });
             })
             ->paginate(10);
-    
-        return view('training.students-info', compact('students', 'batches'));
-    }
+    // Pass the role to the view to conditionally show "Edit" button
+    $userRole = Auth::user()->user_role;
+
+    return view('training.students-info', compact('students', 'batches', 'userRole'));
+}
 
 
 
@@ -114,6 +116,8 @@ class TrainingController extends Controller
         $student = PNUser::with('studentDetail')
             ->where('user_id', $user_id)
             ->firstOrFail();
+
+            
         return view('training.view-student', compact('student'));
     }
 

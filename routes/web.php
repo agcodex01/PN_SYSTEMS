@@ -51,7 +51,16 @@ Route::middleware('auth')->group(function () {
     // Educator routes
     Route::prefix('educator')->name('educator.')->middleware('can:educator-access')->group(function () {
         Route::get('/dashboard', [EducatorController::class, 'dashboard'])->name('dashboard');
-    });
+
+    Route::get('/students-info', [EducatorController::class, 'index'])->name('educator.students.index');
+    Route::get('/students/{user_id}/view', [EducatorController::class, 'viewStudent'])->name('students.view');
+    Route::get('/students-info', [EducatorController::class, 'index'])->name('students.index');
+        
+
+
+});
+ 
+
 
     
     

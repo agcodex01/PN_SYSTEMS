@@ -77,5 +77,70 @@ class EducatorController extends Controller
         ]);
     }
 
-    // Other methods can be copied from TrainingController as needed (like index, view, etc.)
+    
+
+
+    public function studentsInfo(Request $request)
+{
+    // Get all unique batch numbers to display in the dropdown
+    $batches = StudentDetail::distinct()->pluck('batch');
+    
+    // Get students, filter by batch if a batch is selected
+    $students = PNUser::where('user_role', 'Student')
+        ->where('status', 'active')
+        ->with('studentDetail')
+        ->when($request->has('batch') && $request->batch != '', function ($query) use ($request) {
+            return $query->whereHas('studentDetail', function ($q) use ($request) {
+                $q->where('batch', $request->batch);
+            });
+        })
+        ->paginate(10);
+
+    // Get the role of the currently logged-in user
+    $userRole = Auth::user()->user_role;
+
+    // Return the educator version of the student info view
+    return view('educator.students-info', compact('students', 'batches', 'userRole'));
 }
+
+
+
+public function index(Request $request)
+{
+    $batches = StudentDetail::distinct()->pluck('batch');
+
+    $students = PNUser::where('user_role', 'Student')
+        ->where('status', 'active')
+        ->with('studentDetail')
+        ->when($request->has('batch') && $request->batch != '', function ($query) use ($request) {
+            return $query->whereHas('studentDetail', function ($q) use ($request) {
+                $q->where('batch', $request->batch);
+            });
+        })
+        ->paginate(10);
+
+    $userRole = Auth::user()->user_role;
+
+    return view('educator.students-info', compact('students', 'batches', 'userRole'));
+}
+
+public function viewStudent($user_id)
+{
+    $student = PNUser::where('user_id', $user_id)
+        ->where('user_role', 'Student')
+        ->with('studentDetail')
+        ->firstOrFail();
+
+    return view('educator.view-student', compact('student'));
+}
+
+
+
+
+
+
+
+
+
+}
+

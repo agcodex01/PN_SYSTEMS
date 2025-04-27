@@ -30,6 +30,36 @@ class TrainingController extends Controller
                 return [$item->batch => $item->count];
             });
 
+        // Get gender distribution by batch
+        $genderByBatch = [];
+        foreach ($batchCounts->keys() as $batch) {
+            $genderByBatch[$batch] = [
+                'male' => StudentDetail::where('batch', $batch)
+                    ->where('gender', 'Male')
+                    ->count(),
+                'female' => StudentDetail::where('batch', $batch)
+                    ->where('gender', 'Female')
+                    ->count()
+            ];
+        }
+
+        // Get recent items
+        $recentStudents = PNUser::where('user_role', 'Student')
+            ->where('status', 'active')
+            ->with('studentDetail')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        $recentSchools = School::orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        $recentClasses = ClassModel::with('school')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
         return view('training.dashboard', [
             'title' => 'Training Dashboard',
             'schoolsCount' => $schoolsCount,
@@ -37,7 +67,11 @@ class TrainingController extends Controller
             'studentsCount' => $studentsCount,
             'maleCount' => $maleCount,
             'femaleCount' => $femaleCount,
-            'batchCounts' => $batchCounts
+            'batchCounts' => $batchCounts,
+            'genderByBatch' => $genderByBatch,
+            'recentStudents' => $recentStudents,
+            'recentSchools' => $recentSchools,
+            'recentClasses' => $recentClasses
         ]);
     }
 

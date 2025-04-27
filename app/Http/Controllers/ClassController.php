@@ -12,34 +12,36 @@ use Illuminate\Support\Facades\Log;
 
 class ClassController extends Controller
 {
-    public function index(School $school)
+    public function index()
     {
-        $classes = ClassModel::with(['students', 'school'])
-            ->where('school_id', $school->school_id)
-            ->get();
-        return view('training.classes.index', compact('classes', 'school'));
+        $classes = ClassModel::with(['students', 'school'])->get();
+        return view('training.classes.index', compact('classes'));
     }
 
-    public function create(School $school)
+    public function create(Request $request)
     {
+        $schoolId = $request->query('school');
+        $school = School::where('school_id', $schoolId)->firstOrFail();
+        
         $students = PNUser::where('user_role', 'student')
             ->with('studentDetail')
             ->get();
         return view('training.classes.create', compact('school', 'students'));
     }
 
-    public function store(Request $request, School $school)
+    public function store(Request $request)
     {
         try {
             $validated = $request->validate([
                 'class_id' => 'required|string|unique:classes,class_id',
-                'class_name' => 'required|string'
+                'class_name' => 'required|string',
+                'school_id' => 'required|exists:schools,school_id'
             ]);
 
             $class = new ClassModel();
             $class->class_id = $validated['class_id'];
             $class->class_name = $validated['class_name'];
-            $class->school_id = $school->school_id;
+            $class->school_id = $validated['school_id'];
             $class->save();
 
             // If there are student IDs, attach them to the class
@@ -48,7 +50,7 @@ class ClassController extends Controller
             }
 
             return redirect()
-                ->route('training.classes.index', ['school' => $school->school_id])
+                ->route('training.classes.index')
                 ->with('success', 'Class created successfully.');
 
         } catch (\Exception $e) {

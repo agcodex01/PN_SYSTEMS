@@ -26,23 +26,25 @@
 
 
  
-
-    </div>
-
- 
-    @if($errors->any())
+        @if($errors->any())
         <div class="alert alert-danger">
             @foreach($errors->all() as $error)
-                <p style="color: red">{{ $error }}</p>
+                <p class="error-message" style="color: red">{{ $error }}</p>
             @endforeach
         </div>
     @endif
 
     @if(session('error'))
         <div class="alert alert-danger">
-            <p style="color: red">{{ session('error') }}</p>
+            <p class="error-message"  style="color: red">{{ session('error') }}</p>
         </div>
     @endif
+
+
+    </div>
+
+ 
+    
 
 
     

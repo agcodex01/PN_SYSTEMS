@@ -1,17 +1,18 @@
 @extends('layouts.admin_layout')
 @section('content')
 
-<link rel="stylesheet" href="{{ asset('css/admin/dashboard.css') }}">
+<link rel="stylesheet" href="{{ asset('css/admin/dashboard2.css') }}">
 
 
 
     <div class="admin-dash">
+    <h1 class="text-center">Dashboard</h1>
+    <hr>
 
+    
+        
 
-    <div class="container mt-5">
-        <h1 class="text-center">Dashboard</h1>
-
-        <hr>
+  
         <div class="row">
             @foreach($rolesCount as $role => $count)
                 <div class="col-md-3 mb-4">
@@ -24,14 +25,14 @@
                 </div>
             @endforeach
         </div>
-    </div>
+
 
 
 
 
     <h1>Roles Count Data</h1>
     <hr>
-  
+    <br>
 
     <!-- Display the Chart -->
 

@@ -51,10 +51,15 @@ Route::middleware('auth')->group(function () {
     
     
     // Training routes
+
     Route::prefix('training')->name('training.')->middleware(['auth', 'can:training-access'])->group(function () {
         Route::get('/dashboard', [TrainingController::class, 'dashboard'])->name('dashboard');
 
         Route::get('/students-info', [TrainingController::class, 'index'])->name('students-info');
+
+    Route::prefix('training')->name('training.')->middleware('can:training-access')->group(function () {
+        Route::get('/dashboard', [TrainingController::class, 'dashboard'])->name('dashboard');
+
 
         // Student Information Routes
         Route::get('/students/list', [TrainingController::class, 'getStudentsList'])->name('students.list');
@@ -80,10 +85,13 @@ Route::middleware('auth')->group(function () {
         Route::resource('classes', ClassController::class)->except(['create', 'store']);
     });
     
+    
     // Student routes
     Route::prefix('student')->name('student.')->middleware('can:student-access')->group(function () {
         Route::get('/dashboard', function () {
             return view('student.dashboard', ['title' => 'Student Dashboard']);
         })->name('dashboard');
+
+
     });
 });

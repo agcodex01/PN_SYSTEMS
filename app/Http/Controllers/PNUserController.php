@@ -20,18 +20,18 @@ class PNUserController extends Controller
 
         $users = PNUser::when($roleFilter, function ($query, $roleFilter) {
             return $query->where('user_role', $roleFilter);
-        })->paginate(5);
+        })->paginate(8);
     
         // Get all distinct roles
         $roles = PNUser::select('user_role')->distinct()->pluck('user_role');
     
-        return view('admin.pnph_users.index', compact('users', 'roles', 'roleFilter'));
+        return view('admin.pnph_users.index', compact('users', 'roles', 'roleFilter'), ['title'=> 'Manage Users']);
     }
 
     // Show the form for creating a new user
     public function create()
     {
-        return view('admin.pnph_users.create');
+        return view('admin.pnph_users.create', ['title'=> 'Create User']);
     }
 
 
@@ -81,7 +81,7 @@ class PNUserController extends Controller
     public function edit($user_id)
     {
         $user = PNUser::find($user_id);
-        return view('admin.pnph_users.edit', compact('user'));
+        return view('admin.pnph_users.edit', compact('user'), ['title'=> 'Edit User']);
     }
 
 
@@ -122,7 +122,7 @@ class PNUserController extends Controller
     $user = PNUser::findOrFail($user_id);
 
     // Return a view to display user details
-    return view('admin.pnph_users.show', compact('user'));
+    return view('admin.pnph_users.show', compact('user'), ['title'=> 'View User']);
 }
 
 
@@ -136,7 +136,7 @@ public function dashboard()
 
 
 
-    return view('admin.dashboard', compact('rolesCount'));
+    return view('admin.dashboard', compact('rolesCount'), ['title'=> 'Dashboard']);
 }
 
 

@@ -7,9 +7,11 @@ use App\Models\School;
 use App\Models\ClassModel;
 use App\Models\StudentDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class TrainingController extends Controller
 {
+
     public function dashboard()
     {
         $schoolsCount = \App\Models\School::count();
@@ -75,6 +77,8 @@ class TrainingController extends Controller
         ]);
     }
 
+
+
     public function index()
     {
         $students = PNUser::where('user_role', 'Student')
@@ -84,6 +88,12 @@ class TrainingController extends Controller
 
         return view('training.students-info', compact('students'));
     }
+
+
+
+
+
+
 
     public function edit($user_id)
     {
@@ -187,4 +197,32 @@ class TrainingController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
 }
+
+
+
+//Training Dashboard Analytics 
+public function dashboard()
+{
+    // Count students per batch (include both active and inactive)
+    $batchCounts = StudentDetail::whereHas('user', function ($q) {
+            $q->where('user_role', 'Student');
+        })
+        ->select('batch')
+        ->selectRaw('count(*) as count')
+        ->groupBy('batch')
+        ->orderBy('batch')
+        ->pluck('count', 'batch');
+
+    return view('training.dashboard', [
+        'title' => 'Training Dashboard',
+        'batchCounts' => $batchCounts
+    ]);
+}
+
+} 
+
+
+
+

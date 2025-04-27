@@ -16,6 +16,10 @@ body {
     left: 0;
     right: 0;
     z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 30px;
 }
 
 .PN-logo {
@@ -50,11 +54,15 @@ body {
 .menu li {
     display: flex;
     align-items: center;
-    padding: 15px 20px;
+    padding: 30px 20px;
     font-size: 14px;
     cursor: pointer;
     transition: background 0.3s;
     color: #333;
+}
+
+.menu li a{
+     text-decoration: none;
 }
 
 .menu li img {
@@ -140,6 +148,6 @@ body {
 .content {
     flex-grow: 1;
     margin-left: 200px;
-    padding: 20px;
+    padding: 30px;
     background: #f8f9fa;
 }

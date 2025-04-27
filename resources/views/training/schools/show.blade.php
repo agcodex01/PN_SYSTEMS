@@ -5,13 +5,12 @@
     <div class="header-section">
         <a href="javascript:history.back()" class="back-button">
             <i class="fas fa-arrow-left"></i> Back
-        </a>
-        <h2>School Details</h2>
-        <a href="{{ url('/training/classes/create?school=' . $school->school_id) }}" class="btn-add">
-            <i class="fas fa-plus"></i>
-            Add New Class
-        </a>
+</a>
+
     </div>
+
+    <h1 style="font-weight:300;">School Details</h1>
+    <hr>
 
     @if(session('success'))
         <div class="alert alert-success">

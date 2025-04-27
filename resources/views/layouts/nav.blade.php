@@ -137,10 +137,6 @@
     }
 </style>
 
-
-
-
-
 </head>
 <body>
     <div class="top-bar">
@@ -173,6 +169,7 @@
             </div>
         @endauth
     </div>
+
 
     <div class="container">
         <aside class="sidebar">
@@ -225,13 +222,7 @@
                     </a>
                 </li>
 
-                <li><a href="{{ route('training.dashboard') }}"><img src="{{ asset('images/Dashboard.png') }}" alt="Dashboard"> Dashboard</a></li>
-                <li><a href="{{ route('training.students.index') }}"><img src="{{ asset('images/mu.png') }}" alt="Students Info"> Students Info</a></li>
-                <li><img src="{{ asset('images/ms.png') }}" alt="Manage Students"> Manage Students</li>
-                <li><img src="{{ asset('images/gs.png') }}" alt="Grade Submission"> Grade Submission</li>
-                <li><img src="{{ asset('images/analytics.png') }}" alt="Analytics"> Analytics</li>
-                <li><img src="{{ asset('images/is.png') }}" alt="Intervention Status"> Intervention Status</li>
-                <li><img src="{{ asset('images/me.png') }}" alt="Profile"> Profile</li>
+            
 
             </ul>
         </aside>
@@ -248,18 +239,18 @@
         const dropdown = document.getElementById('manageDropdown');
         dropdown.classList.toggle('active');
     }
-</script>
 
     
-    <!-- Scripts -->
-    @stack('scripts')
-
-        function confirmLogout() {
+     function confirmLogout() {
             if (confirm("Are you sure you want to log out?")) {
                 document.getElementById('logout-form').submit();
             }
         }
-    </script>
+    
+</script>
 
+@stack('scripts')
+
+   
 </body>
 </html>

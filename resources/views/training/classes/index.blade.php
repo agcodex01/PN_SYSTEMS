@@ -1,10 +1,11 @@
 @extends('layouts.nav')
 
 @section('content')
+
+
+<h1 style="font-weight: 300;">Classes</h1>
+<hr>
 <div class="page-container">
-    <div class="header-section">
-        <h2>Classes</h2>
-    </div>
 
     @if(session('success'))
         <div class="alert alert-success">

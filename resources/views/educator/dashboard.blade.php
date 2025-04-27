@@ -1,4 +1,4 @@
-@extends('layouts.nav')
+@extends('layouts.educator_layout')
 
 @section('content')
 

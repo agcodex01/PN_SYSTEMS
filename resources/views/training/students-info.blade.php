@@ -20,32 +20,31 @@
 
     <div class="table-wrapper">
         <div class="table-header">
-            <div class="header-cell">User ID</div>
-            <div class="header-cell">Student ID</div>
-            <div class="header-cell">Name</div>
-            <div class="header-cell">Email</div>
-            <div class="header-cell">Batch</div>
-            <div class="header-cell text-center">Actions</div>
+            <div class="header-cell">USER ID</div>
+            <div class="header-cell">STUDENT ID</div>
+            <div class="header-cell">LAST NAME</div>
+            <div class="header-cell">FIRST NAME</div>
+            <div class="header-cell">MI</div>
+            <div class="header-cell">SUFFIX</div>
+            <div class="header-cell">SEX</div>
+            <div class="header-cell">EMAIL</div>
+            <div class="header-cell act1">ACTIONS</div>
         </div>
         
         @forelse($students as $student)
             <div class="table-row">
                 <div class="cell">{{ $student->user_id }}</div>
                 <div class="cell">{{ $student->studentDetail->student_id ?? 'N/A' }}</div>
-                <div class="cell">{{ $student->user_lname }}, {{ $student->user_fname }} {{ $student->user_mInitial }} {{ $student->user_suffix }}</div>
+                <div class="cell">{{ $student->user_lname }}</div>
+                <div class="cell">{{ $student->user_fname }}</div>
+                <div class="cell">{{ $student->user_mInitial }}</div>
+                <div class="cell">{{ $student->user_suffix ?? '' }}</div>
+                <div class="cell">{{ $student->studentDetail->gender ?? 'N/A' }}</div>
                 <div class="cell">{{ $student->user_email }}</div>
-                <div class="cell">{{ $student->studentDetail->batch ?? 'N/A' }}</div>
                 <div class="cell">
                     <div class="action-buttons">
-                        <a href="{{ route('training.students.view', $student->user_id) }}" class="btn btn-info">View</a>
-                        <a href="{{ route('training.students.edit', $student->user_id) }}" class="btn btn-warning">Edit</a>
-                        <form action="{{ route('training.students.destroy', $student->user_id) }}" method="POST" style="display: inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to deactivate this student?')">
-                                Delete
-                            </button>
-                        </form>
+                        <a href="{{ route('training.students.view', $student->user_id) }}" class="btn btn-view">View</a>
+                        <a href="{{ route('training.students.edit', $student->user_id) }}" class="btn btn-edit">Edit</a>
                     </div>
                 </div>
             </div>
@@ -62,6 +61,11 @@
 </div>
 
 <style>
+
+    .act1{
+        text-align:center;
+    }
+
 .page-container {
     padding: 20px;
     max-width: 100%;
@@ -98,34 +102,28 @@
 
 .table-wrapper {
     background: white;
-    border-radius: 8px;
+    border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     margin-bottom: 20px;
 }
 
 .table-header {
     display: grid;
-    grid-template-columns: 100px 180px 1fr 250px 100px 280px;
+    grid-template-columns: 80px 120px 120px 120px 50px 80px 80px 1fr 150px;
     background: #4CAF50;
     color: white;
     font-weight: 500;
 }
 
-.header-cell {
-    padding: 16px;
-    font-size: 14px;
-}
-
 .table-row {
+    text-align: center;
+    /* text-align: justify; */
     display: grid;
-    grid-template-columns: 100px 180px 1fr 250px 100px 280px;
+    grid-template-columns: 80px 120px 120px 120px 50px 80px 80px 1fr 150px;
     border-bottom: 1px solid #eee;
     align-items: center;
-}
-
-.table-row:last-child {
-    border-bottom: none;
+    transition: background-color 0.2s;
 }
 
 .table-row:hover {
@@ -133,73 +131,51 @@
 }
 
 .cell {
-    padding: 16px;
+    padding: 12px 8px;
     font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.empty-message {
-    grid-column: 1 / -1;
-    text-align: center;
-    color: #666;
-    padding: 20px;
-}
-
-.text-center {
-    text-align: center;
+.header-cell {
+    text-align:center;
+    padding: 12px 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
 }
 
 .action-buttons {
     display: flex;
-    gap: 8px;
+    gap: 4px;
     justify-content: center;
+    align-items: center;
+    text-align: center;
 }
 
 .btn {
-    padding: 3px;
-    border-radius: 4px;
-    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 13px;
     text-decoration: none;
     border: none;
     cursor: pointer;
-    transition: background-color 0.2s;
-    width: 50px;
+    transition: all 0.2s;
     text-align: center;
     display: inline-block;
 }
 
-.btn-info {
+.btn-view {
     background: #17a2b8;
-    color: white;
+    color: white !important;
+    min-width: 40px;
 }
 
-.btn-info:hover {
-    background: #138496;
-    color: white;
-    text-decoration: none;
-}
-
-.btn-warning {
+.btn-edit {
     background: #ffc107;
-    color: #000;
-}
-
-.btn-warning:hover {
-    background: #e0a800;
-    color: #000;
-    text-decoration: none;
-}
-
-.btn-danger {
-    width: 60px;
-    padding: 5px;
-    background: #dc3545;
-    color: white;
-}
-
-.btn-danger:hover {
-    background: #c82333;
-    color: white;
-    text-decoration: none;
+    color: #000 !important;
+    min-width: 40px;
 }
 
 .pagination-container {
@@ -208,7 +184,6 @@
     justify-content: center;
 }
 
-/* Pagination Styles */
 .pagination {
     display: flex;
     list-style: none;

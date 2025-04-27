@@ -18,7 +18,7 @@
         </div>
     @endif
 
-    <form action="{{ route('training.classes.store', $school) }}" method="POST" class="form-container">
+    <form action="{{ route('training.classes.store') }}" method="POST" class="form-container">
         @csrf
         <input type="hidden" name="school_id" value="{{ $school->school_id }}">
 

@@ -3,8 +3,11 @@
 @section('content')
 <div class="page-container">
     <div class="header-section">
+        <a href="javascript:history.back()" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
         <h2>School Details</h2>
-        <a href="{{ route('training.classes.create', ['school' => $school->school_id]) }}" class="btn-add">
+        <a href="{{ url('/training/classes/create?school=' . $school->school_id) }}" class="btn-add">
             <i class="fas fa-plus"></i>
             Add New Class
         </a>
@@ -80,17 +83,25 @@
 
         <!-- Subjects Section -->
         <h3 class="mt-4">Subjects</h3>
-        <div class="subjects-grid">
-            @foreach($school->subjects as $subject)
-                <div class="subject-card">
-                    <div class="subject-header">{{ $subject->name }}</div>
-                    <div class="subject-details">
-                        <div><strong>Offer Code:</strong> {{ $subject->offer_code }}</div>
-                        <div><strong>Instructor:</strong> {{ $subject->instructor }}</div>
-                        <div><strong>Schedule:</strong> {{ $subject->schedule }}</div>
-                    </div>
+        <div class="subjects-table-container">
+            <div class="subjects-table-header">
+                <div class="header-cell">Subject Name</div>
+                <div class="header-cell">Offer Code</div>
+                <div class="header-cell">Instructor</div>
+                <div class="header-cell">Schedule</div>
+            </div>
+            @forelse($school->subjects as $subject)
+                <div class="subjects-table-row">
+                    <div class="cell">{{ $subject->name }}</div>
+                    <div class="cell">{{ $subject->offer_code }}</div>
+                    <div class="cell">{{ $subject->instructor }}</div>
+                    <div class="cell">{{ $subject->schedule }}</div>
                 </div>
-            @endforeach
+            @empty
+                <div class="subjects-table-row">
+                    <div class="cell" colspan="4" style="text-align: center;">No subjects found.</div>
+                </div>
+            @endforelse
         </div>
     </div>
 
@@ -150,6 +161,28 @@
     font-size: 24px;
     color: #333;
     margin: 0;
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 15px;
+    background-color: #ff9933;
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.back-button:hover {
+    background-color: #5a6268;
+    color: white;
+}
+
+.back-button i {
+    font-size: 12px;
 }
 
 .btn-add {
@@ -267,41 +300,40 @@
     background-color:rgb(249, 128, 8);
 }
 
-.subjects-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
+.subjects-table-container {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
     margin-top: 16px;
 }
 
-.subject-card {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.subject-header:hover{
-    color:rgb(61, 67, 68);
-}
-
-.subject-header {
-    background: #22bbea;
-    padding: 8px 12px;
+.subjects-table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr 2fr;
+    background: #4CAF50;
+    padding: 12px;
     font-weight: 500;
     color: white;
 }
 
-.subject-card:hover {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.subject-details {
+.subjects-table-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr 2fr;
     padding: 12px;
+    border-bottom: 1px solid #eee;
 }
 
-.subject-details > div {
-    margin-bottom: 4px;
+.subjects-table-row:last-child {
+    border-bottom: none;
+}
+
+.subjects-table-row:hover {
+    background-color: #f8f9fa;
+}
+
+.subjects-table-row .cell {
+    padding: 0 8px;
 }
 
 .terms-list {

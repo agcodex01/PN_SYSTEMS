@@ -367,14 +367,28 @@ function updateSubjectIndices() {
     font-size: 14px;
 }
 
+.btn-submit:hover {
+    background: #388e3c;
+    color: white;
+    text-decoration: none;
+    text-align: center;
+}
+
 .btn-cancel {
-    background: #6c757d;
+    background: #ff9933;
     color: white;
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
+    text-decoration: none;
+    text-align: center;
+}
+
+.btn-cancel:hover {
+    background:rgb(255, 128, 0);
+    color: #000;
     text-decoration: none;
     text-align: center;
 }

@@ -58,7 +58,7 @@
 .header-section {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 15px;
     margin-bottom: 20px;
 }
 
@@ -76,6 +76,12 @@
     text-decoration: none;
     font-size: 14px;
     border: none;
+}
+
+.add-button:hover {
+    background-color:rgb(246, 124, 2);
+    color: white;
+    text-decoration: none;
 }
 
 .table-wrapper {
@@ -118,7 +124,7 @@
 }
 
 .action-btn {
-    width: 40px;
+    width: 50px;
     height: 35px;
     display: inline-flex;
     align-items: center;
@@ -130,17 +136,32 @@
 }
 
 .view {
+    background: #22bbea;
+    color: white;
+}
+
+.view:hover {
     background: #17a2b8;
     color: white;
 }
 
 .edit {
-    background: #28a745;
+    background:rgb(7, 210, 54);
+    color: white;
+}
+
+.edit:hover {
+    background:rgb(2, 163, 40);
     color: white;
 }
 
 .delete {
-    background: #dc3545;
+    background: #ff9933;
+    color: white;
+}
+
+.delete:hover {
+    background:rgb(255, 134, 13);
     color: white;
 }
 

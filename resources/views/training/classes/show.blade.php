@@ -3,9 +3,12 @@
 @section('content')
 <div class="page-container">
     <div class="header-section">
+        <a href="javascript:history.back()" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
         <h2>Class Details</h2>
         <a href="{{ route('training.schools.show', ['school' => $class->school->school_id]) }}" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Back to School
+            <i class="fas fa-arrow-left"></i> Go to School page
         </a>
     </div>
 
@@ -118,6 +121,28 @@
     background-color:rgb(253, 126, 0);
     text-decoration: none;
     color: white;
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 15px;
+    background-color: #ff9933;
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.back-button:hover {
+    background-color: #5a6268;
+    color: white;
+}
+
+.back-button i {
+    font-size: 12px;
 }
 
 .content-section {

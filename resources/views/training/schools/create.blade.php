@@ -574,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .btn-select-students {
-    background-color: #28a745;
+    background-color: #22bbea;
     color: white;
     border: none;
     padding: 8px 16px;
@@ -583,8 +583,10 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .btn-select-students:hover {
-    background-color: #218838;
+    background-color:rgb(5,; 169, 219);
+    color: white;
 }
+
 .header-section {
     display: flex;
     align-items: center;
@@ -689,13 +691,20 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .btn-add {
-    background: #28a745;
+    background: #22bbea;
     color: white;
     padding: 8px 16px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
+}
+
+.btn-add:hover {
+    background-color:rgb(5, 169, 219);
+    color: white;
+    text-decoration: none;
+    text-align: center;
 }
 
 .form-actions {
@@ -705,7 +714,7 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .btn-submit {
-    background: #4CAF50;
+    background: #22bbea;
     color: white;
     padding: 10px 20px;
     border: none;
@@ -714,14 +723,28 @@ document.addEventListener('DOMContentLoaded', function() {
     font-size: 14px;
 }
 
+.btn-submit:hover {
+    background-color:rgb(5, 169, 219);
+    color: white;
+    text-decoration: none;
+    text-align: center;
+}
+
 .btn-cancel {
-    background: #6c757d;
+    background: #ff9933;
     color: white;
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
+    text-decoration: none;
+    text-align: center;
+}
+
+.btn-cancel:hover {
+    background-color:rgb(250, 125, 0);
+    color: white;
     text-decoration: none;
     text-align: center;
 }

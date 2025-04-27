@@ -12,7 +12,8 @@ class StudentDetail extends Model
         'batch',
         'group',
         'student_number',
-        'training_code'
+        'training_code',
+        'gender'
     ];
 
     // Relationship with PNUser model

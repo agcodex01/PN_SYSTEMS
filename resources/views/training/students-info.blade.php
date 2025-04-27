@@ -1,198 +1,223 @@
 @extends('layouts.nav')
 
 @section('content')
-<link rel="stylesheet" href="{{ asset('css/training/students-info.css') }}">
+<div class="page-container">
+    <div class="header-section">
+        <h2>Students</h2>
+    </div>
+
+    @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    <div class="table-wrapper">
+        <div class="table-header">
+            <div class="header-cell">USER ID</div>
+            <div class="header-cell">STUDENT ID</div>
+            <div class="header-cell">LAST NAME</div>
+            <div class="header-cell">FIRST NAME</div>
+            <div class="header-cell">MI</div>
+            <div class="header-cell">SUFFIX</div>
+            <div class="header-cell">SEX</div>
+            <div class="header-cell">EMAIL</div>
+            <div class="header-cell act1">ACTIONS</div>
+        </div>
+        
+        @forelse($students as $student)
+            <div class="table-row">
+                <div class="cell">{{ $student->user_id }}</div>
+                <div class="cell">{{ $student->studentDetail->student_id ?? 'N/A' }}</div>
+                <div class="cell">{{ $student->user_lname }}</div>
+                <div class="cell">{{ $student->user_fname }}</div>
+                <div class="cell">{{ $student->user_mInitial }}</div>
+                <div class="cell">{{ $student->user_suffix ?? '' }}</div>
+                <div class="cell">{{ $student->studentDetail->gender ?? 'N/A' }}</div>
+                <div class="cell">{{ $student->user_email }}</div>
+                <div class="cell">
+                    <div class="action-buttons">
+                        <a href="{{ route('training.students.view', $student->user_id) }}" class="btn btn-view">View</a>
+                        <a href="{{ route('training.students.edit', $student->user_id) }}" class="btn btn-edit">Edit</a>
+                    </div>
+                </div>
+            </div>
+        @empty
+            <div class="table-row">
+                <div class="cell empty-message">No students found</div>
+            </div>
+        @endforelse
+    </div>
+
+    <div class="pagination-container">
+        {{ $students->links() }}
+    </div>
+</div>
 
 <style>
-/* Ensure main content doesn't affect navigation */
-/* .main-content {
-    margin-left: 220px; /* Match the navigation width */
-    /* padding: 15px;
-    min-height: 100vh;
-    background-color: #f8f9fa;
-} */ 
 
-.content-wrapper {
-    background-color: white;
-    border-radius: 5px;
+    .act1{
+        text-align:center;
+    }
+
+.page-container {
     padding: 20px;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.header-section {
     margin-bottom: 20px;
 }
 
-.filter-section {
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.filter-label {
-    font-weight: 500;
+.header-section h2 {
+    font-size: 24px;
     color: #333;
+    margin: 0;
 }
 
-.filter-select {
-    padding: 6px 12px;
-    border: 1px solid #ced4da;
+.alert {
+    padding: 12px;
+    margin-bottom: 20px;
     border-radius: 4px;
-    background-color: white;
-    min-width: 150px;
-    cursor: pointer;
 }
 
-.filter-select:focus {
-    border-color: #80bdff;
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.table-wrapper {
+    background: white;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.table-header {
+    display: grid;
+    grid-template-columns: 80px 120px 120px 120px 50px 80px 80px 1fr 150px;
+    background: #4CAF50;
+    color: white;
+    font-weight: 500;
+}
+
+.table-row {
+    text-align: center;
+    /* text-align: justify; */
+    display: grid;
+    grid-template-columns: 80px 120px 120px 120px 50px 80px 80px 1fr 150px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.table-row:hover {
+    background-color: #f8f9fa;
+}
+
+.cell {
+    padding: 12px 8px;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.header-cell {
+    text-align:center;
+    padding: 12px 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
 }
 
 .action-buttons {
     display: flex;
-    gap: 5px;
+    gap: 4px;
     justify-content: center;
-}
-
-.btn-sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-}
-
-.table {
-    width: 100%;
-    table-layout: fixed;
-    margin-bottom: 1rem;
-    background-color: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.table th, .table td {
-    padding: 12px;
-    vertical-align: middle;
-}
-
-/* Column widths */
-.table th:nth-child(1), .table td:nth-child(1) { width: 10%; } /* User ID */
-.table th:nth-child(2), .table td:nth-child(2) { width: 10%; } /* Student ID */
-.table th:nth-child(3), .table td:nth-child(3) { width: 15%; } /* Last Name */
-.table th:nth-child(4), .table td:nth-child(4) { width: 15%; } /* First Name */
-.table th:nth-child(5), .table td:nth-child(5) { width: 5%; } /* MI */
-.table th:nth-child(6), .table td:nth-child(6) { width: 8%; } /* Suffix */
-.table th:nth-child(7), .table td:nth-child(7) { width: 8%; } /* Batch */
-.table th:nth-child(8), .table td:nth-child(8) { width: 12%; text-align: center; } /* Action */
-
-.table td {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.table thead th {
-    background-color: #4CAF50;
-    color: white;
-    font-weight: 500;
-}
-
-/* Center align the Action header */
-.table thead th:last-child {
+    align-items: center;
     text-align: center;
 }
 
-.btn-info {
-    background-color: #17a2b8;
-    color: white;
-}
-
-.btn-warning {
-    background-color: #ffc107;
-    color: #000;
-}
-
-.btn-info:hover {
-    background-color: #138496;
-    color: white;
-}
-
-.btn-warning:hover {
-    background-color: #e0a800;
-    color: #000;
-}
-
-h1 {
-    margin: 0 0 20px 0;
+.btn {
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 13px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
     text-align: center;
-    color: #333;
-    font-size: 24px;
+    display: inline-block;
 }
 
-/* Style the pagination */
+.btn-view {
+    background: #17a2b8;
+    color: white !important;
+    min-width: 40px;
+}
+
+.btn-edit {
+    background: #ffc107;
+    color: #000 !important;
+    min-width: 40px;
+}
+
 .pagination-container {
     margin-top: 20px;
     display: flex;
     justify-content: center;
 }
 
-</style>
-
-<div class="main-content">
-    <div class="content-wrapper">
-        <h1>Students Information</h1>
-
-        <div class="filter-section">
-            <label class="filter-label">Class:</label>
-            <select class="filter-select" id="batchFilter" onchange="filterStudents()">
-                <option value="">All Class</option>
-                @foreach($batches as $batch)
-                    <option value="{{ $batch }}" {{ request('batch') == $batch ? 'selected' : '' }}>
-                        Class {{ $batch }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>User ID</th>
-                    <th>Student ID</th>
-                    <th>Last Name</th>
-                    <th>First Name</th>
-                    <th>MI</th>
-                    <th>Suffix</th>
-                    <th>Batch</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($students as $student)
-                    <tr>
-                        <td>{{ $student->user_id }}</td>
-                        <td>{{ $student->studentDetail->student_id ?? 'N/A' }}</td>
-                        <td>{{ $student->user_lname }}</td>
-                        <td>{{ $student->user_fname }}</td>
-                        <td>{{ $student->user_mInitial }}</td>
-                        <td>{{ $student->user_suffix }}</td>
-                        <td>{{ $student->studentDetail->batch ?? 'N/A' }}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <a href="{{ route('training.students.view', $student->user_id) }}" class="btn btn-info btn-sm">View</a>
-                                <a href="{{ route('training.students.edit', $student->user_id) }}" class="btn btn-warning btn-sm">Edit</a>
-                            </div>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-
-        <div class="pagination-container">
-            {{ $students->links() }}
-        </div>
-    </div>
-</div>
-
-<script>
-function filterStudents() {
-    const batch = document.getElementById('batchFilter').value;
-    window.location.href = '{{ route("training.students.index") }}' + (batch ? '?batch=' + batch : '');
+.pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 4px;
 }
-</script>
+
+.page-item {
+    display: inline-block;
+}
+
+.page-link {
+    padding: 8px 12px;
+    border: 1px solid #dee2e6;
+    color: #4CAF50;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.page-item.active .page-link {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+
+.page-link:hover {
+    background-color: #e9ecef;
+}
+
+.page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+}
+</style>
 @endsection

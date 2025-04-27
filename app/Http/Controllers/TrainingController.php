@@ -78,18 +78,24 @@ class TrainingController extends Controller
     }
 
 
-
-    public function index()
+    public function index(Request $request)
     {
+        // Get all unique batch numbers to display in the dropdown
+        $batches = StudentDetail::distinct()->pluck('batch');
+    
+        // Get students, filter by batch if a batch is selected
         $students = PNUser::where('user_role', 'Student')
             ->where('status', 'active')
             ->with('studentDetail')
+            ->when($request->has('batch') && $request->batch != '', function ($query) use ($request) {
+                return $query->whereHas('studentDetail', function ($q) use ($request) {
+                    $q->where('batch', $request->batch);
+                });
+            })
             ->paginate(10);
-
-        return view('training.students-info', compact('students'));
+    
+        return view('training.students-info', compact('students', 'batches'));
     }
-
-
 
 
 
@@ -111,51 +117,64 @@ class TrainingController extends Controller
         return view('training.view-student', compact('student'));
     }
 
+
+
+
     public function update(Request $request, $user_id)
     {
         $student = PNUser::where('user_id', $user_id)->firstOrFail();
-
+    
         $request->validate([
-            'user_lname' => 'required',
-            'user_fname' => 'required',
-            'user_mInitial' => 'nullable',
-            'user_suffix' => 'nullable',
-            'user_email' => 'required|email|unique:pnph_users,user_email,' . $user_id . ',user_id',
             'batch' => 'required|digits:4',
             'group' => 'required|size:2',
-            'student_number' => 'required|digits:4',
-            'training_code' => 'required|size:2',
+            'student_number' => [
+                'required',
+                'digits:4',
+                function ($attribute, $value, $fail) use ($request, $user_id) {
+                    $studentId = $request->batch . $request->group . $value . $request->training_code;
+    
+                    // Check if the generated studentId already exists for a different user
+                    $exists = StudentDetail::where('student_id', $studentId)
+                        ->where('user_id', '!=', $user_id) // Ignore current user's own student_id
+                        ->exists();
+    
+                    if ($exists) {
+                        $fail('The student number is already taken for the selected batch, group, and training code.');
+                    }
+                },
+            ],
+            'training_code' => 'required',
+            'user_lname' => 'required',
+            'user_fname' => 'required',
             'gender' => 'required|in:Male,Female',
+            'user_email' => 'required|email|unique:pnph_users,user_email,' . $user_id . ',user_id',
         ]);
-
-        // Update user information
-        $student->update([
-            'user_lname' => $request->user_lname,
-            'user_fname' => $request->user_fname,
-            'user_mInitial' => $request->user_mInitial,
-            'user_suffix' => $request->user_suffix,
-            'user_email' => $request->user_email,
+    
+        // Update the student details
+        $student->update($request->only([
+            'user_lname',
+            'user_fname',
+            'user_mInitial',
+            'user_suffix',
+            'user_email',
+        ]));
+    
+        $student->studentDetail()->update([
+            'batch' => $request->batch,
+            'group' => $request->group,
+            'student_number' => $request->student_number,
+            'training_code' => $request->training_code,
+            'student_id' => $request->batch . $request->group . $request->student_number . $request->training_code,
+            'gender' => $request->gender,
         ]);
-
-        // Generate student ID
-        $studentId = $request->batch . $request->group . $request->student_number . $request->training_code;
-
-        // Update or create student details
-        StudentDetail::updateOrCreate(
-            ['user_id' => $user_id],
-            [
-                'student_id' => $studentId,
-                'batch' => $request->batch,
-                'group' => $request->group,
-                'student_number' => $request->student_number,
-                'training_code' => $request->training_code,
-                'gender' => $request->gender,
-            ]
-        );
-
-        return redirect()->route('training.students.index')
-            ->with('success', 'Student information updated successfully.');
+    
+        return redirect()->route('training.students.index')->with('success', 'Student updated successfully.');
     }
+
+
+
+
+
 
     public function destroy($user_id)
     {
@@ -168,6 +187,14 @@ class TrainingController extends Controller
             return back()->with('error', 'Error deactivating student: ' . $e->getMessage());
         }
     }
+
+
+
+
+
+
+
+
 
     public function getStudentsList()
     {
@@ -202,26 +229,8 @@ class TrainingController extends Controller
 
 
 
-//Training Dashboard Analytics 
-public function dashboard()
-{
-    // Count students per batch (include both active and inactive)
-    $batchCounts = StudentDetail::whereHas('user', function ($q) {
-            $q->where('user_role', 'Student');
-        })
-        ->select('batch')
-        ->selectRaw('count(*) as count')
-        ->groupBy('batch')
-        ->orderBy('batch')
-        ->pluck('count', 'batch');
 
-    return view('training.dashboard', [
-        'title' => 'Training Dashboard',
-        'batchCounts' => $batchCounts
-    ]);
-}
 
-} 
 
 
 

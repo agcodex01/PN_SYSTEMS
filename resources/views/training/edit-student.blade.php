@@ -3,77 +3,7 @@
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/training/edit-student.css') }}">
 
-<style>
-.student-id-section {
-    border: 1px solid #ddd;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 5px;
-    background-color: #f8f9fa;
-}
 
-.student-id-section .form-group {
-    margin-bottom: 15px;
-}
-
-.student-id-preview {
-    font-family: monospace;
-    font-size: 1.2em;
-    padding: 10px;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-top: 10px;
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-control {
-    width: 100%;
-    padding: 0.375rem 0.75rem;
-    border: 1px solid #ced4da;
-    border-radius: 0.25rem;
-}
-
-select.form-control {
-    cursor: pointer;
-}
-
-.student-id-components {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.student-id-components .form-group {
-    margin-bottom: 0;
-}
-
-.student-number-input {
-    width: 100px;
-}
-
-.alert {
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 4px;
-}
-
-.alert-danger {
-    color: #721c24;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-}
-
-.alert-success {
-    color: #155724;
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
-}
-</style>
 
 <div class="edit-student-container">
     <h1>Edit Student Information</h1>
@@ -106,15 +36,15 @@ select.form-control {
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label for="student_number">Student Number</label>
-                    <input type="text" name="student_number" id="student_number" 
-                           class="form-control student-number-input" required
-                           pattern="[0-9]{4}" maxlength="4" placeholder="0001"
-                           value="{{ $student->studentDetail->student_number ?? '' }}"
-                           onchange="updateStudentId()">
-                </div>
-
+             <div class="form-group">
+                <label for="student_number">Student Number</label>
+                <input type="text" name="student_number" id="student_number" 
+                    class="form-control student-number-input" required
+                    pattern="[0-9]{4}" maxlength="4" placeholder="0001"
+                    value="{{ old('student_number', $student->studentDetail->student_number ?? '') }}"
+                    onchange="updateStudentId()">
+            </div>
+                
                 <div class="form-group">
                     <label for="training_code">Training Code</label>
                     <select name="training_code" id="training_code" class="form-control" required onchange="updateStudentId()">

@@ -131,6 +131,11 @@
             <button type="button" id="add-subject" class="btn-add">Add Subject</button>
         </div>
 
+
+
+
+
+
         <div class="form-actions">
             <button type="submit" class="btn-submit">Update School</button>
             <a href="{{ route('training.manage-students') }}" class="btn-cancel">Cancel</a>

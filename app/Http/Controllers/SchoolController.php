@@ -117,6 +117,9 @@ class SchoolController extends Controller
         return view('training.schools.edit', compact('school'));
     }
 
+
+
+    
     public function update(Request $request, School $school)
     {
         $request->validate([

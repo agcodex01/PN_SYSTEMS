@@ -8,6 +8,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\ClassController;
+use App\Http\Controllers\EducatorController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -49,9 +50,7 @@ Route::middleware('auth')->group(function () {
     
     // Educator routes
     Route::prefix('educator')->name('educator.')->middleware('can:educator-access')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('educator.dashboard', ['title' => 'Educator Dashboard']);
-        })->name('dashboard');
+        Route::get('/dashboard', [EducatorController::class, 'dashboard'])->name('dashboard');
     });
 
     

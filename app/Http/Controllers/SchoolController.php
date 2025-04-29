@@ -7,7 +7,6 @@ use App\Models\Subject;
 use App\Models\ClassModel;
 use App\Models\StudentDetail;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
 class SchoolController extends Controller
@@ -44,7 +43,9 @@ class SchoolController extends Controller
                 'semester_count' => 'required|integer|min:1',
                 'terms' => 'required|array|min:1',
                 'passing_grade_min' => 'required|numeric|between:1,5',
-                'passing_grade_max' => 'required|numeric|between:1,5',
+                'passing_grade_max' => 'required|numeric|between:1,5|gte:passing_grade_min',
+                'failing_grade_min' => 'required|numeric|between:1,5',
+                'failing_grade_max' => 'required|numeric|between:1,5|gte:failing_grade_min',
                 'subjects' => 'required|array|min:1',
                 'subjects.*.offer_code' => 'required|string',
                 'subjects.*.name' => 'required|string',
@@ -58,6 +59,11 @@ class SchoolController extends Controller
                 'classes.*.student_ids.*' => 'exists:pnph_users,user_id',
             ]);
 
+            // Ensure no overlap between passing and failing ranges
+            if ($validated['passing_grade_max'] >= $validated['failing_grade_min']) {
+                return back()->withErrors(['grade_range' => 'Passing and failing grade ranges must not overlap.'])->withInput();
+            }
+
             DB::beginTransaction();
 
             // Create school
@@ -70,6 +76,8 @@ class SchoolController extends Controller
                 'terms' => $validated['terms'],
                 'passing_grade_min' => $validated['passing_grade_min'],
                 'passing_grade_max' => $validated['passing_grade_max'],
+                'failing_grade_min' => $validated['failing_grade_min'],
+                'failing_grade_max' => $validated['failing_grade_max'],
             ]);
 
             // Create subjects
@@ -109,17 +117,12 @@ class SchoolController extends Controller
         }
     }
 
-
-
     public function edit(School $school)
     {
         $school->load('subjects');
         return view('training.schools.edit', compact('school'));
     }
 
-
-
-    
     public function update(Request $request, School $school)
     {
         $request->validate([
@@ -130,7 +133,9 @@ class SchoolController extends Controller
             'semester_count' => 'required|integer|min:1',
             'terms' => 'required|array|min:1',
             'passing_grade_min' => 'required|numeric|between:1,5',
-            'passing_grade_max' => 'required|numeric|between:1,5',
+            'passing_grade_max' => 'required|numeric|between:1,5|gte:passing_grade_min',
+            'failing_grade_min' => 'required|numeric|between:1,5',
+            'failing_grade_max' => 'required|numeric|between:1,5|gte:failing_grade_min',
             'subjects' => 'required|array|min:1',
             'subjects.*.offer_code' => 'required|string',
             'subjects.*.name' => 'required|string',
@@ -149,6 +154,8 @@ class SchoolController extends Controller
                 'terms' => $request->terms,
                 'passing_grade_min' => $request->passing_grade_min,
                 'passing_grade_max' => $request->passing_grade_max,
+                'failing_grade_min' => $request->failing_grade_min,
+                'failing_grade_max' => $request->failing_grade_max,
             ]);
 
             // Delete existing subjects
@@ -190,4 +197,4 @@ class SchoolController extends Controller
             return back()->with('error', 'Error deleting school: ' . $e->getMessage());
         }
     }
-} 
+}

@@ -44,6 +44,15 @@ class ClassModel extends Model
             ->withTimestamps();
     }
 
+    public function subjects()
+{
+    return $this->belongsToMany(Subject::class, 'class_subject', 'class_id', 'subject_id');
+}
+
+
+
+
+
     public static function test()
     {
         return "Model is working";

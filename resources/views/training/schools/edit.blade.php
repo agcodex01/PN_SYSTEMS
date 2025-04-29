@@ -65,31 +65,30 @@
         <div class="form-group">
             <label>Grade Range Configuration</label>
             <div class="grade-range-selector">
-                <div class="radio-group">
-                    <input type="radio" id="range1" name="grade_range" value="1" 
-                        {{ $school->passing_grade_min == 1.0 ? 'checked' : '' }}>
-                    <label for="range1">1.0 - 3.0 (Passing)</label>
+                <div class="input-group">
+                    <label for="passingGradeMin">Passing Grade Min</label>
+                    <input type="number" step="0.1" id="passingGradeMin" name="passing_grade_min" 
+                        value="{{ old('passing_grade_min', $school->passing_grade_min) }}" required>
                 </div>
-                <div class="radio-group">
-                    <input type="radio" id="range2" name="grade_range" value="2"
-                        {{ $school->passing_grade_min == 3.0 ? 'checked' : '' }}>
-                    <label for="range2">3.0 - 5.0 (Passing)</label>
+                <div class="input-group">
+                    <label for="passingGradeMax">Passing Grade Max</label>
+                    <input type="number" step="0.1" id="passingGradeMax" name="passing_grade_max" 
+                        value="{{ old('passing_grade_max', $school->passing_grade_max) }}" required>
+                </div>
+                <div class="input-group">
+                    <label for="failingGradeMin">Failing Grade Min</label>
+                    <input type="number" step="0.1" id="failingGradeMin" name="failing_grade_min" 
+                        value="{{ old('failing_grade_min', $school->failing_grade_min) }}" required>
+                </div>
+                <div class="input-group">
+                    <label for="failingGradeMax">Failing Grade Max</label>
+                    <input type="number" step="0.1" id="failingGradeMax" name="failing_grade_max" 
+                        value="{{ old('failing_grade_max', $school->failing_grade_max) }}" required>
                 </div>
             </div>
-            <div class="grade-info">
-                <div id="passingRange">Passing Grade Range: <span>{{ number_format($school->passing_grade_min, 1) }} - {{ number_format($school->passing_grade_max, 1) }}</span></div>
-                <div id="failingRange">Failing Grade Range: <span>
-                    @if($school->passing_grade_min == 1.0)
-                        {{ number_format($school->passing_grade_max + 0.1, 1) }} - 5.0
-                    @else
-                        1.0 - {{ number_format($school->passing_grade_min - 0.1, 1) }}
-                    @endif
-                </span></div>
-            </div>
-            <input type="hidden" name="passing_grade_min" id="passingGradeMin" value="{{ $school->passing_grade_min }}">
-            <input type="hidden" name="passing_grade_max" id="passingGradeMax" value="{{ $school->passing_grade_max }}">
         </div>
 
+        
         <div class="form-group">
             <label>Terms</label>
             <div class="checkbox-group">

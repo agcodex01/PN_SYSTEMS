@@ -9,15 +9,15 @@ return new class extends Migration
     public function up()
     {
         Schema::table('schools', function (Blueprint $table) {
-            $table->decimal('passing_grade_min', 3, 1)->after('terms');
-            $table->decimal('passing_grade_max', 3, 1)->after('passing_grade_min');
+            $table->decimal('failing_grade_min', 3, 1)->after('passing_grade_max'); // Add minimum failing grade
+            $table->decimal('failing_grade_max', 3, 1)->after('failing_grade_min'); // Add maximum failing grade
         });
     }
 
     public function down()
     {
         Schema::table('schools', function (Blueprint $table) {
-            $table->dropColumn(['passing_grade_min', 'passing_grade_max']);
+            $table->dropColumn(['failing_grade_min', 'failing_grade_max']); // Remove the columns
         });
     }
 };

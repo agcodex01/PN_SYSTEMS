@@ -22,7 +22,9 @@ class School extends Model
         'term_type',
         'terms',
         'passing_grade_min',
-        'passing_grade_max'
+        'passing_grade_max',
+        'failing_grade_min', // Added
+        'failing_grade_max'  // Added
     ];
 
     protected $casts = [
@@ -30,7 +32,9 @@ class School extends Model
         'term_type' => 'string',
         'terms' => 'array',
         'passing_grade_min' => 'decimal:1',
-        'passing_grade_max' => 'decimal:1'
+        'passing_grade_max' => 'decimal:1',
+        'failing_grade_min' => 'decimal:1', // Added
+        'failing_grade_max' => 'decimal:1'  // Added
     ];
 
     public function getRouteKeyName()
@@ -52,4 +56,4 @@ class School extends Model
     {
         return $this->hasMany(ClassModel::class, 'school_id', 'school_id');
     }
-} 
+}

@@ -9,6 +9,7 @@ use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\EducatorController;
+use App\Http\Controllers\GradeSubmissionController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -92,6 +93,13 @@ Route::middleware('auth')->group(function () {
         Route::post('schools/{school}/classes', [ClassController::class, 'store'])->name('classes.store');
         Route::get('students/by-batch', [ClassController::class, 'getStudentsList'])->name('students.by-batch');
         Route::resource('classes', ClassController::class)->except(['create', 'store']);
+
+
+        //Grade submission routes
+        Route::get('/grade-submissions', [GradeSubmissionController::class, 'index'])->name('grade-submissions.index');
+        Route::get('/grade-submissions/create', [GradeSubmissionController::class, 'create'])->name('grade-submissions.create');
+        Route::post('/grade-submissions', [GradeSubmissionController::class, 'store'])->name('grade-submissions.store');
+        Route::get('/training/subjects/by-school-and-class', [GradeSubmissionController::class, 'getSubjectsBySchoolAndClass']);
     }); // <-- ✅ properly closed here
     
     

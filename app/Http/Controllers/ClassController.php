@@ -142,4 +142,10 @@ class ClassController extends Controller
 
         return response()->json($students);
     }
+
+    public function getClassesBySchool(School $school)
+    {
+        $classes = $school->classes()->select('class_id', 'class_name', 'batch')->get();
+        return response()->json($classes);
+    }
 }

@@ -40,7 +40,7 @@
 
 <br>
 
-    <div class="table-wrapper">
+<div class="table-wrapper">
         <div class="table-header">
             <div class="header-cell">USER ID</div>
             <div class="header-cell">STUDENT ID</div>
@@ -76,10 +76,8 @@
             </div>
         @endforelse
     </div>
-
     <div class="pagination-container">
         {{ $students->links() }}
     </div>
 </div>
-
 @endsection

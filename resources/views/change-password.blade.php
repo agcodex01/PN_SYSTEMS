@@ -31,16 +31,18 @@
                 <input type="password" name="new_password_confirmation" id="new_password_confirmation" class="form-control" required>
             </div>
             <button type="submit" class="btn btn-primary">Update Password</button>
-        </form>
-</div>
 
-@if($errors->any())
+            @if($errors->any())
         <div class="alert alert-danger">
             @foreach($errors->all() as $error)
-                <p class="error-message"  style="color: red">{{ $error }}</p>
+                <p class="error-message"  style="color: red; text-align:center;">{{ $error }}</p>
             @endforeach
         </div>
     @endif
+        </form>
+</div>
+
+
         
 </body>
 </html>

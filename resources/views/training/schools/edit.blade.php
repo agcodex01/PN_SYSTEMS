@@ -90,7 +90,7 @@
             </div>
         </div>
 
-        
+
         <div class="form-group">
             <label>Terms</label>
             <div class="checkbox-group">
@@ -115,6 +115,8 @@
                 <div class="error-message">{{ $message }}</div>
             @enderror
         </div>
+
+        
 
         <div class="subjects-section">
             <h3>Subjects</h3>

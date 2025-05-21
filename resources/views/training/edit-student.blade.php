@@ -129,6 +129,7 @@ function updateStudentId() {
 
     if (batch && group && studentNumber && trainingCode) {
         const studentId = `${batch}${group}${studentNumber}${trainingCode}`;
+        document.getElementById('student_id').value = studentId; // ✅ Assign it here
         console.log('Generated Student ID:', studentId);
     }
 }

@@ -256,20 +256,11 @@
     </div>
 
     <script>
-<<<<<<< HEAD
-
-function toggleDropdown(event) {
-    event.preventDefault();
-    const dropdown = event.target.closest('li.dropdown');
-    dropdown.classList.toggle('active');
-}
-=======
     function toggleDropdown(event) {
         event.preventDefault();
         const dropdown = event.target.closest('.dropdown');
         dropdown.classList.toggle('active');
     }
->>>>>>> 373899d66c6ca5e2aee64c4122906453f2725c9c
 
     function confirmLogout() {
         if (confirm("Are you sure you want to log out?")) {

@@ -9,8 +9,7 @@ use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\EducatorController;
-use App\Http\Controllers\GradeSubmissionController;
-use App\Http\Controllers\StudentGradeSubmissionController;
+use App\Http\Controllers\Training\GradeSubmissionController;
 use App\Http\Controllers\StudentController;
 
 Route::get('/', function () {
@@ -89,19 +88,36 @@ Route::middleware('auth')->group(function () {
         Route::get('/schools/{school}/edit', [SchoolController::class, 'edit'])->name('schools.edit');
         Route::put('/schools/{school}', [SchoolController::class, 'update'])->name('schools.update');
         Route::delete('/schools/{school}', [SchoolController::class, 'destroy'])->name('schools.destroy');
+        Route::get('/api/students', [SchoolController::class, 'getStudentsList'])->name('api.students.list');
     
         // Class routes with school context
         Route::get('schools/{school}/classes/create', [ClassController::class, 'create'])->name('classes.create');
         Route::post('schools/{school}/classes', [ClassController::class, 'store'])->name('classes.store');
         Route::get('students/by-batch', [ClassController::class, 'getStudentsList'])->name('students.by-batch');
+        Route::get('api/schools/{school}/classes', [ClassController::class, 'getClassesBySchool'])->name('api.classes.by-school');
         Route::resource('classes', ClassController::class)->except(['create', 'store']);
 
 
         //Grade submission routes
-        Route::get('/grade-submissions', [GradeSubmissionController::class, 'index'])->name('grade-submissions.index');
-        Route::get('/grade-submissions/create', [GradeSubmissionController::class, 'create'])->name('grade-submissions.create');
-        Route::post('/grade-submissions', [GradeSubmissionController::class, 'store'])->name('grade-submissions.store');
-        Route::get('/training/subjects/by-school-and-class', [GradeSubmissionController::class, 'getSubjectsBySchoolAndClass']);
+        Route::controller(GradeSubmissionController::class)->group(function () {
+            Route::get('/grade-submissions', 'index')->name('grade-submissions.index');
+            Route::get('/grade-submissions/create', 'create')->name('grade-submissions.create');
+            Route::post('/grade-submissions', 'store')->name('grade-submissions.store');
+            Route::get('/grade-submissions/recent', 'recent')->name('grade-submissions.recent');
+            Route::get('/grade-submissions/monitor', 'monitor')->name('grade-submissions.monitor');
+            Route::get('/subjects/by-school-and-class', 'getSubjectsBySchoolAndClass')->name('subjects.by-school-class');
+            Route::get('/grade-submissions/{gradeSubmission}', 'show')->name('grade-submissions.show');
+            Route::delete('/grade-submissions/{gradeSubmission}', 'destroy')->name('grade-submissions.destroy');
+            Route::get('/grade-submissions/{gradeSubmission}/students/{student}', 'viewStudentSubmission')->name('grade-submissions.view');
+            Route::post('/grade-submissions/{gradeSubmission}/update-status', 'updateStatus')->name('grade-submissions.update-status');
+            Route::put('/grade-submissions/{gradeSubmission}/verify', 'verify')->name('grade-submissions.verify');
+            Route::put('/grade-submissions/{gradeSubmission}/reject', 'reject')->name('grade-submissions.reject');
+            Route::get('/grade-submissions/{gradeSubmission}/proof/{student}', 'viewProof')->name('grade-submissions.view-proof');
+            Route::post('/grade-submissions/{gradeSubmission}/proof/{student}/status', 'updateProofStatus')->name('grade-submissions.update-proof-status');
+
+            // Temporary route to fix subject associations for a submission
+            Route::get('/grade-submissions/{gradeSubmission}/fix-subjects', 'fixSubmissionSubjects')->name('grade-submissions.fix-subjects');
+        });
     }); // <-- ✅ properly closed here
     
     
@@ -111,10 +127,10 @@ Route::middleware('auth')->group(function () {
     // Student routes
     Route::prefix('student')->name('student.')->middleware('can:student-access')->group(function () {
         Route::get('/dashboard', [StudentController::class, 'dashboard'])->name('dashboard');
-
-
-        Route::get('/grade-submissions/{id}', [StudentGradeSubmissionController::class, 'show'])->name('grade-submissions.show');
-        Route::post('/grade-submissions/{id}', [StudentGradeSubmissionController::class, 'store'])->name('grade-submissions.store');
+        Route::get('/grade-submissions/{submissionId}', [StudentController::class, 'showSubmissionForm'])->name('submit-grades.show');
+        Route::post('/grade-submissions/{submissionId}', [StudentController::class, 'submitGrades'])->name('submit-grades.store');
+        Route::get('/view-submission/{submissionId}', [StudentController::class, 'viewSubmission'])->name('view-submission');
+        Route::get('/grade-submissions', [StudentController::class, 'submissionsList'])->name('student.grade-submissions');
     });
 
 

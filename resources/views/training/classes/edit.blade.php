@@ -55,7 +55,7 @@
             </div>
             <div class="students-container">
                 @foreach($students as $student)
-                    <div class="student-checkbox" data-batch="{{ $student->studentDetail->batch }}">
+                    <div class="student-checkbox" data-batch="{{ $student->studentDetail->batch ?? '' }}">
                         <input type="checkbox" 
                             id="student_{{ $student->user_id }}" 
                             name="student_ids[]" 
@@ -64,7 +64,7 @@
                                 in_array($student->user_id, old('student_ids', $class->students->pluck('user_id')->toArray()))) ? 'checked' : '' }}>
                         <label for="student_{{ $student->user_id }}">
                             {{ $student->user_id }} - {{ $student->user_fname }} {{ $student->user_mInitial }}. {{ $student->user_lname }}
-                            <span class="batch-tag">{{ $student->studentDetail->batch }}</span>
+                            <span class="batch-tag">{{ $student->studentDetail->batch ?? '' }}</span>
                         </label>
                     </div>
                 @endforeach

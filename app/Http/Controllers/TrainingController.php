@@ -34,14 +34,21 @@ class TrainingController extends Controller
 
         // Get gender distribution by batch
         $genderByBatch = [];
+        $studentsByGenderByBatch = [];
         foreach ($batchCounts->keys() as $batch) {
+            $male = StudentDetail::where('batch', $batch)
+                ->where('gender', 'Male')
+                ->count();
+            $female = StudentDetail::where('batch', $batch)
+                ->where('gender', 'Female')
+                ->count();
             $genderByBatch[$batch] = [
-                'male' => StudentDetail::where('batch', $batch)
-                    ->where('gender', 'Male')
-                    ->count(),
-                'female' => StudentDetail::where('batch', $batch)
-                    ->where('gender', 'Female')
-                    ->count()
+                'male' => $male,
+                'female' => $female
+            ];
+            $studentsByGenderByBatch[$batch] = [
+                'male' => $male,
+                'female' => $female
             ];
         }
 
@@ -71,6 +78,7 @@ class TrainingController extends Controller
             'femaleCount' => $femaleCount,
             'batchCounts' => $batchCounts,
             'genderByBatch' => $genderByBatch,
+            'studentsByGenderByBatch' => $studentsByGenderByBatch,
             'recentStudents' => $recentStudents,
             'recentSchools' => $recentSchools,
             'recentClasses' => $recentClasses
@@ -152,30 +160,19 @@ class TrainingController extends Controller
             'user_suffix',
             'user_email',
         ]));
-
-
-        // Update or create student details
-        if ($student->studentDetail) {
-            $student->studentDetail->update([
+    
+        $student->studentDetail()->updateOrCreate(
+            ['user_id' => $student->user_id],
+            [
                 'batch' => $request->batch,
                 'group' => $request->group,
                 'student_number' => $request->student_number,
                 'training_code' => $request->training_code,
-                'student_id' => $studentId,
+                'student_id' => $request->batch . $request->group . $request->student_number . $request->training_code,
                 'gender' => $request->gender,
-            ]);
-        } else {
-            StudentDetail::create([
-                'user_id' => $student->user_id,
-                'batch' => $request->batch,
-                'group' => $request->group,
-                'student_number' => $request->student_number,
-                'training_code' => $request->training_code,
-                'student_id' => $studentId,
-                'gender' => $request->gender,
-            ]);
-        }
-
+            ]
+        );
+    
         return redirect()->route('training.students.index')->with('success', 'Student updated successfully.');
     }
 

@@ -1,18 +1,5 @@
 @extends('layouts.student_layout')
 
-<<<<<<< HEAD
-<h2>Notifications</h2>
-<ul>
-    @foreach ($notifications as $notification)
-        <li>
-            {{ $notification->gradeSubmission->semester }} - {{ $notification->gradeSubmission->term }} ({{ $notification->gradeSubmission->academic_year }})
-            <a href="{{ route('student.grade-submissions.show', $notification->grade_submission_id) }}">
-                View Submission
-            </a>
-        </li>
-    @endforeach
-</ul>
-=======
 @section('content')
 <div class="dashboard-container">
     <h1>My Grade Submissions</h1>
@@ -80,7 +67,6 @@
         </div>
     @endif
 </div>
->>>>>>> 373899d66c6ca5e2aee64c4122906453f2725c9c
 
 <style>
 .dashboard-container {

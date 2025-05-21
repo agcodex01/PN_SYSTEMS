@@ -214,23 +214,6 @@
 
 
                 <li class="dropdown {{ request()->routeIs('training.grade-submissions.*') ? 'active' : '' }}" id="gradeSubmissionDropdown">
-<<<<<<< HEAD
-    <a href="#" onclick="toggleDropdown(event)">
-        <img src="{{ asset('images/gs.png') }}" alt="Grade Submission"> Grade Submission
-    </a>
-    <div class="dropdown-content">
-        <a href="{{ route('training.grade-submissions.create') }}" class="{{ request()->routeIs('training.grade-submissions.create') ? 'active' : '' }}">
-            <img src="{{ asset('images/create.png') }}" alt="Create"> Create
-        </a>
-        <a href="{{ route('training.grade-submissions.index') }}" class="{{ request()->routeIs('training.grade-submissions.index') ? 'active' : '' }}">
-            <img src="{{ asset('images/monitor.png') }}" alt="Monitor"> Monitor
-        </a>
-    </div>
-</li>
-
-
-
-=======
                     <a href="#" onclick="toggleDropdown(event)">
                         <img src="{{ asset('images/gs.png') }}" alt="Grade Submission"> Grade Submission
                     </a>
@@ -246,7 +229,6 @@
                         </a>
                     </div>
                 </li>
->>>>>>> 373899d66c6ca5e2aee64c4122906453f2725c9c
                 <li>
                     <a href="#">
                         <img src="{{ asset('images/analytics.png') }}" alt="Analytics"> Analytics

@@ -21,9 +21,9 @@
         </div>
     @endif
 
-    <form action="{{ route('training.schools.store') }}" method="POST" class="form-container">
+    <form action="{{ route('training.schools.store') }}" method="POST" class="form-container" id="createSchoolForm">
         @csrf
-
+        
         <div class="form-group">
             <label for="school_id">School ID</label>
             <input type="text" id="school_id" name="school_id" value="{{ old('school_id') }}" required>
@@ -67,23 +67,28 @@
         <div class="form-group">
             <label>Grade Range Configuration</label>
             <div class="grade-range-selector">
-        <div class="input-group">
-            <label for="passingGradeMin">Passing Grade Min</label>
-            <input type="number" step="0.1" id="passingGradeMin" name="passing_grade_min" value="{{ old('passing_grade_min') }}" required>
+                <div class="input-group">
+                    <label for="passingGradeMin">Passing Grade Min</label>
+                    <input type="number" step="0.1" id="passingGradeMin" name="passing_grade_min" 
+                        value="{{ old('passing_grade_min') }}" required>
+                </div>
+                <div class="input-group">
+                    <label for="passingGradeMax">Passing Grade Max</label>
+                    <input type="number" step="0.1" id="passingGradeMax" name="passing_grade_max" 
+                        value="{{ old('passing_grade_max') }}" required>
+                </div>
+                <div class="input-group">
+                    <label for="failingGradeMin">Failing Grade Min</label>
+                    <input type="number" step="0.1" id="failingGradeMin" name="failing_grade_min" 
+                        value="{{ old('failing_grade_min') }}" required>
+                </div>
+                <div class="input-group">
+                    <label for="failingGradeMax">Failing Grade Max</label>
+                    <input type="number" step="0.1" id="failingGradeMax" name="failing_grade_max" 
+                        value="{{ old('failing_grade_max') }}" required>
+                </div>
+            </div>
         </div>
-        <div class="input-group">
-            <label for="passingGradeMax">Passing Grade Max</label>
-            <input type="number" step="0.1" id="passingGradeMax" name="passing_grade_max" value="{{ old('passing_grade_max') }}" required>
-        </div>
-        <div class="input-group">
-            <label for="failingGradeMin">Failing Grade Min</label>
-            <input type="number" step="0.1" id="failingGradeMin" name="failing_grade_min" value="{{ old('failing_grade_min') }}" required>
-        </div>
-        <div class="input-group">
-            <label for="failingGradeMax">Failing Grade Max</label>
-            <input type="number" step="0.1" id="failingGradeMax" name="failing_grade_max" value="{{ old('failing_grade_max') }}" required>
-        </div>
-    </div>
 
         <div class="form-group">
             <label>Terms</label>
@@ -132,19 +137,20 @@
                 @foreach(old('classes', []) as $index => $class)
                     <div class="class-row">
                         <div class="class-header">
-                            <input type="text" name="classes[{{ $index }}][class_id]" placeholder="Class ID" value="{{ $class['class_id'] ?? '' }}" required>
-                            <input type="text" name="classes[{{ $index }}][name]" placeholder="Class Name" value="{{ $class['name'] ?? '' }}" required>
-                            <input type="hidden" name="classes[{{ $index }}][batch]" class="batch-input">
+                            <div class="class-display">
+                                <strong>ID:</strong>
+                                <input type="text" name="classes[{{ $index }}][class_id]" placeholder="Class ID" value="{{ $class['class_id'] ?? '' }}" required>
+                                <strong>Name:</strong>
+                                <input type="text" name="classes[{{ $index }}][name]" placeholder="Class Name" value="{{ $class['name'] ?? '' }}" required>
+                            </div>
                             <button type="button" class="btn-select-students" data-class-index="{{ $index }}">Select Students</button>
                             <button type="button" class="btn-remove" onclick="removeClass(this)">×</button>
                         </div>
-                        <div class="students-container" id="students-container-{{ $index }}">
-                            <!-- Students will be loaded here via AJAX when batch is selected -->
-                        </div>
+                        <div id="students-container-{{ $index }}" class="students-container"></div>
                     </div>
                 @endforeach
             </div>
-            <button type="button" id="add-class" class="btn-add">Add Class</button>
+            <button type="button" id="add-class" class="btn-add">Add New Class</button>
         </div>
 
         <div class="form-actions">
@@ -162,12 +168,10 @@
             <button type="button" class="close-modal">&times;</button>
         </div>
         <div class="modal-body">
-            <div class="filter-section">
+            <div class="batch-filter">
+                <label for="batchFilter">Filter by Batch:</label>
                 <select id="batchFilter">
                     <option value="">All Batches</option>
-                    @foreach($batches as $batch)
-                        <option value="{{ $batch->batch }}">{{ $batch->batch }}</option>
-                    @endforeach
                 </select>
             </div>
             <div id="modalStudentsContainer" class="students-list">
@@ -175,7 +179,7 @@
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn-submit" id="confirmStudentSelection">Confirm Selection</button>
+            <button type="button" class="btn-save" id="confirmStudentSelection">Save Selection</button>
             <button type="button" class="btn-cancel close-modal">Cancel</button>
         </div>
     </div>
@@ -183,102 +187,52 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('createSchoolForm');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default submission
+        
+        // Create FormData object
+        const formData = new FormData(form);
+        
+        // Send the form data using fetch
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            if (data) {
+                if (data.success) {
+                    window.location.href = '{{ route("training.manage-students") }}';
+                } else {
+                    alert(data.message || 'An error occurred');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while creating the school');
+        });
+    });
+
+    let subjectCount = {{ count(old('subjects', [])) }};
+    let classCount = {{ count(old('classes', [])) }};
     let currentClassIndex = null;
     const modal = document.getElementById('studentModal');
     const closeButtons = document.querySelectorAll('.close-modal');
     const confirmButton = document.getElementById('confirmStudentSelection');
-    const batchFilter = document.getElementById('batchFilter');
 
-    // Close modal when clicking close button or outside the modal
-    closeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-    });
-
-    window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
-
-    // Handle batch filter change
-    batchFilter.addEventListener('change', function() {
-        loadStudentsByBatch(this.value);
-    });
-
-    // Handle confirm button click
-    confirmButton.addEventListener('click', function() {
-        const selectedStudents = Array.from(document.querySelectorAll('#modalStudentsContainer input[type="checkbox"]:checked'))
-            .map(checkbox => ({
-                id: checkbox.value,
-                name: checkbox.getAttribute('data-name'),
-                student_id: checkbox.getAttribute('data-student-id')
-            }));
-
-        // Get the selected batch
-        const selectedBatch = batchFilter.value;
-        
-        // Update the hidden batch input for the current class
-        const batchInput = document.querySelector(`input[name="classes[${currentClassIndex}][batch]"]`);
-        if (batchInput) {
-            batchInput.value = selectedBatch;
-        }
-
-        updateSelectedStudentsList(currentClassIndex, selectedStudents);
-        modal.style.display = 'none';
-    });
-
-    // Function to load students by batch
-    function loadStudentsByBatch(batchId) {
-        const url = `/training/students/by-batch${batchId ? '?batch_id=' + batchId : ''}`;
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(students => {
-                console.log('Received students:', students);
-                const container = document.getElementById('modalStudentsContainer');
-                container.innerHTML = students.map(student => {
-                    const studentId = `${student.batch}${student.group}${student.student_number}${student.training_code}`;
-                    const fullName = `${student.user_lname}, ${student.user_fname}`;
-                    return `
-                        <div class="student-item">
-                            <input type="checkbox" 
-                                   id="modal_student_${student.user_id}" 
-                                   value="${student.user_id}"
-                                   data-name="${fullName}"
-                                   data-student-id="${studentId}">
-                            <label for="modal_student_${student.user_id}">
-                                ${studentId} - ${fullName}
-                            </label>
-                        </div>
-                    `;
-                }).join('');
-
-                // Check previously selected students
-                const selectedStudentsInput = document.querySelector(`input[name="classes[${currentClassIndex}][student_ids][]"]`);
-                if (selectedStudentsInput) {
-                    const selectedIds = Array.from(document.querySelectorAll(`#selected-students-${currentClassIndex} .selected-student-tag`))
-                        .map(tag => tag.getAttribute('data-student-id'));
-                    selectedIds.forEach(id => {
-                        const checkbox = document.querySelector(`#modal_student_${id}`);
-                        if (checkbox) checkbox.checked = true;
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error loading students:', error);
-                document.getElementById('modalStudentsContainer').innerHTML = 
-                    `<p class="error-message">Error loading students: ${error.message}</p>`;
-            });
-    }
-    let subjectCount = {{ count(old('subjects', [])) }};
-    let classCount = {{ count(old('classes', [])) }};
-
+    // Add Subject Button
     document.getElementById('add-subject').addEventListener('click', function() {
         const container = document.getElementById('subjects-container');
         const row = document.createElement('div');
@@ -294,179 +248,212 @@ document.addEventListener('DOMContentLoaded', function() {
         subjectCount++;
     });
 
-    // Handle select students button click
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('btn-select-students')) {
-            currentClassIndex = e.target.getAttribute('data-class-index');
-            modal.style.display = 'block';
-            const batchSelect = document.querySelector(`select[name="classes[${currentClassIndex}][batch_id]"]`);
-            batchFilter.value = batchSelect.value;
-            loadStudentsByBatch(batchFilter.value);
-        }
-    });
-
-    function updateSelectedStudentsList(classIndex, students) {
-        const container = document.getElementById(`students-container-${classIndex}`);
-        
-        // Create selected students display
-        const selectedStudentsHtml = `
-            <div class="selected-students">
-                <h4>Selected Students:</h4>
-                <div class="selected-students-list">
-                    ${students.map(student => `
-                        <div class="selected-student-tag" data-student-id="${student.id}">
-                            ${student.student_id} - ${student.name}
-                            <span class="remove-student" onclick="removeSelectedStudent(this, ${classIndex}, ${student.id})">&times;</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-
-        // Add hidden inputs for student IDs
-        const hiddenInputsHtml = students.map(student => 
-            `<input type="hidden" name="classes[${classIndex}][student_ids][]" value="${student.id}">`
-        ).join('');
-
-        container.innerHTML = selectedStudentsHtml + hiddenInputsHtml;
-    }
-
-    window.removeSelectedStudent = function(element, classIndex, studentId) {
-        const tag = element.closest('.selected-student-tag');
-        tag.remove();
-    };
-
+    // Add Class Button
     document.getElementById('add-class').addEventListener('click', function() {
         const container = document.getElementById('classes-container');
         const row = document.createElement('div');
         row.className = 'class-row';
         row.innerHTML = `
             <div class="class-header">
-                <input type="text" name="classes[${classCount}][class_id]" placeholder="Class ID" required>
-                <input type="text" name="classes[${classCount}][name]" placeholder="Class Name" required>
-                <input type="hidden" name="classes[${classCount}][batch]" class="batch-input">
+                <div class="class-display">
+                    <strong>ID:</strong>
+                    <input type="text" name="classes[${classCount}][class_id]" placeholder="Class ID" required>
+                    <strong>Name:</strong>
+                    <input type="text" name="classes[${classCount}][name]" placeholder="Class Name" required>
+                </div>
                 <button type="button" class="btn-select-students" data-class-index="${classCount}">Select Students</button>
                 <button type="button" class="btn-remove" onclick="removeClass(this)">×</button>
             </div>
             <div id="students-container-${classCount}" class="students-container"></div>
         `;
         container.appendChild(row);
-        attachBatchChangeListener(classCount);
         classCount++;
+        document.activeElement.blur(); // Prevent auto-focus triggering modal
     });
 
-    function removeSubject(button) {
-        const row = button.closest('.subject-row');
-        row.remove();
-        updateSubjectIndices();
-    }
-
-    function updateSubjectIndices() {
-        const rows = document.querySelectorAll('.subject-row');
-        rows.forEach((row, index) => {
-            const inputs = row.querySelectorAll('input');
-            inputs.forEach(input => {
-                const name = input.name;
-                input.name = name.replace(/\[\d+\]/, `[${index}]`);
-            });
+    // Close modal when clicking close button or outside the modal
+    closeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            modal.style.display = 'none';
         });
-        subjectCount = rows.length;
-    }
+    });
 
-    function removeClass(button) {
-        const row = button.closest('.class-row');
-        row.remove();
-        updateClassIndices();
-    }
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
 
-    function updateClassIndices() {
-        const rows = document.querySelectorAll('.class-row');
-        rows.forEach((row, index) => {
-            const inputs = row.querySelectorAll('input, select');
-            inputs.forEach(input => {
-                const name = input.name;
-                input.name = name.replace(/\[\d+\]/, `[${index}]`);
-                if (input.classList.contains('batch-select')) {
-                    input.dataset.index = index;
+    // Handle confirm button click
+    confirmButton.addEventListener('click', function() {
+        const selectedStudents = Array.from(document.querySelectorAll('#modalStudentsContainer input[type="checkbox"]:checked'))
+            .map(checkbox => ({
+                id: checkbox.value,
+                name: checkbox.getAttribute('data-name'),
+                student_id: checkbox.getAttribute('data-student-id')
+            }));
+
+        updateSelectedStudentsList(currentClassIndex, selectedStudents);
+        modal.style.display = 'none';
+    });
+
+    // Handle select students button click
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-select-students')) {
+            currentClassIndex = e.target.getAttribute('data-class-index');
+            modal.style.display = 'flex';
+            loadStudents();
+        }
+    });
+});
+
+function removeSubject(button) {
+    const row = button.parentElement;
+    row.remove();
+    updateSubjectIndices();
+}
+
+function updateSubjectIndices() {
+    const rows = document.querySelectorAll('.subject-row');
+    rows.forEach((row, index) => {
+        const inputs = row.querySelectorAll('input');
+        inputs.forEach(input => {
+            const name = input.name;
+            input.name = name.replace(/\[\d+\]/, `[${index}]`);
+        });
+    });
+    subjectCount = rows.length;
+}
+
+function removeClass(button) {
+    const row = button.closest('.class-row');
+    row.remove();
+    updateClassIndices();
+}
+
+function updateClassIndices() {
+    const rows = document.querySelectorAll('.class-row');
+    rows.forEach((row, index) => {
+        const inputs = row.querySelectorAll('input');
+        inputs.forEach(input => {
+            const name = input.name;
+            input.name = name.replace(/\[\d+\]/, `[${index}]`);
+        });
+        const button = row.querySelector('.btn-select-students');
+        if (button) {
+            button.dataset.classIndex = index;
+        }
+        const container = row.querySelector('.students-container');
+        if (container) {
+            container.id = `students-container-${index}`;
+        }
+    });
+    classCount = rows.length;
+}
+
+function loadStudents() {
+    fetch('/training/api/students')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(students => {
+            const container = document.getElementById('modalStudentsContainer');
+            const batchFilter = document.getElementById('batchFilter');
+            const batches = new Set();
+
+            // Collect unique batches
+            students.forEach(student => {
+                if (student.batch) {
+                    batches.add(student.batch);
                 }
             });
-            const studentsContainer = row.querySelector('.students-container');
-            if (studentsContainer) {
-                studentsContainer.id = `students-container-${index}`;
-            }
-        });
-        classCount = rows.length;
-    }
 
-    function attachBatchChangeListener(index) {
-        const select = document.querySelector(`select[name="classes[${index}][batch_id]"]`);
-        select.addEventListener('change', function() {
-            const batchId = this.value;
-            const studentsContainer = document.getElementById(`students-container-${index}`);
-            
-            if (!batchId) {
-                studentsContainer.innerHTML = '';
-                return;
-            }
+            // Populate batch filter
+            batchFilter.innerHTML = '<option value="">All Batches</option>';
+            Array.from(batches).sort().forEach(batch => {
+                const option = document.createElement('option');
+                option.value = batch;
+                option.textContent = `Batch ${batch}`;
+                batchFilter.appendChild(option);
+            });
 
-            fetch(`/training/batches/${batchId}/students`)
-                .then(response => response.json())
-                .then(students => {
-                    studentsContainer.innerHTML = students.map(student => `
-                        <div class="student-item">
-                            <input type="checkbox" 
-                                   name="classes[${index}][student_ids][]" 
-                                   value="${student.id}" 
-                                   id="class_${index}_student_${student.id}">
-                            <label for="class_${index}_student_${student.id}">
-                                ${student.student_id} - ${student.name}
+            // Function to render students
+            const renderStudents = (filteredStudents) => {
+                container.innerHTML = filteredStudents.map(student => {
+                    const studentId = `${student.batch}${student.group}${student.student_number}${student.training_code}`;
+                    const fullName = `${student.user_lname}, ${student.user_fname}`;
+                    return `
+                        <div class="student-item" data-batch="${student.batch || ''}">
+                            <label class="student-checkbox">
+                                <input type="checkbox" 
+                                       value="${student.user_id}"
+                                       data-name="${fullName}"
+                                       data-student-id="${studentId}">
+                                <span>${studentId} - ${fullName}</span>
                             </label>
                         </div>
-                    `).join('');
-                })
-                .catch(error => {
-                    console.error('Error fetching students:', error);
-                    studentsContainer.innerHTML = '<p class="error-message">Error loading students</p>';
-                });
+                    `;
+                }).join('');
+            };
+
+            // Initial render
+            renderStudents(students);
+
+            // Add batch filter event listener
+            batchFilter.addEventListener('change', function() {
+                const selectedBatch = this.value;
+                const filteredStudents = selectedBatch 
+                    ? students.filter(student => student.batch === selectedBatch)
+                    : students;
+                renderStudents(filteredStudents);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading students:', error);
+            document.getElementById('modalStudentsContainer').innerHTML = 
+                `<p class="error-message">Error loading students: ${error.message}</p>`;
         });
+}
+
+function updateSelectedStudentsList(classIndex, students) {
+    const container = document.getElementById(`students-container-${classIndex}`);
+    
+    // Create selected students display
+    const selectedStudentsHtml = `
+        <div class="selected-students">
+            <h4>Selected Students:</h4>
+            <div class="selected-students-list">
+                ${students.map(student => `
+                    <div class="selected-student-tag" data-student-id="${student.id}">
+                        ${student.student_id} - ${student.name}
+                        <span class="remove-student" onclick="removeSelectedStudent(this, ${classIndex}, ${student.id})">&times;</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    // Add hidden inputs for student IDs
+    const hiddenInputsHtml = students.map(student => 
+        `<input type="hidden" name="classes[${classIndex}][student_ids][]" value="${student.id}">`
+    ).join('');
+
+    container.innerHTML = selectedStudentsHtml + hiddenInputsHtml;
+}
+
+function removeSelectedStudent(button, classIndex, studentId) {
+    const tag = button.parentElement;
+    tag.remove();
+    
+    // Remove the corresponding hidden input
+    const hiddenInput = document.querySelector(`input[name="classes[${classIndex}][student_ids][]"][value="${studentId}"]`);
+    if (hiddenInput) {
+        hiddenInput.remove();
     }
-
-    // Attach batch change listeners to existing class rows
-    document.querySelectorAll('.batch-select').forEach(select => {
-        const index = select.dataset.index;
-        attachBatchChangeListener(index);
-    });
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const rangeInputs = document.querySelectorAll('input[name="grade_range"]');
-    const passingRangeSpan = document.querySelector('#passingRange span');
-    const failingRangeSpan = document.querySelector('#failingRange span');
-    const passingGradeMin = document.getElementById('passingGradeMin');
-    const passingGradeMax = document.getElementById('passingGradeMax');
-
-    function updateGradeRanges(value) {
-        if (value === '1') {
-            passingRangeSpan.textContent = '1.0 - 3.0';
-            failingRangeSpan.textContent = '3.1 - 5.0';
-            passingGradeMin.value = '1.0';
-            passingGradeMax.value = '3.0';
-        } else {
-            passingRangeSpan.textContent = '3.0 - 5.0';
-            failingRangeSpan.textContent = '1.0 - 3.0';
-            passingGradeMin.value = '3.0';
-            passingGradeMax.value = '5.0';
-        }
-    }
-
-    rangeInputs.forEach(input => {
-        input.addEventListener('change', (e) => {
-            updateGradeRanges(e.target.value);
-        });
-    });
-});
+}
 </script>
 
 @endsection 

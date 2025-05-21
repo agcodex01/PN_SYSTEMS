@@ -63,8 +63,6 @@
             </div> -->
         </div>
 
-        <input type="hidden" name="student_id" id="student_id" required>
-
         <div class="form-group">
             <label for="user_lname">Last Name</label>
             <input type="text" name="user_lname" id="user_lname" class="form-control" value="{{ $student->user_lname }}" required>

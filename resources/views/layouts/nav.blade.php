@@ -6,6 +6,7 @@
     <title>{{ $title ?? 'Dashboard' }}</title>
     <link rel="stylesheet" href="{{ asset('css/nav.css') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
     body {
@@ -15,6 +16,17 @@
         height: 100vh;
         display: flex;
         flex-direction: column;
+    }
+
+    .logout-btn {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .logout-btn:hover {
+        color: #ff9933;
     }
 
     .top-bar {
@@ -150,17 +162,17 @@
 
             <div class="user-info" style="color: #333; font-weight: 500; display: flex; align-items: center; gap: 15px;">
                 Logged in as: 
-                <span style="color: #ff9933;">
+                <span style="color: white;">
                     {{ $user->user_fname }} {{ $user->user_mInitial }} {{ $user->user_lname }} {{ $user->suffix }}
                 </span> 
                 | Role: 
-                <span style="color: #ff9933;">
+                <span style="color: white;">
                     {{ ucfirst($user->user_role) }}
                 </span>
 
                 <form action="{{ route('logout') }}" method="POST" id="logout-form" style="display: inline;">
                     @csrf
-                    <button type="button" class="logout-btn" style="background: none; border: none; color: inherit; cursor: pointer;" onclick="confirmLogout()">
+                    <button type="button" class="logout-btn" onclick="confirmLogout()">
                         <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"/>
                         </svg>
@@ -201,10 +213,21 @@
                 </li>
 
 
-                <li>
-                    <a href="#">
+                <li class="dropdown {{ request()->routeIs('training.grade-submissions.*') ? 'active' : '' }}" id="gradeSubmissionDropdown">
+                    <a href="#" onclick="toggleDropdown(event)">
                         <img src="{{ asset('images/gs.png') }}" alt="Grade Submission"> Grade Submission
                     </a>
+                    <div class="dropdown-content">
+                        <a href="{{ route('training.grade-submissions.create') }}" class="{{ request()->routeIs('training.grade-submissions.create') ? 'active' : '' }}">
+                            <img src="{{ asset('images/Dashboard.png') }}" alt="Create"> Create
+                        </a>
+                        <a href="{{ route('training.grade-submissions.index') }}" class="{{ request()->routeIs('training.grade-submissions.index') ? 'active' : '' }}">
+                            <img src="{{ asset('images/classes.png') }}" alt="Monitor"> Monitor
+                        </a>
+                        <a href="{{ route('training.grade-submissions.recent') }}" class="{{ request()->routeIs('training.grade-submissions.recent') ? 'active' : '' }}">
+                            <img src="{{ asset('images/analytics.png') }}" alt="Recent"> Recent
+                        </a>
+                    </div>
                 </li>
                 <li>
                     <a href="#">
@@ -233,21 +256,18 @@
     </div>
 
     <script>
-
     function toggleDropdown(event) {
         event.preventDefault();
-        const dropdown = document.getElementById('manageDropdown');
+        const dropdown = event.target.closest('.dropdown');
         dropdown.classList.toggle('active');
     }
 
-    
-     function confirmLogout() {
-            if (confirm("Are you sure you want to log out?")) {
-                document.getElementById('logout-form').submit();
-            }
+    function confirmLogout() {
+        if (confirm("Are you sure you want to log out?")) {
+            document.getElementById('logout-form').submit();
         }
-    
-</script>
+    }
+    </script>
 
 @stack('scripts')
 

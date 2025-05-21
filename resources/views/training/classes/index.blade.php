@@ -69,7 +69,7 @@
 .table-header {
     display: grid;
     grid-template-columns: 100px 150px 450px 120px 180px;
-    background: #4CAF50;
+    background: #22bbea;
     color: white;
     border-radius: 8px 8px 0 0;
     margin-bottom: 1px;

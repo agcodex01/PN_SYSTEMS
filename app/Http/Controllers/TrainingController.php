@@ -111,6 +111,9 @@ class TrainingController extends Controller
         return view('training.edit-student', compact('student'));
     }
 
+
+
+
     public function view($user_id)
     {
         $student = PNUser::with('studentDetail')
@@ -123,37 +126,24 @@ class TrainingController extends Controller
 
 
 
-
     public function update(Request $request, $user_id)
     {
         $student = PNUser::where('user_id', $user_id)->firstOrFail();
-    
+        $student = PNUser::with('studentDetail')->where('user_id', $user_id)->firstOrFail();
+
         $request->validate([
             'batch' => 'required|digits:4',
-            'group' => 'required|size:2',
-            'student_number' => [
-                'required',
-                'digits:4',
-                function ($attribute, $value, $fail) use ($request, $user_id) {
-                    $studentId = $request->batch . $request->group . $value . $request->training_code;
-    
-                    // Check if the generated studentId already exists for a different user
-                    $exists = StudentDetail::where('student_id', $studentId)
-                        ->where('user_id', '!=', $user_id) // Ignore current user's own student_id
-                        ->exists();
-    
-                    if ($exists) {
-                        $fail('The student number is already taken for the selected batch, group, and training code.');
-                    }
-                },
-            ],
-            'training_code' => 'required',
-            'user_lname' => 'required',
-            'user_fname' => 'required',
             'gender' => 'required|in:Male,Female',
             'user_email' => 'required|email|unique:pnph_users,user_email,' . $user_id . ',user_id',
         ]);
-    
+
+        // ajdaijbdawi
+
+        // diri na part ha
+
+        // Generate the student ID
+        $studentId = $request->batch . $request->group . $request->student_number . $request->training_code;
+
         // Update the student details
         $student->update($request->only([
             'user_lname',
@@ -162,16 +152,30 @@ class TrainingController extends Controller
             'user_suffix',
             'user_email',
         ]));
-    
-        $student->studentDetail()->update([
-            'batch' => $request->batch,
-            'group' => $request->group,
-            'student_number' => $request->student_number,
-            'training_code' => $request->training_code,
-            'student_id' => $request->batch . $request->group . $request->student_number . $request->training_code,
-            'gender' => $request->gender,
-        ]);
-    
+
+
+        // Update or create student details
+        if ($student->studentDetail) {
+            $student->studentDetail->update([
+                'batch' => $request->batch,
+                'group' => $request->group,
+                'student_number' => $request->student_number,
+                'training_code' => $request->training_code,
+                'student_id' => $studentId,
+                'gender' => $request->gender,
+            ]);
+        } else {
+            StudentDetail::create([
+                'user_id' => $student->user_id,
+                'batch' => $request->batch,
+                'group' => $request->group,
+                'student_number' => $request->student_number,
+                'training_code' => $request->training_code,
+                'student_id' => $studentId,
+                'gender' => $request->gender,
+            ]);
+        }
+
         return redirect()->route('training.students.index')->with('success', 'Student updated successfully.');
     }
 

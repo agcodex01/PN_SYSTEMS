@@ -23,4 +23,9 @@ class Student extends Model
     {
         return $this->belongsToMany(ClassRoom::class, 'class_student', 'student_id', 'class_id', 'student_id', 'class_id');
     }
+
+    public function studentDetail()
+{
+    return $this->hasOne(StudentDetail::class, 'student_id', 'user_id');
+}
 } 

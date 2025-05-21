@@ -21,4 +21,9 @@ class StudentDetail extends Model
     {
         return $this->belongsTo(PNUser::class, 'user_id', 'user_id');
     }
+
+    public function student()
+{
+    return $this->belongsTo(Student::class, 'student_id', 'user_id');
+}
 } 

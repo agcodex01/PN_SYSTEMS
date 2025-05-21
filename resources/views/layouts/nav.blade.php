@@ -201,11 +201,22 @@
                 </li>
 
 
-                <li>
-                    <a href="#">
-                        <img src="{{ asset('images/gs.png') }}" alt="Grade Submission"> Grade Submission
-                    </a>
-                </li>
+                <li class="dropdown {{ request()->routeIs('training.grade-submissions.*') ? 'active' : '' }}" id="gradeSubmissionDropdown">
+    <a href="#" onclick="toggleDropdown(event)">
+        <img src="{{ asset('images/gs.png') }}" alt="Grade Submission"> Grade Submission
+    </a>
+    <div class="dropdown-content">
+        <a href="{{ route('training.grade-submissions.create') }}" class="{{ request()->routeIs('training.grade-submissions.create') ? 'active' : '' }}">
+            <img src="{{ asset('images/create.png') }}" alt="Create"> Create
+        </a>
+        <a href="{{ route('training.grade-submissions.index') }}" class="{{ request()->routeIs('training.grade-submissions.index') ? 'active' : '' }}">
+            <img src="{{ asset('images/monitor.png') }}" alt="Monitor"> Monitor
+        </a>
+    </div>
+</li>
+
+
+
                 <li>
                     <a href="#">
                         <img src="{{ asset('images/analytics.png') }}" alt="Analytics"> Analytics
@@ -234,11 +245,11 @@
 
     <script>
 
-    function toggleDropdown(event) {
-        event.preventDefault();
-        const dropdown = document.getElementById('manageDropdown');
-        dropdown.classList.toggle('active');
-    }
+function toggleDropdown(event) {
+    event.preventDefault();
+    const dropdown = event.target.closest('li.dropdown');
+    dropdown.classList.toggle('active');
+}
 
     
      function confirmLogout() {

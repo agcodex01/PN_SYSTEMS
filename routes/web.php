@@ -10,6 +10,8 @@ use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\EducatorController;
 use App\Http\Controllers\GradeSubmissionController;
+use App\Http\Controllers\StudentGradeSubmissionController;
+use App\Http\Controllers\StudentController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -108,11 +110,11 @@ Route::middleware('auth')->group(function () {
 
     // Student routes
     Route::prefix('student')->name('student.')->middleware('can:student-access')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('student.dashboard', ['title' => 'Student Dashboard']);
-        })->name('dashboard');
+        Route::get('/dashboard', [StudentController::class, 'dashboard'])->name('dashboard');
 
 
+        Route::get('/grade-submissions/{id}', [StudentGradeSubmissionController::class, 'show'])->name('grade-submissions.show');
+        Route::post('/grade-submissions/{id}', [StudentGradeSubmissionController::class, 'store'])->name('grade-submissions.store');
     });
 
 

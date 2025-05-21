@@ -6,6 +6,8 @@ use App\Models\ClassModel;
 use App\Models\Subject;
 use App\Models\GradeSubmission;
 use Illuminate\Http\Request;
+use App\Models\Notification;
+use App\Models\Student;
 
 class GradeSubmissionController extends Controller
 {
@@ -26,30 +28,64 @@ class GradeSubmissionController extends Controller
     }
 
 
+
+
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'school_id' => 'required|exists:schools,school_id',
-            'class_id' => 'required|exists:classes,class_id',
+            'school_id' => 'required|string|exists:schools,school_id',
+            'class_id' => 'required|string|exists:classes,class_id',
             'semester' => 'required|string',
             'term' => 'required|string',
             'academic_year' => 'required|string',
-            'subject_ids' => 'required|array|min:1',
-            'subject_ids.*' => 'exists:subjects,id',
+            'subject_ids' => 'required|array',
         ]);
-
-        GradeSubmission::create([
-            'school_id' => $validated['school_id'],
-            'class_id' => $validated['class_id'],
-            'semester' => $validated['semester'],
-            'term' => $validated['term'],
-            'academic_year' => $validated['academic_year'],
-            'subject_ids' => $validated['subject_ids'],
-        ]);
-
-        return redirect()->route('grade-submissions.index')
-            ->with('success', 'Grade submission created successfully!');
+    
+        try {
+            DB::beginTransaction();
+    
+            // Create the grade submission
+            $gradeSubmission = GradeSubmission::create([
+                'school_id' => $validated['school_id'],
+                'class_id' => $validated['class_id'],
+                'semester' => $validated['semester'],
+                'term' => $validated['term'],
+                'academic_year' => $validated['academic_year'],
+            ]);
+    
+            // Attach subjects to the grade submission
+            $gradeSubmission->subjects()->attach($validated['subject_ids']);
+    
+            // Fetch all students in the selected class
+            $students = Student::where('class_id', $validated['class_id'])->get();
+    
+            // Create notifications for all students
+            foreach ($students as $student) {
+                Notification::create([
+                    'user_id' => $student->user_id,
+                    'grade_submission_id' => $gradeSubmission->id,
+                    'is_read' => false,
+                ]);
+            }
+    
+            DB::commit();
+    
+            return redirect()->route('training.grade-submissions.index')
+                ->with('success', 'Grade submission created successfully, and students have been notified.');
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error creating grade submission: ' . $e->getMessage());
+        }
     }
+
+
+
+
+
+
+
+
 
     public function index()
     {

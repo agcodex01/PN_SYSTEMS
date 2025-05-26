@@ -11,14 +11,20 @@ return new class extends Migration
         Schema::create('grade_submission_proofs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('grade_submission_id')->constrained('grade_submissions')->onDelete('cascade');
-            $table->string('user_id');
+            $table->string('user_id')->nullable();
+            $table->foreign('user_id')->references('user_id')->on('pnph_users')->onDelete('cascade');
             $table->string('file_path');
             $table->string('file_name');
             $table->string('file_type');
             $table->timestamps();
 
-            $table->foreign('user_id')->references('user_id')->on('pnph_users')->onDelete('cascade');
-            $table->unique(['grade_submission_id', 'user_id']);
+            // Add unique constraint
+            $table->unique(['grade_submission_id', 'user_id'])->name('proof_unique');
+
+
+            
+            // Add unique constraint
+            $table->unique(['grade_submission_id', 'user_id'])->name('proof_unique');
         });
     }
 

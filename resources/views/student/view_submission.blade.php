@@ -42,6 +42,22 @@
         </table>
     @endif
 
+    @if($proof)
+        <h3>Proof of Submission</h3>
+        <div class="proof-container">
+            <p><strong>Status:</strong> {{ ucfirst($proof->status) }}</p>
+            <div class="proof-file">
+                @if($proof->file_type === 'pdf')
+                    <iframe src="{{ asset('storage/' . $proof->file_path) }}" width="100%" height="500px"></iframe>
+                @elseif(in_array($proof->file_type, ['jpg', 'jpeg', 'png']))
+                    <img src="{{ asset('storage/' . $proof->file_path) }}" alt="Proof" style="max-width: 100%; max-height: 500px;">
+                @else
+                    <a href="{{ asset('storage/' . $proof->file_path) }}" download="{{ $proof->file_name }}">Download Proof</a>
+                @endif
+            </div>
+        </div>
+    @endif
+
     <div class="back-link" style="margin-top: 20px;">
         <a href="{{ route('student.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
     </div>

@@ -29,20 +29,7 @@
 
                 <div class="proof-actions">
                     @if($proof->status === 'pending')
-                        <form action="{{ route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id]) }}" method="POST" class="action-form" style="display:inline-block;">
-                            @csrf
-                            <input type="hidden" name="status" value="approved">
-                            <button type="submit" class="btn-custom btn-success-custom">
-                                Approve
-                            </button>
-                        </form>
-                        <form action="{{ route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id]) }}" method="POST" class="action-form" style="display:inline-block;">
-                            @csrf
-                            <input type="hidden" name="status" value="rejected">
-                            <button type="submit" class="btn-custom btn-danger-custom">
-                                Reject
-                            </button>
-                        </form>
+                        <p class="text-muted">Please use the Action dropdown in the monitor view to approve or reject this proof.</p>
                     @endif
                 </div>
             @else

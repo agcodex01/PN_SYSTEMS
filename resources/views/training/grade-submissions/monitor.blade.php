@@ -107,12 +107,14 @@
                                             @foreach($subjects as $subject)
                                                 <th class="text-center-custom">{{ $subject->name }}</th>
                                             @endforeach
+                                            <th class="text-center-custom" style="width: 120px">Proof</th>
+                                            <th class="text-center-custom" style="width: 120px">Status</th>
                                             <th class="text-center-custom" style="width: 120px">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($students as $student)
-                                            <tr>
+                                            <tr data-submission-id="{{ $gradeSubmission->id }}" data-student-id="{{ $student->user_id }}">
                                                 <td class="text-center-custom small-text">{{ $student->user_id }}</td>
                                                 <td class="small-text">{{ $student->name }}</td>
                                                 @foreach($subjects as $subject)
@@ -149,6 +151,50 @@
                                                         <span class="text-muted-custom small-text">No proof</span>
                                                     @endif
                                                 </td>
+                                                 <td class="text-center-custom">
+                                                     @php
+                                                         $proof = \App\Models\GradeSubmissionProof::where('grade_submission_id', $gradeSubmission->id)
+                                                             ->where('user_id', $student->user_id)
+                                                             ->first();
+                                                         
+                                                         // Get the status from the grade_submission_subject table if proof exists
+                                                         $status = DB::table('grade_submission_subject')
+                                                             ->where('grade_submission_id', $gradeSubmission->id)
+                                                             ->where('user_id', $student->user_id)
+                                                             ->value('status') ?? 'pending';
+                                                     @endphp
+                                                     <span class="status-badge {{ $status === 'approved' ? 'approved' : ($status === 'rejected' ? 'rejected' : 'pending') }}">
+                                                         {{ ucfirst($status) }}
+                                                     </span>
+                                                 </td>
+                                                 <td class="text-center-custom">
+                                                     <div class="action-buttons-container">
+                                                         @if($proof && $proof->status === 'pending')
+                                                             <form method="POST" action="{{ route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id]) }}" class="d-inline">
+                                                                 @csrf
+                                                                 <input type="hidden" name="status" value="approved">
+                                                                 <button type="submit" class="btn btn-sm btn-success-custom">
+                                                                     <i class="fas fa-check-circle text-white"></i> Approve
+                                                                 </button>
+                                                             </form>
+                                                             <form method="POST" action="{{ route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id]) }}" class="d-inline">
+                                                                 @csrf
+                                                                 <input type="hidden" name="status" value="rejected">
+                                                                 <button type="submit" class="btn btn-sm btn-danger-custom">
+                                                                     <i class="fas fa-times-circle text-white"></i> Reject
+                                                                 </button>
+                                                             </form>
+                                                         @else
+                                                             <form method="POST" action="{{ route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id]) }}" class="d-inline">
+                                                                 @csrf
+                                                                 <input type="hidden" name="status" value="pending">
+                                                                 <button type="submit" class="btn btn-sm btn-warning-custom">
+                                                                     <i class="fas fa-edit text-white"></i> Edit Status
+                                                                 </button>
+                                                             </form>
+                                                         @endif
+                                                     </div>
+                                                 </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -164,16 +210,15 @@
 
 <style>
     :root {
-        --primary-color: #22bbea;
-        --secondary-color: #ff9933;
+        --primary-color: #007bff;
+        --secondary-color: #6c757d;
         --success-color: #28a745;
-        --danger-color: #dc3545;
-        --warning-color: #ffc107;
         --info-color: #17a2b8;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
         --light-bg: #f8f9fa;
-        --dark-text: #343a40;
-        --border-color: #dee2e6;
-        --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        --dark-text: #212529;
+        --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
         --error-color: #dc3545;
     }
 
@@ -198,6 +243,45 @@
         box-shadow: var(--card-shadow);
         overflow: hidden;
         margin-bottom: 20px;
+    }
+
+    .action-buttons-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin: 5px 0;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.875rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-success-custom {
+        background-color: var(--success-color);
+        border-color: var(--success-color);
+        color: white;
+    }
+
+    .btn-danger-custom {
+        background-color: var(--danger-color);
+        border-color: var(--danger-color);
+        color: white;
+    }
+
+    .btn-warning-custom {
+        background-color: var(--warning-color);
+        border-color: var(--warning-color);
+        color: white;
+    }
+
+    .btn-success-custom:hover,
+    .btn-danger-custom:hover,
+    .btn-warning-custom:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
     }
 
     .card-header-custom {
@@ -262,12 +346,17 @@
     }
 
      .form-control-custom {
-        width: 100%; /* Make select fill its container */
-        padding: 8px 10px;
-        border: 1px solid var(--border-color);
-        border-radius: 5px;
-        font-size: 1rem;
+        width: 100%;
+        padding: 0.25rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        line-height: 1.2;
         box-sizing: border-box;
+     }
+     .form-control-custom option {
+        font-size: 0.75rem;
+        padding: 0.25rem;
      }
      .form-control-custom:focus {
          border-color: var(--primary-color);
@@ -440,5 +529,57 @@
         font-size: 1.1rem;
         font-weight: 500;
     }
+
+    .dropdown-custom-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle-custom {
+    background-color: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.dropdown-toggle-custom:hover {
+    background-color: #1aaed1;
+}
+
+.dropdown-custom-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    z-index: 10;
+    min-width: 140px;
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    box-shadow: var(--card-shadow);
+    margin-top: 5px;
+}
+
+.dropdown-custom-wrapper:hover .dropdown-custom-menu {
+    display: block;
+}
+
+.dropdown-custom-item {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 10px 15px;
+    text-align: left;
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: var(--dark-text);
+}
+
+.dropdown-custom-item:hover {
+    background-color: var(--light-bg);
+}
+
 </style>
 @endsection 

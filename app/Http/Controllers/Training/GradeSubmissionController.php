@@ -437,7 +437,7 @@ class GradeSubmissionController extends Controller
     public function updateProofStatus(Request $request, GradeSubmission $gradeSubmission, $studentId)
     {
         $request->validate([
-            'status' => 'required|in:approved,rejected'
+            'status' => 'required|in:approved,rejected,pending'
         ]);
 
         try {

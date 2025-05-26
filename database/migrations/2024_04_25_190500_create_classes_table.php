@@ -31,13 +31,8 @@ return new class extends Migration
         Schema::create('class_student', function (Blueprint $table) {
             $table->id();
             $table->foreignId('class_id')->constrained('classes')->onDelete('cascade');
-            $table->string('user_id');
+            $table->string('user_id'); // foreign key added later
             $table->timestamps();
-            
-            $table->foreign('user_id')
-                ->references('user_id')
-                ->on('pnph_users')
-                ->onDelete('cascade');
         });
     }
 

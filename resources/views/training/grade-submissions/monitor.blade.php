@@ -84,13 +84,15 @@
                             // Fetch students for this submission
                             $students = \DB::table('grade_submission_subject')
                                 ->join('pnph_users', 'grade_submission_subject.user_id', '=', 'pnph_users.user_id')
+                                ->join('student_details', 'pnph_users.user_id', '=', 'student_details.user_id')
                                 ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
                                 ->where('pnph_users.user_role', 'student')
-                                ->select('pnph_users.user_id', 'pnph_users.user_fname', 'pnph_users.user_lname')
+                                ->select('pnph_users.user_id', 'pnph_users.user_fname', 'pnph_users.user_lname', 'student_details.student_id')
                                 ->distinct()
                                 ->get()
                                 ->map(function ($student) {
                                     return (object)[
+                                        'student_id' => $student->student_id,
                                         'user_id' => $student->user_id,
                                         'name' => $student->user_fname . ' ' . $student->user_lname
                                     ];
@@ -147,7 +149,7 @@
                                     <tbody>
                                         @foreach($students as $student)
                                             <tr data-submission-id="{{ $gradeSubmission->id }}" data-student-id="{{ $student->user_id }}">
-                                                <td class="text-center-custom small-text">{{ $student->user_id }}</td>
+                                                <td class="text-center-custom small-text">{{ $student->student_id }}</td>
                                                 <td class="small-text">{{ $student->name }}</td>
                                                 @foreach($subjects as $subject)
                                                     <td class="text-center-custom">

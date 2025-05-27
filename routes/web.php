@@ -69,6 +69,11 @@ Route::middleware('auth')->group(function () {
     // Training routes
 
     Route::prefix('training')->name('training.')->middleware(['auth', 'can:training-access'])->group(function () {
+        // Analytics routes
+     
+
+
+        
         Route::get('/dashboard', [TrainingController::class, 'dashboard'])->name('dashboard');
         Route::get('/students-info', [TrainingController::class, 'index'])->name('students-info');
     
@@ -93,6 +98,7 @@ Route::middleware('auth')->group(function () {
         // Class routes with school context
         Route::get('schools/{school}/classes/create', [ClassController::class, 'create'])->name('classes.create');
         Route::post('schools/{school}/classes', [ClassController::class, 'store'])->name('classes.store');
+        Route::delete('/classes/{class}', [ClassController::class, 'destroy'])->name('classes.destroy');
         Route::get('students/by-batch', [ClassController::class, 'getStudentsList'])->name('students.by-batch');
         Route::get('api/schools/{school}/classes', [ClassController::class, 'getClassesBySchool'])->name('api.classes.by-school');
         Route::resource('classes', ClassController::class)->except(['create', 'store']);

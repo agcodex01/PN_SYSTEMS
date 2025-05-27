@@ -90,9 +90,38 @@ class GradeSubmissionController extends Controller
     public function index()
     {
         // Fetch all grade submissions from the database
-        $gradeSubmissions = GradeSubmission::all();
+        $gradeSubmissions = GradeSubmission::with(['students', 'subjects'])->get();
 
         return view('training.grade-submissions.index', compact('gradeSubmissions'));
+    }
+
+    public function monitor()
+    {
+        // Fetch all grade submissions from the database
+        $gradeSubmissions = GradeSubmission::with(['students', 'subjects'])->get();
+
+        // Get all schools
+        $schools = School::all();
+        
+        // Get classes grouped by school
+        $classesBySchool = $schools->map(function($school) {
+            return ClassModel::where('school_id', $school->school_id)
+                ->select('class_id', 'class_name')
+                ->get()
+                ->pluck('class_name', 'class_id');
+        });
+
+        // Get unique filter options (semester, term, academic year combinations)
+        $filterOptions = $gradeSubmissions->map(function($submission) {
+            return $submission->semester . ' ' . $submission->term . ' ' . $submission->academic_year;
+        })->unique()->sortDesc()->toArray();
+
+        return view('training.grade-submissions.monitor', compact(
+            'gradeSubmissions',
+            'schools',
+            'classesBySchool',
+            'filterOptions'
+        ));
     }
 
     public function getSubjectsBySchoolAndClass(Request $request)

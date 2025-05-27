@@ -4,11 +4,22 @@
 <div class="submission-container">
     <div class="submission-card">
         <div class="card-header-custom">
-            <h2>Grade Submission</h2>
-            <p>{{ $gradeSubmission->semester }} {{ $gradeSubmission->term }} {{ $gradeSubmission->academic_year }}</p>
+            <h2 style="color: #333;">Grade Submission</h2>
+            <p style="color: #555;">{{ $gradeSubmission->semester }} {{ $gradeSubmission->term }} {{ $gradeSubmission->academic_year }}</p>
         </div>
 
         <div class="card-body-custom">
+            <!-- Display validation errors -->
+            @if($errors->any())
+                <div class="alert-custom alert-danger-custom">
+                    <ul>
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             @if(session('error'))
                 <div class="alert-custom alert-danger-custom">
                     {{ session('error') }}
@@ -60,13 +71,18 @@
                                         <td>{{ $subject->name }}</td>
                                         <td>
                                             <input type="text" 
-                                                   name="grades[{{ $subject->id }}]" 
-                                                   value="{{ $subject->grade ?? '' }}"
-                                                   class="grade-input"
-                                                   pattern="^(100|[0-9]{1,2}(\.[0-9]{1,2})?|INC|NC|DR)$"
-                                                   title="Enter a grade between 0-100 or INC, NC, DR"
-                                                   required>
-                                            <small class="form-text text-muted">Enter grade (1.0-5.0) or INC, NC, DR</small>
+                                               name="grades[{{ $subject->id }}]" 
+                                               value="{{ $subject->grade ?? '' }}"
+                                               class="grade-input {{ $errors->has('grades.' . $subject->id) ? 'is-invalid' : '' }}"
+                                               pattern="^(5(\.0)?|[1-4](\.[0-9]{1,2})?|INC|NC|DR)$"
+                                               title="Please match requested format: 1.0-5.0 or INC, NC, DR"
+                                               required>
+                                        @error('grades.' . $subject->id)
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+                                            <small class="form-text text-muted">Please match requested format: 1.0-5.0 or INC, NC, DR</small>
                                         </td>
                                     </tr>
                                 @endforeach

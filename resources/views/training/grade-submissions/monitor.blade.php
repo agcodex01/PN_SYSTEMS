@@ -23,6 +23,32 @@
             <div class="filter-section">
                  <h3>Filter Submissions</h3>
                  <form action="{{ route('training.grade-submissions.index') }}" method="GET" class="filter-form-custom">
+                    <div class="form-group-custom filter-group">
+                        <label for="school_id" class="visually-hidden">School</label>
+                        <select name="school_id" id="school_id" class="form-control-custom" onchange="this.form.submit()">
+                            <option value="">All Schools</option>
+                            @foreach($schools as $school)
+                                <option value="{{ $school->school_id }}" {{ request('school_id') == $school->school_id ? 'selected' : '' }}>
+                                    {{ $school->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div class="form-group-custom filter-group">
+                        <label for="class_id" class="visually-hidden">Class</label>
+                        <select name="class_id" id="class_id" class="form-control-custom" onchange="this.form.submit()">
+                            <option value="">All Classes</option>
+                            @if(request('school_id'))
+                                @foreach($classesBySchool[request('school_id')] as $class)
+                                    <option value="{{ $class->class_id }}" {{ request('class_id') == $class->class_id ? 'selected' : '' }}>
+                                        {{ $class->name }}
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+                    
                      <div class="form-group-custom filter-group">
                          <label for="filter_key" class="visually-hidden">Semester Term Academic Year</label>
                          <select name="filter_key" id="filter_key" class="form-control-custom">
@@ -32,8 +58,14 @@
                              @endforeach
                          </select>
                      </div>
-                     <button type="submit" class="btn-custom btn-primary-custom btn-sm-custom">Filter</button>
-                     <a href="{{ route('training.grade-submissions.index') }}" class="btn-custom btn-secondary-custom btn-sm-custom">Reset</a>
+                     <div class="filter-buttons">
+                         <button type="submit" class="btn-custom btn-primary-custom">
+                             <i class="fas fa-filter"></i> Filter
+                         </button>
+                         <button type="button" onclick="location.href='{{ route('training.grade-submissions.index') }}'" class="btn-custom btn-secondary-custom">
+                             <i class="fas fa-undo"></i> Reset
+                         </button>
+                     </div>
                  </form>
             </div>
         </div>
@@ -107,12 +139,14 @@
                                             @foreach($subjects as $subject)
                                                 <th class="text-center-custom">{{ $subject->name }}</th>
                                             @endforeach
+                                            <th class="text-center-custom" style="width: 120px">Proof</th>
+                                            <th class="text-center-custom" style="width: 120px">Status</th>
                                             <th class="text-center-custom" style="width: 120px">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($students as $student)
-                                            <tr>
+                                            <tr data-submission-id="{{ $gradeSubmission->id }}" data-student-id="{{ $student->user_id }}">
                                                 <td class="text-center-custom small-text">{{ $student->user_id }}</td>
                                                 <td class="small-text">{{ $student->name }}</td>
                                                 @foreach($subjects as $subject)
@@ -121,6 +155,7 @@
                                                             $grade = $grades[$student->user_id][$subject->id] ?? null;
                                                             $gradeValue = $grade ? $grade->grade : null;
                                                         @endphp
+                                                        
                                                         @if($gradeValue !== null)
                                                             <div class="grade-value small-text">
                                                                 @if(in_array(strtoupper($gradeValue), ['INC', 'NC', 'DR']))
@@ -142,16 +177,81 @@
                                                     @endphp
                                                     @if($proof)
                                                         <a href="{{ route('training.grade-submissions.view-proof', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id]) }}"
-                                                           class="btn-custom btn-sm-custom btn-primary-custom">
-                                                            View Proof
+                                                           class="btn-custom btn-primary-custom">
+                                                            <i class="fas fa-eye"></i> View Proof
                                                         </a>
                                                     @else
                                                         <span class="text-muted-custom small-text">No proof</span>
                                                     @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
+                                                 </td>
+                                                 <td class="text-center-custom">
+                                                     @php
+                                                         $proof = \App\Models\GradeSubmissionProof::where('grade_submission_id', $gradeSubmission->id)
+                                                             ->where('user_id', $student->user_id)
+                                                             ->first();
+                                                             
+                                                         // Get the status from the grade_submission_subject table if proof exists
+                                                         $status = DB::table('grade_submission_subject')
+                                                             ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
+                                                             ->where('grade_submission_subject.user_id', $student->user_id)
+                                                             ->value('status') ?? 'pending';
+                                                     @endphp
+                                                     <span class="status-badge {{ $status === 'approved' ? 'approved' : ($status === 'rejected' ? 'rejected' : 'pending') }}">
+                                                         {{ ucfirst($status) }}
+                                                     </span>
+                                                 </td>
+                                                 <td class="text-center-custom">
+                                                     <div class="action-buttons">
+                                                         @php
+                                                             $hasIncGrade = false;
+                                                             foreach($subjects as $subject) {
+                                                                 $grade = $grades[$student->user_id][$subject->id] ?? null;
+                                                                 $gradeValue = $grade ? $grade->grade : null;
+                                                                 if(strtoupper($gradeValue) === 'INC') {
+                                                                     $hasIncGrade = true;
+                                                                     break;
+                                                                 }
+                                                             }
+                                                         @endphp
+                                                         
+                                                         @if($proof && $proof->status === 'pending')
+                                                             <div class="action-group">
+                                                                 <form method="POST" action="{{ route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id]) }}" class="d-inline">
+                                                                     @csrf
+                                                                     <input type="hidden" name="status" value="approved">
+                                                                     <button type="submit" class="action-button btn-success-custom">
+                                                                         <i class="fas fa-check-circle"></i> Approve
+                                                                     </button>
+                                                                 </form>
+                                                                 <form method="POST" action="{{ route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id]) }}" class="d-inline">
+                                                                     @csrf
+                                                                     <input type="hidden" name="status" value="rejected">
+                                                                     <button type="submit" class="action-button btn-danger-custom">
+                                                                         <i class="fas fa-times-circle"></i> Reject
+                                                                     </button>
+                                                                 </form>
+                                                             </div>
+                                                         @else
+                                                             @if($hasIncGrade)
+                                                                 <form method="POST" action="{{ route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id]) }}" class="d-inline">
+                                                                     @csrf
+                                                                     <input type="hidden" name="status" value="pending">
+                                                                     <button type="submit" class="action-button btn-warning-custom">
+                                                                         <i class="fas fa-edit"></i> Edit Status
+                                                                         <span class="inc-badge" style="margin-left: 4px;">INC</span>
+                                                                     </button>
+                                                                 </form>
+                                                             @else
+                                                                 <span class="text-muted-custom small-text">
+                                                                     Status is final and cannot be changed
+                                                                 </span>
+                                                             @endif
+                                                         @endif
+                                                     </div>
+                                                 </td>
+                                             </tr>
+                                         @endforeach
+                                     </tbody>
                                 </table>
                             </div>
                         </div>
@@ -160,7 +260,7 @@
             </div>
         @endif
     @endforeach
-</div>
+     </div>
 
 <style>
     :root {
@@ -286,39 +386,136 @@
         border: 0;
     }
 
-    .btn-custom {
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 1rem;
-        transition: background-color 0.3s ease;
-        text-decoration: none;
-        display: inline-block;
-        text-align: center;
+    .action-buttons-container {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
     }
 
-     .btn-sm-custom {
-        padding: 5px 10px;
-        font-size: 0.875rem;
-     }
+    .btn-custom {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-width: 100px;
+        height: 32px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .btn-custom i {
+        font-size: 14px;
+    }
 
     .btn-primary-custom {
         background-color: var(--primary-color);
-        color: #fff;
-    }
-
-    .btn-primary-custom:hover {
-        background-color: #0056b3;
+        color: white;
     }
 
     .btn-secondary-custom {
         background-color: var(--secondary-color);
-        color: #fff;
+        color: white;
     }
 
-    .btn-secondary-custom:hover {
-        background-color: #ff751a;
+    .btn-success-custom {
+        background-color: var(--success-color);
+        color: white;
+    }
+
+    .btn-danger-custom {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-warning-custom {
+        background-color: #ffc107;
+        color: #000;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 4px;
+        margin-top: 8px;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 4px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .action-group {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+
+    /* Hover effects for table rows */
+    tr[data-submission-id] {
+        transition: background-color 0.2s ease;
+    }
+
+    tr[data-submission-id]:hover {
+        background-color: rgba(34, 187, 234, 0.05);
+    }
+
+    tr[data-submission-id]:hover .btn-custom {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-custom:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-custom:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(34, 187, 234, 0.3);
+    }
+
+    .btn-custom:active {
+        transform: translateY(0);
+        box-shadow: 0 0 1px rgba(0,0,0,0.1);
+    }
+
+    .btn-custom.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
+    .inc-badge {
+        background: #ff4444;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        margin-left: 4px;
+    }
+
+    /* Reduce padding for action buttons in table cells */
+    .action-button {
+        padding: 4px 8px;
+        min-width: 80px;
+        height: 28px;
+        border-radius: 4px;
+        font-size: 12px;
     }
 
     .table-responsive-custom {

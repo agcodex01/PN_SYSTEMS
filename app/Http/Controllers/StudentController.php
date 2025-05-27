@@ -122,13 +122,16 @@ class StudentController extends Controller
             'grades.*' => [
                 'required',
                 function ($attribute, $value, $fail) {
-                    // Check if it's a valid percentage grade (0-100)
-                    if (is_numeric($value) && ($value < 0 || $value > 100)) {
-                        $fail('The numeric grade must be between 0 and 100.');
+                    // Check if it's a valid numeric grade (1.0-5.0)
+                    if (is_numeric($value)) {
+                        $value = floatval($value);
+                        if ($value < 1.0 || $value > 5.0) {
+                            $fail('The numeric grade must be between 1.0 and 5.0.');
+                        }
                     }
-                    // Check if it's a valid letter grade (INC, NC, DR)
-                    if (!is_numeric($value) && !in_array(strtoupper($value), ['INC', 'NC', 'DR'])) {
-                        $fail('The grade must be a number between 0-100 or one of: INC, NC, DR.');
+                    // Check if it's a valid special grade (INC, NC, DR)
+                    else if (!in_array(strtoupper($value), ['INC', 'NC', 'DR'])) {
+                        $fail('The grade must be between 1.0-5.0 or one of: INC, NC, DR.');
                     }
                 },
             ],
@@ -144,6 +147,11 @@ class StudentController extends Controller
 
             // Update grades and status in the pivot table (this will always replace old grades, including rejected ones)
             foreach ($validated['grades'] as $subjectId => $grade) {
+                // If it's a numeric grade and doesn't have a decimal point, add .0
+                if (is_numeric($grade) && strpos($grade, '.') === false) {
+                    $grade = floatval($grade) . '.0';
+                }
+                
                 $result = DB::table('grade_submission_subject')
                     ->where('grade_submission_id', $submissionId)
                     ->where('subject_id', $subjectId)

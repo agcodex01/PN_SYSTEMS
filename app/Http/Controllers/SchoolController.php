@@ -9,6 +9,7 @@ use App\Models\StudentDetail;
 use App\Models\PNUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class SchoolController extends Controller
 {
@@ -24,6 +25,14 @@ class SchoolController extends Controller
         $classes = ClassModel::where('school_id', $school->school_id)
             ->with('students')
             ->get();
+            
+        // Ensure terms is an array
+        if (is_string($school->terms)) {
+            $school->terms = json_decode($school->terms, true) ?? [];
+        } elseif (is_null($school->terms)) {
+            $school->terms = [];
+        }
+            
         return view('training.schools.show', compact('school', 'classes'));
     }
 
@@ -36,13 +45,15 @@ class SchoolController extends Controller
     public function store(Request $request)
     {
         try {
-            $validated = $request->validate([
+            // Debug the request data
+            \Log::info('Form data:', $request->all());
+            // Validate the request data
+            $validator = \Validator::make($request->all(), [
                 'school_id' => 'required|string|unique:schools,school_id',
                 'name' => 'required|string|max:255',
                 'department' => 'required|string|max:255',
                 'course' => 'required|string|max:255',
                 'semester_count' => 'required|integer|min:1',
-                'terms' => 'required|array|min:1',
                 'passing_grade_min' => 'required|numeric|between:1,5',
                 'passing_grade_max' => 'required|numeric|between:1,5|gte:passing_grade_min',
                 'failing_grade_min' => 'required|numeric|between:1,5',
@@ -52,19 +63,31 @@ class SchoolController extends Controller
                 'subjects.*.name' => 'required|string',
                 'subjects.*.instructor' => 'required|string',
                 'subjects.*.schedule' => 'required|string',
-                'classes' => 'array',
+                'classes' => 'required|array|min:1',
                 'classes.*.class_id' => 'required|string|unique:classes,class_id',
                 'classes.*.name' => 'required|string',
-                'classes.*.student_ids' => 'required|array',
+                'classes.*.student_ids' => 'required|array|min:1',
                 'classes.*.student_ids.*' => 'exists:pnph_users,user_id',
+                'terms' => 'required|array|min:1',
+                'terms.*' => 'in:prelim,midterm,semi_final,final',
             ]);
 
-            // Ensure no overlap between passing and failing ranges
-            if ($validated['passing_grade_max'] >= $validated['failing_grade_min']) {
-                return back()->withErrors(['grade_range' => 'Passing and failing grade ranges must not overlap.'])->withInput();
+            if ($validator->fails()) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+                return back()->withErrors($validator)->withInput();
             }
 
-            DB::beginTransaction();
+            $validated = $validator->validated();
+            
+            // Debug the validated data
+            \Log::info('Validated data:', $validated);
+            
+            // Start database transaction
+            \DB::beginTransaction();
 
             // Create school
             $school = School::create([
@@ -73,14 +96,14 @@ class SchoolController extends Controller
                 'department' => $validated['department'],
                 'course' => $validated['course'],
                 'semester_count' => $validated['semester_count'],
-                'terms' => $validated['terms'],
                 'passing_grade_min' => $validated['passing_grade_min'],
                 'passing_grade_max' => $validated['passing_grade_max'],
                 'failing_grade_min' => $validated['failing_grade_min'],
                 'failing_grade_max' => $validated['failing_grade_max'],
+                'terms' => json_encode($validated['terms']),
             ]);
-
-            // Create subjects
+            
+            // Add subjects
             foreach ($validated['subjects'] as $subjectData) {
                 $school->subjects()->create([
                     'offer_code' => $subjectData['offer_code'],
@@ -89,30 +112,68 @@ class SchoolController extends Controller
                     'schedule' => $subjectData['schedule'],
                 ]);
             }
+            
+            // Add classes and students
+            foreach ($validated['classes'] as $classData) {
+                $class = $school->classes()->create([
+                    'class_id' => $classData['class_id'],
+                    'class_name' => $classData['name'],
+                ]);
+                
+                // Attach students to the class
+                if (!empty($classData['student_ids'])) {
+                    $class->students()->sync($classData['student_ids']);
+                }
+            }
+            
+            // Commit the transaction
+            \DB::commit();
 
-            // Create classes if provided
-            if (isset($validated['classes'])) {
-                foreach ($validated['classes'] as $classData) {
-                    $class = new ClassModel();
-                    $class->class_id = $classData['class_id'];
-                    $class->class_name = $classData['name'];
-                    $class->school_id = $school->school_id;
-                    $class->save();
-
-                    if (isset($classData['student_ids'])) {
-                        $class->students()->attach($classData['student_ids']);
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'School created successfully!',
+                    'redirect' => route('training.manage-students')
+                ]);
+            }
+            
+            return redirect()->route('training.manage-students')
+                ->with('success', 'School created successfully!');
+                
+        } catch (\Exception $e) {
+            // Rollback the transaction on error
+            $pdo = \DB::getPdo();
+            if ($pdo && $pdo->inTransaction()) {
+                \DB::rollBack();
+            }
+            
+            // Log the error
+            \Log::error('Error creating school: ' . $e->getMessage());
+            \Log::error('Exception: ' . get_class($e));
+            \Log::error('File: ' . $e->getFile() . ':' . $e->getLine());
+            \Log::error('Trace: ' . $e->getTraceAsString());
+            
+            // Handle specific exceptions
+            $errorMessage = 'An error occurred while creating the school. Please try again.';
+            
+            if ($e instanceof \Illuminate\Database\QueryException) {
+                if (str_contains($e->getMessage(), 'Duplicate entry')) {
+                    if (str_contains($e->getMessage(), 'schools_school_id_unique')) {
+                        $errorMessage = 'A school with this ID already exists. Please choose a different school ID.';
+                    } elseif (str_contains($e->getMessage(), 'classes_class_id_unique')) {
+                        $errorMessage = 'One of the class IDs you entered is already in use. Please use unique class IDs.';
                     }
                 }
             }
-
-            DB::commit();
-            return redirect()->route('training.manage-students')
-                ->with('success', 'School created successfully with subjects.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', 'Error creating school: ' . $e->getMessage())
-                        ->withInput();
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 500);
+            }
+            
+            return back()->withInput()->with('error', $errorMessage);
         }
     }
 

@@ -99,17 +99,38 @@ class ClassController extends Controller
         }
     }
 
+    /**
+     * Remove the specified class from storage.
+     *
+     * @param  \App\Models\ClassModel  $class
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(ClassModel $class)
+    {
+        try {
+            // Store the school ID before deleting the class
+            $schoolId = $class->school_id;
+            
+            // Detach all students from the class
+            $class->students()->detach();
+            
+            // Delete the class
+            $class->delete();
+
+            return redirect()->route('training.classes.index')
+                ->with('success', 'Class deleted successfully');
+                
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Error deleting class: ' . $e->getMessage());
+        }
+    }
+
     public function show(ClassModel $class)
     {
         $class->load(['school', 'students.studentDetail']);
         return view('training.classes.show', compact('class'));
-    }
-
-    public function destroy(ClassModel $class)
-    {
-        $class->delete();
-        return redirect()->route('training.classes.index')
-            ->with('success', 'Class deleted successfully.');
     }
 
     public function getStudentsList(Request $request)

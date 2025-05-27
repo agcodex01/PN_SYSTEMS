@@ -21,6 +21,8 @@
         </div>
     @endif
 
+    <div id="formErrors" class="alert alert-error" style="display:none"></div>
+
     <form action="{{ route('training.schools.store') }}" method="POST" class="form-container" id="createSchoolForm">
         @csrf
         
@@ -192,6 +194,9 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
         e.preventDefault(); // Prevent default submission
         
+        const errorBox = document.getElementById('formErrors');
+        if (errorBox) errorBox.style.display = 'none';
+        
         // Create FormData object
         const formData = new FormData(form);
         
@@ -206,17 +211,20 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => {
             if (response.redirected) {
                 window.location.href = response.url;
+            } else if (response.status === 422) {
+                // Validation error
+                return response.json().then(data => {
+                    displayValidationErrors(data.errors);
+                });
             } else {
                 return response.json();
             }
         })
         .then(data => {
-            if (data) {
-                if (data.success) {
-                    window.location.href = '{{ route("training.manage-students") }}';
-                } else {
-                    alert(data.message || 'An error occurred');
-                }
+            if (data && data.success) {
+                window.location.href = '{{ route("training.manage-students") }}';
+            } else if (data && data.message) {
+                alert(data.message);
             }
         })
         .catch(error => {
@@ -452,6 +460,24 @@ function removeSelectedStudent(button, classIndex, studentId) {
     const hiddenInput = document.querySelector(`input[name="classes[${classIndex}][student_ids][]"][value="${studentId}"]`);
     if (hiddenInput) {
         hiddenInput.remove();
+    }
+}
+
+function displayValidationErrors(errors) {
+    // Collect all error messages
+    let allMessages = [];
+    for (const [field, messages] of Object.entries(errors)) {
+        allMessages = allMessages.concat(messages);
+    }
+
+    // Display all errors in the error box
+    const errorBox = document.getElementById('formErrors');
+    if (errorBox) {
+        errorBox.innerHTML = allMessages.map(msg => `<div>${msg}</div>`).join('');
+        errorBox.style.display = 'block';
+    } else {
+        // Fallback: alert all errors
+        alert(allMessages.join('\n'));
     }
 }
 </script>

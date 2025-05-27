@@ -17,31 +17,58 @@ class GradeSubmissionController extends Controller
 {
     public function index(Request $request)
     {
-        // Get the concatenated filter key from the request
-        $filterKey = $request->query('filter_key');
-
         // Get all schools
         $schools = School::all();
-
-        // Get all grade submissions, optionally filter by filterKey
-        $gradeSubmissionsQuery = GradeSubmission::query();
-        if ($filterKey) {
-            $gradeSubmissionsQuery->where(DB::raw("CONCAT(semester, ' ', term, ' ', academic_year)"), $filterKey);
+        
+        // Get classes for each school
+        $classesBySchool = collect();
+        foreach($schools as $school) {
+            $classesBySchool[$school->school_id] = ClassModel::where('school_id', $school->school_id)->get();
         }
-        $gradeSubmissions = $gradeSubmissionsQuery->orderBy('created_at', 'desc')->get();
+        
+        // Get submissions based on filters
+        $query = GradeSubmission::query();
+        
+        // Apply school filter if selected
+        if ($request->has('school_id') && $request->school_id) {
+            $query->where('school_id', $request->school_id);
+        }
+        
+        // Apply class filter if selected
+        if ($request->has('class_id') && $request->class_id) {
+            $query->where('class_id', $request->class_id);
+        }
+        
+        // Apply semester/term/year filter if selected
+        if ($request->has('filter_key') && $request->filter_key) {
+            $filter = explode(',', $request->filter_key);
+            if (count($filter) === 3) {
+                $query->where('semester', $filter[0])
+                    ->where('term', $filter[1])
+                    ->where('academic_year', $filter[2]);
+            }
+        }
+        
+        // Get submissions with related data
+        $submissions = $query->with(['students', 'proofs', 'subjects'])->get();
+        
+        // Group submissions by school
+        $submissionsBySchool = $submissions->groupBy('school_id');
 
-        // Group grade submissions by school_id
-        $submissionsBySchool = $gradeSubmissions->groupBy('school_id');
+        // Get unique filter options from submissions
+        $filterOptions = $submissions->map(function($submission) {
+            return $submission->semester . ',' . $submission->term . ',' . $submission->academic_year;
+        })->unique()->sortDesc()->values();
 
-        // Get unique filter options
-        $filterOptions = GradeSubmission::select(DB::raw("CONCAT(semester, ' ', term, ' ', academic_year) AS filter_key"))
-            ->distinct()
-            ->pluck('filter_key')
-            ->sortDesc()
-            ->values()
-            ->all();
-
-        return view('training.grade-submissions.monitor', compact('schools', 'submissionsBySchool', 'filterOptions', 'filterKey'));
+        return view('training.grade-submissions.monitor', compact(
+            'schools', 
+            'classesBySchool',
+            'submissionsBySchool',
+            'filterOptions'
+        ))
+        ->with('filter_key', $request->filter_key)
+        ->with('school_id', $request->school_id)
+        ->with('class_id', $request->class_id);
     }
 
     public function create(Request $request)

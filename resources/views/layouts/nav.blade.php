@@ -229,19 +229,28 @@
                         </a>
                     </div>
                 </li>
-                <li>
-                    <a href="#">
+                <li class="dropdown {{ request()->routeIs('analytics.*') ? 'active' : '' }}" id="analyticsDropdown">
+                    <a href="#" onclick="toggleDropdown(event)">
                         <img src="{{ asset('images/analytics.png') }}" alt="Analytics"> Analytics
                     </a>
+                    <div class="dropdown-content">
+                        <a href="#" class="{{ request()->routeIs('analytics.class-grades') ? 'active' : '' }}">
+                            <img src="{{ asset('images/class grades.png') }}" alt="Class Grades"> Class Grades
+                        </a>
+                        <a href="#" class="{{ request()->routeIs('analytics.class-subject-progress') ? 'active' : '' }}">
+                            <img src="{{ asset('images/subject progress.png') }}" alt="Class Subject Progress"> Class Subject Progress
+                        </a>
+                        <a href="#" class="{{ request()->routeIs('analytics.subject-intervention') ? 'active' : '' }}">
+                            <img src="{{ asset('images/subject intervention.png') }}" alt="Subject Intervention"> Subject Intervention
+                        </a>
+                        <a href="#" class="{{ request()->routeIs('analytics.internship-grades-progress') ? 'active' : '' }}">
+                            <img src="{{ asset('images/internship grades.png') }}" alt="Internship Grades Progress"> Internship Grades Progress
+                        </a>
+                    </div>
                 </li>
                 <li>
                     <a href="#">
                         <img src="{{ asset('images/is.png') }}" alt="Intervention Status"> Intervention Status
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <img src="{{ asset('images/me.png') }}" alt="Profile"> Profile
                     </a>
                 </li>
 

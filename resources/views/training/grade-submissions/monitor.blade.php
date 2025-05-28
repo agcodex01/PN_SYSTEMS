@@ -188,18 +188,34 @@
                                                  </td>
                                                  <td class="text-center-custom">
                                                      @php
+                                                         // Check if student has uploaded all grades
+                                                         $hasAllGrades = true;
+                                                         foreach($subjects as $subject) {
+                                                             $grade = $grades[$student->user_id][$subject->id] ?? null;
+                                                             $gradeValue = $grade ? $grade->grade : null;
+                                                             if ($gradeValue === null) {
+                                                                 $hasAllGrades = false;
+                                                                 break;
+                                                             }
+                                                         }
+                                                         
+                                                         // Only check for approval status if all grades are uploaded
+                                                         if ($hasAllGrades) {
+                                                             $status = DB::table('grade_submission_subject')
+                                                                 ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
+                                                                 ->where('grade_submission_subject.user_id', $student->user_id)
+                                                                 ->value('status') ?? 'pending';
+                                                         } else {
+                                                             $status = 'pending';
+                                                         }
+                                                         
+                                                         // Check if proof exists
                                                          $proof = \App\Models\GradeSubmissionProof::where('grade_submission_id', $gradeSubmission->id)
                                                              ->where('user_id', $student->user_id)
                                                              ->first();
-                                                             
-                                                         // Get the status from the grade_submission_subject table if proof exists
-                                                         $status = DB::table('grade_submission_subject')
-                                                             ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
-                                                             ->where('grade_submission_subject.user_id', $student->user_id)
-                                                             ->value('status') ?? 'pending';
                                                      @endphp
                                                      <span class="status-badge {{ $status === 'approved' ? 'approved' : ($status === 'rejected' ? 'rejected' : 'pending') }}">
-                                                         {{ ucfirst($status) }}
+                                                         {{ $hasAllGrades ? ucfirst($status) : 'Pending Grades' }}
                                                      </span>
                                                  </td>
                                                  <td class="text-center-custom">

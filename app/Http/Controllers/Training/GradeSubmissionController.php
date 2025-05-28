@@ -364,6 +364,7 @@ class GradeSubmissionController extends Controller
                 return response()->json(['error' => 'Student not associated with this grade submission.'], 404);
             }
 
+            // Update the pivot table
             DB::table('grade_submission_subject')
                 ->where('grade_submission_id', $gradeSubmission->id)
                 ->where('user_id', $request->student_id)
@@ -372,26 +373,71 @@ class GradeSubmissionController extends Controller
                     'updated_at' => now()
                 ]);
 
+            // Update the main grade_submissions table status
+            $gradeSubmission->status = $request->status;
+            $gradeSubmission->save();
+
             return response()->json(['message' => 'Status updated successfully']);
         } catch (\Exception $e) {
             \Log::error('Error updating grade submission status:' . $e->getMessage());
-            return response()->json(['error' => 'Failed to update status'], 500);
+            return response()->json(['error' => 'Failed to update status: ' . $e->getMessage()], 500);
         }
     }
 
     public function verify(GradeSubmission $gradeSubmission)
     {
         try {
+            // Get all students in the class
+            $class = $gradeSubmission->classModel;
+            if (!$class) {
+                return back()->with('error', 'Class not found for this submission.');
+            }
+            
+            $totalStudents = $class->students()->where('user_role', 'student')->count();
+            
+            // Get count of students who have submitted all their grades
+            $studentsWithCompleteGrades = DB::table('grade_submission_subject')
+                ->select('user_id')
+                ->where('grade_submission_id', $gradeSubmission->id)
+                ->whereNotNull('grade')
+                ->groupBy('user_id')
+                ->havingRaw('COUNT(DISTINCT subject_id) = ?', [
+                    $gradeSubmission->subjects()->count()
+                ])
+                ->count();
+
+            // Check if all students have submitted all their grades
+            if ($studentsWithCompleteGrades < $totalStudents) {
+                $missing = $totalStudents - $studentsWithCompleteGrades;
+                return back()->with('error', "Cannot approve submission. $missing students have not submitted all their grades yet.");
+            }
+
+            // Check for any null grades (shouldn't happen if above check passes, but just to be safe)
+            $incompleteGrades = DB::table('grade_submission_subject')
+                ->where('grade_submission_id', $gradeSubmission->id)
+                ->whereNull('grade')
+                ->exists();
+
+            if ($incompleteGrades) {
+                return back()->with('error', 'Cannot approve submission. Some grades are still missing.');
+            }
+
+            // Only approve if all grades are uploaded
             $gradeSubmission->update(['status' => 'approved']);
 
+            // Update all related records
             DB::table('grade_submission_subject')
                 ->where('grade_submission_id', $gradeSubmission->id)
-                ->update(['status' => 'approved', 'updated_at' => now()]);
+                ->update([
+                    'status' => 'approved', 
+                    'updated_at' => now()
+                ]);
 
             return redirect()->route('training.grade-submissions.index')
                 ->with('success', 'Grade submission verified and approved!');
         } catch (\Exception $e) {
-            return back()->with('error', 'An error occurred while verifying the grade submission.');
+            \Log::error('Error verifying grade submission: ' . $e->getMessage());
+            return back()->with('error', 'An error occurred while verifying the grade submission: ' . $e->getMessage());
         }
     }
 
@@ -476,29 +522,31 @@ class GradeSubmissionController extends Controller
                 return back()->with('error', 'No proof found for this student.');
             }
 
+            // Update the student's grade status in the pivot table
+            $updated = DB::table('grade_submission_subject')
+                ->where('grade_submission_id', $gradeSubmission->id)
+                ->where('user_id', $studentId)
+                ->update([
+                    'student_status' => $request->status,
+                    'updated_at' => now()
+                ]);
+
             // Update proof status
             $proof->update([
                 'status' => $request->status
             ]);
 
-            // Update the grade submission status for this student
-            DB::table('grade_submission_subject')
-                ->where('grade_submission_id', $gradeSubmission->id)
-                ->where('user_id', $studentId)
-                ->update([
-                    'status' => $request->status,
-                    'updated_at' => now()
-                ]);
-
-            \Log::info('Proof status updated:', [
+            // Log the update
+            \Log::info('Student grade status updated:', [
                 'proof_id' => $proof->id,
                 'student_id' => $studentId,
-                'new_status' => $request->status
+                'new_status' => $request->status,
+                'updated_rows' => $updated
             ]);
 
             $message = $request->status === 'approved' 
-                ? 'Proof approved successfully.' 
-                : 'Proof rejected. Student can resubmit.';
+                ? 'Student grade approved successfully.' 
+                : 'Student grade status updated.';
 
             return back()->with('success', $message);
         } catch (\Exception $e) {

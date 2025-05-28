@@ -229,12 +229,12 @@
                         </a>
                     </div>
                 </li>
-                <li class="dropdown {{ request()->routeIs('analytics.*') ? 'active' : '' }}" id="analyticsDropdown">
+                <li class="dropdown {{ request()->routeIs('training.analytics.*') ? 'active' : '' }}" id="analyticsDropdown">
                     <a href="#" onclick="toggleDropdown(event)">
                         <img src="{{ asset('images/analytics.png') }}" alt="Analytics"> Analytics
                     </a>
                     <div class="dropdown-content">
-                        <a href="#" class="{{ request()->routeIs('analytics.class-grades') ? 'active' : '' }}">
+                        <a href="{{ route('training.analytics.class-grades') }}" class="{{ request()->routeIs('training.analytics.class-grades') ? 'active' : '' }}">
                             <img src="{{ asset('images/class grades.png') }}" alt="Class Grades"> Class Grades
                         </a>
                         <a href="#" class="{{ request()->routeIs('analytics.class-subject-progress') ? 'active' : '' }}">

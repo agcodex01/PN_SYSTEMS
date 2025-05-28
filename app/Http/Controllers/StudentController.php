@@ -24,6 +24,9 @@ class StudentController extends Controller
             'subjects',
             'students' => function($query) use ($user) {
                 $query->where('grade_submission_subject.user_id', $user->user_id);
+            },
+            'proofs' => function($query) use ($user) {
+                $query->where('user_id', $user->user_id);
             }
         ])
         ->orderBy('created_at', 'desc');
@@ -74,9 +77,17 @@ class StudentController extends Controller
                 'subjects',
                 'students' => function($query) use ($user) {
                     $query->where('grade_submission_subject.user_id', $user->user_id);
+                },
+                'proofs' => function($query) use ($user) {
+                    $query->where('user_id', $user->user_id);
                 }
             ])
             ->firstOrFail();
+
+        // Check if the submission is approved - if yes, don't allow editing
+        if ($gradeSubmission->status === 'approved') {
+            return redirect()->route('student.dashboard')->with('error', 'This submission has already been approved and cannot be modified.');
+        }
 
         // Get all subjects and their grades for this student
         $subjects = DB::table('subjects')
@@ -91,7 +102,10 @@ class StudentController extends Controller
             $subjects = $gradeSubmission->subjects;
         }
 
-        return view('student.submission_form', compact('gradeSubmission', 'subjects'));
+        // Get the latest proof if it exists
+        $proof = $gradeSubmission->proofs->first();
+
+        return view('student.submission_form', compact('gradeSubmission', 'subjects', 'proof'));
     }
 
     public function submitGrades(Request $request, $submissionId)
@@ -108,7 +122,15 @@ class StudentController extends Controller
             ->whereHas('students', function($query) use ($user) {
                 $query->where('grade_submission_subject.user_id', $user->user_id);
             })
+            ->with(['proofs' => function($query) use ($user) {
+                $query->where('user_id', $user->user_id);
+            }])
             ->firstOrFail();
+
+        // Check if submission is already approved
+        if ($gradeSubmission->status === 'approved') {
+            return redirect()->route('student.dashboard')->with('error', 'This submission has already been approved and cannot be modified.');
+        }
 
         \Log::info('Found grade submission:', [
             'submission_id' => $gradeSubmission->id,
@@ -145,29 +167,49 @@ class StudentController extends Controller
         try {
             DB::beginTransaction();
 
-            // Update grades and status in the pivot table (this will always replace old grades, including rejected ones)
+            // Get the grade submission
+            $gradeSubmission = GradeSubmission::findOrFail($submissionId);
+            
+            // Update grades and status in the pivot table
             foreach ($validated['grades'] as $subjectId => $grade) {
                 // If it's a numeric grade and doesn't have a decimal point, add .0
                 if (is_numeric($grade) && strpos($grade, '.') === false) {
                     $grade = floatval($grade) . '.0';
                 }
                 
+                // Update or create the grade submission subject record
                 $result = DB::table('grade_submission_subject')
-                    ->where('grade_submission_id', $submissionId)
-                    ->where('subject_id', $subjectId)
-                    ->where('user_id', $user->user_id)
-                    ->update([
-                        'grade' => $grade,
-                        'status' => 'submitted',
-                        'updated_at' => now()
-                    ]);
-
-                \Log::info('Updated grade for subject:', [
-                    'subject_id' => $subjectId,
-                    'grade' => $grade,
-                    'result' => $result
-                ]);
+                    ->updateOrInsert(
+                        [
+                            'grade_submission_id' => $submissionId,
+                            'subject_id' => $subjectId,
+                            'user_id' => $user->user_id
+                        ],
+                        [
+                            'grade' => $grade,
+                            'status' => 'submitted',
+                            'updated_at' => now()
+                        ]
+                    );
             }
+            
+            // Update the main grade submission status to 'submitted' if it was 'rejected' or 'pending'
+            if (in_array($gradeSubmission->status, ['rejected', 'pending', 'submitted'])) {
+                $gradeSubmission->update(['status' => 'submitted']);
+                
+                // Also update all related grade_submission_subject records to 'submitted'
+                DB::table('grade_submission_subject')
+                    ->where('grade_submission_id', $submissionId)
+                    ->where('user_id', $user->user_id)
+                    ->update(['status' => 'submitted']);
+            }
+
+            // Log the submission
+            \Log::info('Grade submission updated:', [
+                'submission_id' => $submissionId,
+                'user_id' => $user->user_id,
+                'subjects_updated' => count($validated['grades'])
+            ]);
 
             // Handle file upload
             $file = $request->file('proof');

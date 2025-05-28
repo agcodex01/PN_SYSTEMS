@@ -37,26 +37,62 @@
                             <span class="value">{{ $submission->academic_year ?? 'N/A' }}</span>
                         </div>
 
-                        {{-- Display overall status for the student in this submission --}}
                         @php
+                            // Get the student's pivot data
                             $studentPivot = $submission->students->where('pivot.user_id', Auth::id())->first();
-                            $overallStatus = $studentPivot ? ($studentPivot->pivot->status ?? 'pending') : 'pending';
+                            $pivotStatus = $studentPivot ? ($studentPivot->pivot->status ?? 'pending') : 'pending';
+                            
+                            // Get the latest proof status
+                            $proof = $submission->proofs->where('user_id', Auth::id())->sortByDesc('created_at')->first();
+                            $proofStatus = $proof ? $proof->status : null;
+                            
+                            // Determine the overall status to display
+                            $overallStatus = $pivotStatus; // Default to pivot status
+                            
+                            // If there's a proof with a more specific status, use that
+                            if ($proofStatus && in_array($proofStatus, ['approved', 'rejected'])) {
+                                $overallStatus = $proofStatus;
+                            } elseif ($proofStatus === 'pending' && $pivotStatus === 'submitted') {
+                                $overallStatus = 'pending_review';
+                            }
                         @endphp
-                         <div class="info-row">
-                             <span class="label">Overall Status:</span> {{-- Changed label from Status to Overall Status --}}
-                             <span class="status {{ $overallStatus }}">
-                                 {{ ucfirst($overallStatus) }}
-                             </span>
-                         </div>
+                        
                         <div class="info-row">
-                            <span class="label">Created:</span> {{-- Changed label from Submitted to Created --}}
+                            <span class="label">Status:</span>
+                            <span class="status {{ $overallStatus }}">
+                                @if($overallStatus === 'pending_review')
+                                    Pending Review
+                                @else
+                                    {{ ucfirst($overallStatus) }}
+                                @endif
+                            </span>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Submitted:</span>
                             <span class="date">{{ $submission->created_at ? $submission->created_at->format('M d, Y') : 'N/A' }}</span>
                         </div>
 
                         {{-- Add the button based on submission status --}}
                         <div class="card-actions">
-                            @if(in_array($overallStatus, ['submitted', 'approved']))
+                            @php
+                                // Check if the student has any grades submitted for this submission
+                                $hasGrades = $submission->students->contains('pivot.user_id', Auth::id()) && 
+                                          $submission->students->where('pivot.user_id', Auth::id())->first()->pivot->grade !== null;
+                                
+                                // Check if there's a proof submitted
+                                $hasProof = $proof !== null;
+                            @endphp
+                            
+                            @if(!$hasGrades && !$hasProof)
+                                {{-- New submission - no grades or proof yet --}}
+                                <a href="{{ route('student.submit-grades.show', $submission->id) }}" class="btn-submit-grades">Submit Grades</a>
+                            @elseif($overallStatus === 'rejected' || $pivotStatus === 'rejected' || $proofStatus === 'rejected')
+                                <a href="{{ route('student.submit-grades.show', $submission->id) }}" class="btn-submit-grades">Resubmit Grades</a>
+                            @elseif(in_array($overallStatus, ['submitted', 'pending_review', 'pending']))
                                 <a href="{{ route('student.view-submission', $submission->id) }}" class="btn-view-submission">View Submission</a>
+                            @elseif($overallStatus === 'approved')
+                                <a href="{{ route('student.view-submission', $submission->id) }}" class="btn-view-submission">View Approved Submission</a>
                             @else
                                 <a href="{{ route('student.submit-grades.show', $submission->id) }}" class="btn-submit-grades">Submit Grades</a>
                             @endif

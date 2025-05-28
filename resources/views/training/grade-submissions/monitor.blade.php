@@ -254,10 +254,9 @@
                                                                  <form method="POST" action="{{ route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id]) }}" class="d-inline">
                                                                      @csrf
                                                                      <input type="hidden" name="status" value="pending">
-                                                                     <button type="submit" class="action-button btn-warning-custom">
-                                                                         <i class="fas fa-edit"></i> Edit Status
-                                                                         <span class="inc-badge" style="margin-left: 4px;">INC</span>
-                                                                     </button>
+                                                                      <button type="submit" class="action-button btn-warning-custom">
+                                                                          <i class="fas fa-edit"></i> Edit Status
+                                                                      </button>
                                                                  </form>
                                                              @else
                                                                  <span class="text-muted-custom small-text">

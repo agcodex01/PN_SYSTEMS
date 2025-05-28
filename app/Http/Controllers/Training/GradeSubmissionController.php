@@ -527,7 +527,7 @@ class GradeSubmissionController extends Controller
                 ->where('grade_submission_id', $gradeSubmission->id)
                 ->where('user_id', $studentId)
                 ->update([
-                    'student_status' => $request->status,
+                    'status' => $request->status, // Changed from student_status to status
                     'updated_at' => now()
                 ]);
 

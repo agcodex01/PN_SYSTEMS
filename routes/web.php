@@ -38,6 +38,12 @@ Route::post('/reset-password/update', [AuthController::class, 'resetPassword'])-
     });
     
 
+       // Main Menu Route
+       Route::get('/main-menu', function () {
+        return view('main-menu');
+    })->name('main-menu');
+    
+
 
 Route::middleware('auth')->group(function () {
 
@@ -50,6 +56,7 @@ Route::middleware('auth')->group(function () {
     // Logout Route
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
+ 
     // Admin routes
   
     // Educator routes

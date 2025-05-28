@@ -38,18 +38,20 @@
                     ->first();
             @endphp
 
-            @if($proof && $proof->status === 'rejected')
+            @if($gradeSubmission->status === 'rejected' || ($proof && $proof->status === 'rejected'))
                 <div class="rejection-notice">
                     <h3>Previous Submission Rejected</h3>
-                    <p>Your previous proof was rejected. Please resubmit your grades and proof.</p>
+                    <p>Your previous submission was rejected. Please review and resubmit your grades and proof.</p>
                 </div>
-            @endif
-
-            @if($proof && $proof->status === 'approved')
+            @elseif(($proof && $proof->status === 'approved') || $gradeSubmission->status === 'approved')
                 <div class="alert-custom alert-success-custom">
                     <h3>Grades Approved</h3>
-                    <p>Your grades have been approved.</p>
+                    <p>Your grades have been approved and cannot be modified.</p>
                 </div>
+                @php
+                    // If somehow we got here with approved status, we should redirect
+                    return redirect()->route('student.dashboard');
+                @endphp
             @endif
 
             <form action="{{ route('student.submit-grades.store', $gradeSubmission->id) }}" method="POST" enctype="multipart/form-data">

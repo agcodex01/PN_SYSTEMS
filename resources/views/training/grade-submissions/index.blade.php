@@ -42,12 +42,12 @@
                             @endif
                         </td>
                         <td class="actions">
-                            <form action="{{ route('grade-submissions.verify', $submission->id) }}" method="POST" class="inline-form">
+                            <form action="{{ route('training.grade-submissions.verify', $submission->id) }}" method="POST" class="inline-form">
                                 @csrf
                                 @method('PUT')
                                 <button type="submit" class="btn-approve" onclick="return confirm('Approve this grade?')">Approve</button>
                             </form>
-                            <form action="{{ route('grade-submissions.reject', $submission->id) }}" method="POST" class="inline-form">
+                            <form action="{{ route('training.grade-submissions.reject', $submission->id) }}" method="POST" class="inline-form">
                                 @csrf
                                 @method('PUT')
                                 <button type="submit" class="btn-reject" onclick="return confirm('Reject this grade?')">Reject</button>

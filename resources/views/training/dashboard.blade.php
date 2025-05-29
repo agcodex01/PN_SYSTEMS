@@ -27,7 +27,7 @@
         </div>
     </div>
 
-    <h1 style="font-weight:300; margin-bottom: 20px; color: #333;">Student by Batch Analytics</h1>
+    <h1 style="font-weight:300; margin-bottom: 20px; color: #333;">Student by Class Analytics</h1>
     <hr>
     <!-- Charts -->
     <div style="display: flex; flex-direction: column; gap: 30px;">
@@ -41,8 +41,8 @@
 
 
 
-    <h1 style="font-weight:300;  color: #333;">Sex by Batch Analytics</h1>
-    <hr style="margin-top: -20px;>
+    <h1 style="font-weight:300;  color: #333;">Sex by Class Analytics</h1>
+    <hr style="margin-top: -20px;">
     <div class="options">
     <div style="background: #fff; width: 95%; border-radius: 12px; padding: 30px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); max-width: 600px; margin: 30px auto 0 auto; display: flex; flex-direction: column; align-items: center;">
         <div style="width:100%; display:flex; flex-direction:column; align-items:center; margin-bottom: 10px;">
@@ -162,12 +162,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     legend: { display: true },
                     title: {
                         display: true,
-                        text: 'Students by Batch and Gender',
                         font: { size: 16 }
                     }
                 },
                 scales: {
-                    x: { stacked: false, title: { display: true, text: 'Batch' } },
+                    x: { stacked: false, title: { display: true, text: 'Class' } },
                     y: { beginAtZero: true, max: 70, title: { display: true, text: 'Number of Students' } }
                 },
                 layout: { padding: { left: 10, right: 10 } }

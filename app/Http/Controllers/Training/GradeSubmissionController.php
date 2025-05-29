@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Training;
 
 use App\Http\Controllers\Controller;
-use App\Models\School;
 use App\Models\ClassModel;
-use App\Models\Subject;
 use App\Models\GradeSubmission;
+use App\Models\GradeSubmissionProof;
+use App\Models\PNUser;
+use App\Models\School;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\PNUser;
-use App\Models\GradeSubmissionProof;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class GradeSubmissionController extends Controller
 {
@@ -320,11 +322,35 @@ class GradeSubmissionController extends Controller
     public function destroy(GradeSubmission $gradeSubmission)
     {
         try {
+            // Get all proofs before deleting
+            $proofs = $gradeSubmission->proofs()->get();
+            
+            // Delete the grade submission (this will trigger cascading deletes for related records)
             $gradeSubmission->delete();
+            
+            // Delete the proof files from storage
+            foreach ($proofs as $proof) {
+                // Delete the file if it exists
+                if (Storage::disk('public')->exists($proof->file_path)) {
+                    Storage::disk('public')->delete($proof->file_path);
+                }
+                
+                // Also try to delete the student's folder if it's empty
+                $folderPath = dirname($proof->file_path);
+                if (Storage::disk('public')->exists($folderPath)) {
+                    // If folder is empty, delete it
+                    if (count(Storage::disk('public')->files($folderPath)) === 0) {
+                        Storage::disk('public')->deleteDirectory($folderPath);
+                    }
+                }
+            }
+            
             return redirect()->route('training.grade-submissions.recent')
-                ->with('success', 'Grade submission deleted successfully!');
+                ->with('success', 'Grade submission and all related data deleted successfully!');
+                
         } catch (\Exception $e) {
-            return back()->with('error', 'An error occurred while deleting the grade submission.');
+            \Log::error('Error deleting grade submission: ' . $e->getMessage());
+            return back()->with('error', 'An error occurred while deleting the grade submission: ' . $e->getMessage());
         }
     }
 
@@ -466,7 +492,14 @@ class GradeSubmissionController extends Controller
 
             $file = $request->file('proof');
             $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('proofs', $fileName, 'public');
+            
+            // Get student details for folder name
+            $student = PNUser::with('studentDetail')->findOrFail($studentId);
+            $studentId = $student->studentDetail->student_id ?? $student->user_id; // Fallback to user_id if student_id is not available
+            $folderName = $student->user_lname . '_' . $studentId;
+            $folderName = preg_replace('/[^a-zA-Z0-9_]/', '_', $folderName); // Sanitize folder name
+            
+            $filePath = $file->storeAs("proofs/{$folderName}", $fileName, 'public');
 
             // Create or update the proof record
             $proof = GradeSubmissionProof::updateOrCreate(

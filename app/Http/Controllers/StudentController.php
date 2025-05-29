@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\GradeSubmission;
 use App\Models\GradeSubmissionProof;
+use App\Models\GradeSubmissionSubject;
+use App\Models\PNUser;
+use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -211,10 +214,17 @@ class StudentController extends Controller
                 'subjects_updated' => count($validated['grades'])
             ]);
 
-            // Handle file upload
+            // Handle file upload - store in student-specific folder
             $file = $request->file('proof');
             $fileName = time() . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('proofs', $fileName, 'public');
+            
+            // Get student details for folder name
+            $student = PNUser::with('studentDetail')->findOrFail($user->user_id);
+            $studentId = $student->studentDetail->student_id ?? $student->user_id; // Fallback to user_id if student_id is not available
+            $folderName = $student->user_lname . '_' . $studentId;
+            $folderName = preg_replace('/[^a-zA-Z0-9_]/', '_', $folderName); // Sanitize folder name
+            
+            $filePath = $file->storeAs("proofs/{$folderName}", $fileName, 'public');
 
             // Create or update the proof record
             $proof = GradeSubmissionProof::updateOrCreate(

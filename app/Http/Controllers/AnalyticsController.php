@@ -129,28 +129,50 @@ class AnalyticsController extends Controller
 
         // Get subjects for this submission
         $subjects = $gradeSubmission->subjects()->pluck('name')->toArray();
-        // Get all students for this class
-        $students = $gradeSubmission->students()->with(['studentDetail'])->get();
+        // Get all students for this class (distinct to avoid duplicates)
+        $students = $gradeSubmission->students()
+            ->with(['studentDetail'])
+            ->distinct('users.id')
+            ->get();
+            
         // Get all grades for this submission with student_status
         $gradesRaw = DB::table('grade_submission_subject')
-            ->select('*', 'student_status as status') // Map student_status to status for backward compatibility
+            ->select('*', 'student_status as status')
             ->where('grade_submission_id', $gradeSubmission->id)
             ->get();
+            
+        // Group grades by user_id for easier access
+        $gradesByStudent = [];
+        foreach ($gradesRaw as $grade) {
+            if (!isset($gradesByStudent[$grade->user_id])) {
+                $gradesByStudent[$grade->user_id] = [];
+            }
+            $gradesByStudent[$grade->user_id][$grade->subject_id] = $grade;
+        }
 
         $studentRows = [];
         $hasGrades = false;
         $allGradesComplete = true;
         
         foreach ($students as $student) {
+            $studentId = $student->studentDetail->student_id ?? $student->user_id;
+            
+            // Skip if we've already processed this student
+            if (isset($studentRows[$studentId])) {
+                continue;
+            }
+            
             $row = [
-                'student_id' => $student->studentDetail->student_id ?? $student->user_id,
+                'student_id' => $studentId,
                 'full_name' => $student->user_lname . ', ' . $student->user_fname,
                 'grades' => [],
                 'average' => '',
                 'status' => '',
                 'subjects' => $subjects,
-                'has_grades' => false
+                'has_grades' => false,
+                'user_id' => $student->user_id  // Keep user_id for reference
             ];
+            
             $numericGrades = [];
             $pending = false;
             $hasAnyGrade = false;
@@ -162,28 +184,66 @@ class AnalyticsController extends Controller
                 });
                 
                 $grade = $gradeObj ? $gradeObj->grade : '';
-                $status = $gradeObj ? ($gradeObj->student_status ?? $gradeObj->status ?? 'pending') : 'pending';
+                
+                // Get both status and student_status
+                $status = $gradeObj ? ($gradeObj->status ?? 'pending') : 'pending';
+                $studentStatus = $gradeObj ? ($gradeObj->student_status ?? $status) : $status;
+                
+                // Use student_status if it's set, otherwise fall back to status
+                $effectiveStatus = !empty($studentStatus) ? $studentStatus : $status;
+                
+                // Normalize status to lowercase for comparison
+                $normalizedStatus = strtolower($effectiveStatus);
                 
                 // Create grade object with status
                 $gradeData = [
                     'grade' => $grade,
-                    'status' => $status
+                    'status' => $normalizedStatus === 'approved' ? 'approved' : $effectiveStatus
                 ];
+                
+                // Log the status for debugging
+                \Log::debug('Grade status check', [
+                    'student_id' => $student->user_id,
+                    'subject_id' => $subject ? $subject->id : null,
+                    'status' => $status,
+                    'student_status' => $studentStatus,
+                    'effective_status' => $effectiveStatus,
+                    'normalized' => $normalizedStatus,
+                    'grade' => $grade,
+                    'has_student_status' => isset($gradeObj->student_status),
+                    'has_status' => isset($gradeObj->status)
+                ]);
+                
+                // Log the status for debugging
+                \Log::debug('Grade status check', [
+                    'student_id' => $student->user_id,
+                    'subject_id' => $subject ? $subject->id : null,
+                    'status' => $status,
+                    'normalized' => $normalizedStatus,
+                    'grade' => $grade
+                ]);
                 
                 if ($grade !== '') {
                     $hasGrades = true;
                     $hasAnyGrade = true;
                     $row['has_grades'] = true;
                     
-                    if (in_array($grade, ['INC', 'DR', 'NC'])) {
+                    // Only consider the grade if it's approved or status is not being checked
+                    if ($normalizedStatus === 'approved') {
+                        if (in_array($grade, ['INC', 'DR', 'NC'])) {
+                            $pending = true;
+                            $allGradesComplete = false;
+                            $gradeData['grade'] = $grade;
+                        } elseif (is_numeric($grade)) {
+                            $numericGrades[] = floatval($grade);
+                        } else {
+                            $allGradesComplete = false;
+                            $gradeData['grade'] = '';
+                        }
+                    } else {
+                        // If grade exists but not approved, mark as pending
                         $pending = true;
                         $allGradesComplete = false;
-                        $gradeData['grade'] = $grade;
-                    } elseif (is_numeric($grade)) {
-                        $numericGrades[] = floatval($grade);
-                    } else {
-                        $allGradesComplete = false;
-                        $gradeData['grade'] = '';
                     }
                 } else {
                     $allGradesComplete = false;
@@ -209,16 +269,16 @@ class AnalyticsController extends Controller
             } else {
                 $row['status'] = 'Pending';
             }
-            $studentRows[] = $row;
+            // Use student_id as the key to avoid duplicates
+            $studentRows[$studentId] = $row;
         }
-        // Add subjects as a key for the frontend and check if any grades exist
-        $hasAnyGrades = false;
-        foreach ($studentRows as &$row) {
-            $row['subjects'] = $subjects;
-            if ($row['has_grades']) {
-                $hasAnyGrades = true;
-            }
-        }
+        // Convert associative array to indexed array for the response
+        $studentRows = array_values($studentRows);
+        
+        // Check if any grades exist
+        $hasAnyGrades = !empty(array_filter($studentRows, function($row) {
+            return $row['has_grades'];
+        }));
         
         // Add submission info to response
         $response = [

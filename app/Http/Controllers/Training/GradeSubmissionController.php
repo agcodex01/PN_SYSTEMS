@@ -522,14 +522,44 @@ class GradeSubmissionController extends Controller
                 return back()->with('error', 'No proof found for this student.');
             }
 
-            // Update the student's grade status in the pivot table
+            // First, get the grade submission subjects to update
+            $subjects = DB::table('grade_submission_subject')
+                ->where('grade_submission_id', $gradeSubmission->id)
+                ->where('user_id', $studentId)
+                ->get();
+                
+            // Log before update
+            \Log::info('Before update', [
+                'subjects' => $subjects,
+                'new_status' => $request->status
+            ]);
+                
+            // Update status and student_status
             $updated = DB::table('grade_submission_subject')
                 ->where('grade_submission_id', $gradeSubmission->id)
                 ->where('user_id', $studentId)
                 ->update([
-                    'status' => $request->status, // Changed from student_status to status
+                    'status' => $request->status,
+                    'student_status' => $request->status,
                     'updated_at' => now()
                 ]);
+                
+            // Log the update for debugging
+            \Log::info('Updated grade status', [
+                'grade_submission_id' => $gradeSubmission->id,
+                'student_id' => $studentId,
+                'status' => $request->status,
+                'updated_rows' => $updated,
+                'sql' => DB::getQueryLog()
+            ]);
+            
+            // Verify the update
+            $updatedSubjects = DB::table('grade_submission_subject')
+                ->where('grade_submission_id', $gradeSubmission->id)
+                ->where('user_id', $studentId)
+                ->get();
+                
+            \Log::info('After update', ['subjects' => $updatedSubjects]);
 
             // Update proof status
             $proof->update([

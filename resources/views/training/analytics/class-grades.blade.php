@@ -3,13 +3,14 @@
 @section('content')
 <div class="page-container">
     <div class="header-section">
-        <h2>Class Grades</h2>
+        <h1 style= "font-weight: 300">Class Grades</h1>
+        <hr>
         <p class="text-muted">View and analyze class grades. Select a school, class, and submission to view the grade report.</p>
     </div>
     
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <div class="row g-3">
+            <div class="row g-3 ">
                 <div class="col-md-4">
                     <label for="schoolSelect" class="form-label fw-bold">School</label>
                     <select id="schoolSelect" class="form-select">

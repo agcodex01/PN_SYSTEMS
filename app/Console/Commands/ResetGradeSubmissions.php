@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\GradeSubmission;
 use App\Models\GradeSubmissionProof;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ResetGradeSubmissions extends Command
 {
@@ -54,20 +55,58 @@ class ResetGradeSubmissions extends Command
             // Start transaction
             DB::beginTransaction();
 
-            $this->info('Deleting grade submission proofs...');
-            DB::table('grade_submission_proofs')->delete();
-            
-            $this->info('Deleting grade submission subjects...');
-            DB::table('grade_submission_subject')->delete();
-            
-            $this->info('Deleting grade submissions...');
-            DB::table('grade_submissions')->delete();
-            
-            // Commit transaction
-            DB::commit();
-            
-            $this->info("\nSuccessfully deleted all grade submissions and related data.");
-            $this->info("You can now create new grade submissions.");
+            try {
+                // First, get all proof file paths before deleting
+                $this->info('Collecting proof files...');
+                $proofs = DB::table('grade_submission_proofs')->get();
+                
+                $this->info('Deleting grade submission proofs...');
+                DB::table('grade_submission_proofs')->delete();
+                
+                $this->info('Deleting grade submission subjects...');
+                DB::table('grade_submission_subject')->delete();
+                
+                $this->info('Deleting grade submissions...');
+                DB::table('grade_submissions')->delete();
+                
+                // Commit transaction
+                DB::commit();
+                
+                // Delete the proof files
+                $this->info('\nDeleting proof files...');
+                $deletedFiles = 0;
+                $deletedFolders = [];
+                
+                foreach ($proofs as $proof) {
+                    if (Storage::disk('public')->exists($proof->file_path)) {
+                        Storage::disk('public')->delete($proof->file_path);
+                        $deletedFiles++;
+                        
+                        // Track folders for cleanup
+                        $folderPath = dirname($proof->file_path);
+                        if (!in_array($folderPath, $deletedFolders)) {
+                            $deletedFolders[] = $folderPath;
+                        }
+                    }
+                }
+                
+                // Clean up empty folders
+                foreach ($deletedFolders as $folder) {
+                    if (Storage::disk('public')->exists($folder)) {
+                        if (count(Storage::disk('public')->files($folder)) === 0) {
+                            Storage::disk('public')->deleteDirectory($folder);
+                        }
+                    }
+                }
+                
+                $this->info("\nSuccessfully deleted all grade submissions and related data.");
+                $this->info("- Deleted {$deletedFiles} proof files");
+                $this->info("You can now create new grade submissions.");
+                
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
             
             return 0;
             

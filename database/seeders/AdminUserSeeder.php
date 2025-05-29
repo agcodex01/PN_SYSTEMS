@@ -8,19 +8,19 @@ use Illuminate\Support\Str;
 
 class AdminUserSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
         DB::table('pnph_users')->insert([
-            'user_id' => '123',
-            'user_fname' => 'System',
-            'user_lname' => 'Admin',
-            'user_mInitial' => '',
-            'user_suffix' => '',
+            'user_id' => '002',
+            'user_fname' => 'admin',
+            'user_lname' => 'User',
+            'user_mInitial' => null,
+            'user_suffix' => null,
             'user_email' => 'admin@example.com',
             'user_role' => 'Admin',
-            'user_password' => Hash::make('admin2025'), // Change this after first login!
+            'user_password' => Hash::make('password'),
             'status' => 'active',
-            'is_temp_password' => true,
+            'is_temp_password' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

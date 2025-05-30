@@ -13,6 +13,7 @@ use App\Http\Controllers\Training\GradeSubmissionController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\ClassGradeController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\Training\InternGradeController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -141,8 +142,19 @@ Route::middleware('auth')->group(function () {
             Route::get('/grade-submissions/{gradeSubmission}/fix-subjects', 'fixSubmissionSubjects')->name('grade-submissions.fix-subjects');
         });
 
-
-
+        // Intern Grade Routes
+        Route::prefix('intern-grades')->name('intern-grades.')->group(function () {
+            Route::get('/', [InternGradeController::class, 'index'])->name('index');
+            Route::get('/create', [InternGradeController::class, 'create'])->name('create');
+            Route::post('/store', [InternGradeController::class, 'store'])->name('store');
+            Route::get('/{internGrade}/edit', [InternGradeController::class, 'edit'])->name('edit');
+            Route::put('/{internGrade}', [InternGradeController::class, 'update'])->name('update');
+            Route::delete('/{internGrade}', [InternGradeController::class, 'destroy'])->name('destroy');
+            
+            // API routes for dynamic dropdowns
+            Route::get('/api/classes/{school}', [InternGradeController::class, 'getClassesBySchool'])->name('api.classes');
+            Route::get('/api/interns/{school}', [InternGradeController::class, 'getInternsBySchoolAndClass'])->name('api.interns');
+        });
 
     }); // <-- ✅ properly closed here
     

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Dashboard' }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="{{ asset('css/nav.css') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -227,6 +228,11 @@
                         <a href="{{ route('training.grade-submissions.recent') }}" class="{{ request()->routeIs('training.grade-submissions.recent') ? 'active' : '' }}">
                             <img src="{{ asset('images/analytics.png') }}" alt="Recent"> Recent
                         </a>
+
+                        <a href="{{ route('training.intern-grades.index') }}" class="{{ request()->routeIs('training.intern-grades.*') ? 'active' : '' }}">
+                            <img src="{{ asset('images/intern.png') }}" alt="Intern"> Intern
+                        </a>
+
                     </div>
                 </li>
                 <li class="dropdown {{ request()->routeIs('training.analytics.*') ? 'active' : '' }}" id="analyticsDropdown">

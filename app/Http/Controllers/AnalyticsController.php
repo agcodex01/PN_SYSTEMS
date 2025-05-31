@@ -12,6 +12,16 @@ use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
+    // Show the Subject Progress Analytics page
+    public function showSubjectProgress()
+    {
+        // Get the first school's passing grade range as default
+        $school = School::select('passing_grade_min', 'passing_grade_max')->first();
+        
+        return view('training.analytics.subject-progress', [
+            'defaultSchool' => $school
+        ]);
+    }
     // Show the Subject Intervention Analytics page
     public function showSubjectIntervention()
     {
@@ -226,6 +236,103 @@ class AnalyticsController extends Controller
                 'dr' => $dr,
                 'nc' => $nc,
                 'remarks' => $remarks
+            ];
+        }
+        
+        return response()->json([
+            'subjects' => $subjectResults,
+            'submission' => [
+                'term' => $gradeSubmission->term,
+                'semester' => $gradeSubmission->semester,
+                'academic_year' => $gradeSubmission->academic_year,
+            ],
+            'school' => [
+                'name' => $school->name,
+                'passing_grade_min' => $school->passing_grade_min,
+                'passing_grade_max' => $school->passing_grade_max
+            ],
+            'class_name' => $gradeSubmission->classModel->class_name ?? 'Unknown Class'
+        ]);
+    }
+    
+    public function fetchSubjectProgressData(\Illuminate\Http\Request $request)
+    {
+        $schoolId = $request->query('school_id');
+        $classId = $request->query('class_id');
+        $submissionId = $request->query('submission_id');
+        
+        if (!$schoolId || !$classId || !$submissionId) {
+            return response()->json([]);
+        }
+
+        $school = School::where('school_id', $schoolId)->first();
+        if (!$school) return response()->json([]);
+
+        // Get the GradeSubmission by id
+        $gradeSubmission = GradeSubmission::where('id', $submissionId)
+            ->where('school_id', $schoolId)
+            ->where('class_id', $classId)
+            ->first();
+            
+        if (!$gradeSubmission) {
+            return response()->json([
+                'error' => 'Submission not found',
+                'submission_status' => 'not_found'
+            ]);
+        }
+
+        // Get all grades for this submission
+        $grades = DB::table('grade_submission_subject')
+            ->join('subjects', 'subjects.id', '=', 'grade_submission_subject.subject_id')
+            ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
+            ->where('grade_submission_subject.student_status', 'approved')
+            ->select(
+                'subjects.id as subject_id',
+                'subjects.name as subject_name',
+                'grade_submission_subject.grade'
+            )
+            ->get();
+            
+        // Group grades by subject
+        $groupedGrades = $grades->groupBy('subject_name');
+        
+        $subjectResults = [];
+        
+        foreach ($groupedGrades as $subjectName => $grades) {
+            $passed = 0;
+            $failed = 0;
+            $inc = 0;
+            $dr = 0;
+            $nc = 0;
+            
+            // Count grades for this subject
+            foreach ($grades as $grade) {
+                if ($grade->grade === 'INC') {
+                    $inc++;
+                } elseif ($grade->grade === 'DR') {
+                    $dr++;
+                } elseif ($grade->grade === 'NC') {
+                    $nc++;
+                } elseif (is_numeric($grade->grade)) {
+                    $gradeValue = (float)$grade->grade;
+                    if ($gradeValue >= $school->passing_grade_min && $gradeValue <= $school->passing_grade_max) {
+                        $passed++;
+                    } else {
+                        $failed++;
+                    }
+                }
+            }
+            
+            $totalStudents = $passed + $failed + $inc + $dr + $nc;
+            
+            $subjectResults[] = [
+                'subject' => $subjectName,
+                'passed' => $passed,
+                'failed' => $failed,
+                'inc' => $inc,
+                'dr' => $dr,
+                'nc' => $nc,
+                'total_students' => $totalStudents
             ];
         }
         

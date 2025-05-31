@@ -11,7 +11,7 @@ class ClearGradeSubmissions extends Command
      *
      * @var string
      */
-    protected $signature = 'app:clear-grade-submissions';
+    protected $signature = 'app:clear-grade-submissions {--force : Force the operation to run without confirmation}';
 
     /**
      * The console command description.
@@ -25,7 +25,7 @@ class ClearGradeSubmissions extends Command
      */
     public function handle()
     {
-        if (!$this->confirm('WARNING: This will delete ALL grade submission data. Are you sure you want to continue?')) {
+        if (!$this->option('force') && !$this->confirm('WARNING: This will delete ALL grade submission data. Are you sure you want to continue?')) {
             $this->info('Operation cancelled.');
             return 0;
         }

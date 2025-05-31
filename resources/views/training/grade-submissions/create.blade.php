@@ -101,6 +101,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to populate terms dropdown
     function populateTerms(terms) {
+        // Ensure terms is an array
+        if (!Array.isArray(terms)) {
+            try {
+                terms = JSON.parse(terms);
+            } catch (e) {
+                terms = [];
+            }
+        }
         termSelect.innerHTML = '<option value="">-- Select Term --</option>';
         if (terms && terms.length > 0) {
             terms.forEach(term => {
@@ -181,12 +189,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
              // Fetch and populate classes for the old school
             fetch(`/training/api/schools/${oldSchoolId}/classes`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(classes => {
                     populateClasses(classes);
                 })
                 .catch(error => {
                     console.error('Error fetching old classes:', error);
+                    classSelect.innerHTML = '<option value="">Error loading classes</option>';
+                    classSelect.disabled = true;
                 });
 
             // Fetch and populate subjects for the old school
@@ -226,7 +241,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Fetch classes for selected school
             fetch(`/training/api/schools/${schoolId}/classes`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(classes => {
                     populateClasses(classes);
                 })

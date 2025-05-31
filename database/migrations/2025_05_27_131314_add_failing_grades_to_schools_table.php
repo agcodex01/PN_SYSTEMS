@@ -11,10 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('schools', function (Blueprint $table) {
-            $table->decimal('failing_grade_min', 3, 1)->after('passing_grade_max');
-            $table->decimal('failing_grade_max', 3, 1)->after('failing_grade_min');
-        });
+        // (Removed failing_grade_min and failing_grade_max columns, as they already exist.)
     }
 
     /**
@@ -22,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('schools', function (Blueprint $table) {
-            $table->dropColumn(['failing_grade_min', 'failing_grade_max']);
-        });
+        // (No down migration needed.)
     }
 };

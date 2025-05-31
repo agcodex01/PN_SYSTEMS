@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-container">
     <div class="header-section">
-        <h1 style= "font-weight: 300">Class Grades</h1>
+        <h1 style= "font-weight: 300">📊Class Grades</h1>
         <hr>
         <p class="text-muted">View and analyze class grades. Select a school, class, and submission to view the grade report.</p>
     </div>

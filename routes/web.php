@@ -88,6 +88,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/subject-intervention', [AnalyticsController::class, 'showSubjectIntervention'])->name('subject-intervention');
             Route::get('/subject-intervention-data', [AnalyticsController::class, 'fetchSubjectInterventionData'])->name('subject-intervention-data');
             
+            // Subject Progress Analytics
+            Route::get('/subject-progress', [AnalyticsController::class, 'showSubjectProgress'])->name('subject-progress');
+            Route::get('/subject-progress-data', [AnalyticsController::class, 'fetchSubjectProgressData'])->name('subject-progress-data');
+            
             // Shared routes
             Route::get('/schools', [AnalyticsController::class, 'getSchools'])->name('schools');
             Route::get('/classes/{school}', [AnalyticsController::class, 'getClassesBySchool'])->name('classes');

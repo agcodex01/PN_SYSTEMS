@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-container">
     <div class="header-section">
-        <h1 style="font-weight: 300">Subject Intervention Analytics</h1>
+        <h1 style="font-weight: 300">📊 Subject Intervention Analytics</h1>
         <hr>
         <p class="text-muted">View and analyze subjects that need intervention based on student grades. Select a school, class, and submission to view the report.</p>
     </div>

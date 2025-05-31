@@ -151,10 +151,13 @@ Route::middleware('auth')->group(function () {
             Route::put('/{internGrade}', [InternGradeController::class, 'update'])->name('update');
             Route::delete('/{internGrade}', [InternGradeController::class, 'destroy'])->name('destroy');
             
-            // API routes for dynamic dropdowns
-            Route::get('/api/classes/{school}', [InternGradeController::class, 'getClassesBySchool'])->name('api.classes');
-            Route::get('/api/interns/{school}', [InternGradeController::class, 'getInternsBySchoolAndClass'])->name('api.interns');
+            // API routes for dynamic dropdowns (Keeping the original one commented out for now)
+            // Route::get('/api/classes/{school}', [InternGradeController::class, 'getClassesBySchool'])->name('api.classes'); 
+            Route::get('/api/interns/{school}', [InternGradeController::class, 'getInternsBySchoolAndClass'])->name('api.interns'); // Keeping the original one for now
         });
+
+        // API route for fetching interns by school (moved outside intern-grades group)
+        Route::get('/api/schools/{school}/interns', [InternGradeController::class, 'getInternsBySchoolAndClass'])->name('api.schools.interns');
 
     }); // <-- ✅ properly closed here
     

@@ -22,27 +22,17 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label>Student ID:</label>
-                    <input type="text" value="{{ $internGrade->intern_id }}" disabled>
+                    <div class="form-text-display">{{ $internGrade->intern->studentDetail->student_id ?? 'N/A' }}</div>
                 </div>
 
                 <div class="form-group">
                     <label>Student Name:</label>
-                    <input type="text" value="{{ $internGrade->intern->user_fname }} {{ $internGrade->intern->user_lname }}" disabled>
+                    <div class="form-text-display">{{ $internGrade->intern->user_fname }} {{ $internGrade->intern->user_lname }}</div>
                 </div>
 
                 <div class="form-group">
                     <label>Company:</label>
-                    <input type="text" value="{{ $internGrade->company_name }}" disabled>
-                </div>
-
-                <div class="form-group">
-                    <label>School:</label>
-                    <input type="text" value="{{ $internGrade->school->name }}" disabled>
-                </div>
-
-                <div class="form-group">
-                    <label>Class:</label>
-                    <input type="text" value="{{ $internGrade->class->class_name }}" disabled>
+                    <div class="form-text-display">{{ $internGrade->company_name }}</div>
                 </div>
             </div>
         </div>

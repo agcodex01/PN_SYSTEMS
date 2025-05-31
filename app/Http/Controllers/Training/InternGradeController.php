@@ -14,27 +14,25 @@ class InternGradeController extends Controller
 {
     public function index(Request $request)
     {
-        $query = InternGrade::with(['intern', 'school', 'class', 'intern.studentDetail'])
-            ->select([
-                'intern_grades.*',
-                DB::raw('CONCAT(pnph_users.user_fname, " ", pnph_users.user_lname) as intern_name'),
-                'schools.name as school_name',
-                'classes.class_name',
-                'student_details.student_id as student_id'
-            ])
-            ->join('pnph_users', 'intern_grades.intern_id', '=', 'pnph_users.user_id')
-            ->join('schools', 'intern_grades.school_id', '=', 'schools.school_id')
-            ->join('classes', 'intern_grades.class_id', '=', 'classes.class_id')
-            ->leftJoin('student_details', 'pnph_users.user_id', '=', 'student_details.user_id');
+        $query = InternGrade::with(['intern', 'school', 'classModel', 'intern.studentDetail'])
+            ->select('intern_grades.*')
+            ->leftJoin('pnph_users', 'intern_grades.intern_id', '=', 'pnph_users.user_id')
+            ->leftJoin('schools', 'intern_grades.school_id', '=', 'schools.school_id')
+            ->leftJoin('classes', 'intern_grades.class_id', '=', 'classes.class_id');
 
         if ($request->filled('school_filter')) {
             $query->where('intern_grades.school_id', $request->school_filter);
         }
 
         $internGrades = $query->get();
+
+        \Log::info('InternGradeController@index: Fetched Intern Grades', ['count' => $internGrades->count(), 'grades' => $internGrades->toArray()]);
+
         $schools = School::all();
 
         $groupedGrades = $internGrades->groupBy('class_id');
+
+        \Log::info('InternGradeController@index: Grouped Intern Grades', ['groupedGrades' => $groupedGrades->toArray()]);
 
         return view('training.intern.index', compact('groupedGrades', 'schools'));
     }
@@ -89,28 +87,46 @@ class InternGradeController extends Controller
                 $internGrade->school_id = $validated['school_id'];
                 $internGrade->class_id = $validated['class_id'];
                 $internGrade->company_name = $validated['company_name'];
-                $internGrade->ict_learning_competency = $validated['grades']['ict_learning_competency'];
-                $internGrade->twenty_first_century_skills = $validated['grades']['twenty_first_century_skills'];
-                $internGrade->expected_outputs_deliverables = $validated['grades']['expected_outputs_deliverables'];
+                // Store individual grades as an array (Laravel will cast to JSON)
+                $internGrade->grades = $validated['grades'];
                 $internGrade->remarks = $validated['remarks'] ?? null;
                 $internGrade->created_by = auth()->id();
                 $internGrade->updated_by = auth()->id();
 
                 // Calculate final grade BEFORE saving
-                $internGrade->calculateFinalGrade();
+                $internGrade->final_grade = $internGrade->calculateFinalGradeFromJson();
+
+                // Log final_grade before and after rounding
+                \Log::info('Final grade before rounding:', ['type' => gettype($internGrade->final_grade), 'value' => $internGrade->final_grade]);
+                $roundedFinalGrade = round($internGrade->final_grade);
+                \Log::info('Final grade after rounding:', ['type' => gettype($roundedFinalGrade), 'value' => $roundedFinalGrade]);
+
+                // Determine the status based on the final grade
+                $internGrade->status = match((int) $roundedFinalGrade) {
+                    1 => 'Fully Achieved',
+                    2 => 'Partially Achieved',
+                    3 => 'Barely Achieved',
+                    4 => 'No Achievement',
+                    default => null,
+                };
+
+                // Log the determined status
+                \Log::info('Determined intern grade status:', ['status' => $internGrade->status]);
 
                 // Log the grade calculation
                 \Log::info('Calculated final grade:', [
                     'grades' => [
-                        'ict' => $internGrade->ict_learning_competency,
-                        'skills' => $internGrade->twenty_first_century_skills,
-                        'outputs' => $internGrade->expected_outputs_deliverables
+                        'ict' => $validated['grades']['ict_learning_competency'],
+                        'skills' => $validated['grades']['twenty_first_century_skills'],
+                        'outputs' => $validated['grades']['expected_outputs_deliverables']
                     ],
                     'final_grade' => $internGrade->final_grade
                 ]);
 
                 // Save after calculating final grade
                 $internGrade->save();
+
+                $internGrade->refresh();
 
                 DB::commit();
 
@@ -145,6 +161,10 @@ class InternGradeController extends Controller
 
     public function edit(InternGrade $internGrade)
     {
+        \Log::info('InternGradeController@edit: InternGrade ID', ['id' => $internGrade->id]);
+        $internGrade->load(['school', 'classModel']);
+        \Log::info('InternGradeController@edit: InternGrade after loading relationships', ['internGrade' => $internGrade->toArray()]);
+        \Log::info('InternGradeController@edit: InternGrade class relationship', ['class' => $internGrade->class]);
         $schools = School::all();
         return view('training.intern.edit', compact('internGrade', 'schools'));
     }
@@ -158,18 +178,31 @@ class InternGradeController extends Controller
             'remarks' => 'nullable|string|max:500'
         ]);
 
+        \Log::info('InternGradeController@update: Validated Data', ['validated' => $validated]);
+
         try {
             DB::beginTransaction();
 
-            $internGrade->ict_learning_competency = $validated['grades']['ict_learning_competency'];
-            $internGrade->twenty_first_century_skills = $validated['grades']['twenty_first_century_skills'];
-            $internGrade->expected_outputs_deliverables = $validated['grades']['expected_outputs_deliverables'];
+            // Assign the validated grades array to the grades JSON column
+            $internGrade->grades = $validated['grades'];
+
             $internGrade->remarks = $validated['remarks'] ?? null;
             $internGrade->updated_by = Auth::id();
 
             // Recalculate final grade
-            $internGrade->final_grade = $internGrade->calculateFinalGrade();
+            $internGrade->final_grade = $internGrade->calculateFinalGradeFromJson();
+            // Determine the status based on the recalculated final grade
+            $roundedFinalGrade = round($internGrade->final_grade);
+            $internGrade->status = match((int) $roundedFinalGrade) {
+                1 => 'Fully Achieved',
+                2 => 'Partially Achieved',
+                3 => 'Barely Achieved',
+                4 => 'No Achievement',
+                default => null,
+            };
             $internGrade->save();
+
+            $internGrade->refresh();
 
             DB::commit();
 

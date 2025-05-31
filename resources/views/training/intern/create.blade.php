@@ -207,7 +207,6 @@ $(document).ready(function() {
     // Handle school selection
     schoolSelect.on('change', function() {
         const schoolId = $(this).val();
-        
         // Reset and disable dependent fields
         classSelect.html('<option value="">-- Select Class --</option>').prop('disabled', true);
         internSelect.html('<option value="">-- Select Student --</option>').prop('disabled', true);
@@ -224,12 +223,25 @@ $(document).ready(function() {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 success: function(classes) {
-                    populateClasses(classes);
+                    if (Array.isArray(classes) && classes.length > 0) {
+                        classSelect.html('<option value="">-- Select Class --</option>');
+                        classes.forEach(function(class_) {
+                            classSelect.append(
+                                $('<option></option>')
+                                    .val(class_.class_id)
+                                    .text(`${class_.class_name} (${class_.batch})`)
+                            );
+                        });
+                        classSelect.prop('disabled', false);
+                    } else {
+                        classSelect.html('<option value="">No classes found</option>').prop('disabled', true);
+                        internSelect.html('<option value="">-- Select Student --</option>').prop('disabled', true);
+                    }
                 },
                 error: function(xhr) {
                     console.error('Error fetching classes:', xhr);
-                    alert('Error loading classes. Please try again.');
-                    classSelect.html('<option value="">Error loading classes</option>');
+                    classSelect.html('<option value="">Error loading classes</option>').prop('disabled', true);
+                    internSelect.html('<option value="">-- Select Student --</option>').prop('disabled', true);
                 }
             });
         }
@@ -312,6 +324,11 @@ function calculateFinalGrade() {
 @endpush
 
 <style>
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
 .create-submission-container {
     max-width: 1000px;
     margin: 2rem auto;

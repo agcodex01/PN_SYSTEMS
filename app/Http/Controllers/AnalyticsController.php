@@ -12,6 +12,16 @@ use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
+    // Show the Subject Intervention Analytics page
+    public function showSubjectIntervention()
+    {
+        // Get the first school's passing grade range as default
+        $school = School::select('passing_grade_min', 'passing_grade_max')->first();
+        
+        return view('training.analytics.subject-intervention', [
+            'defaultSchool' => $school
+        ]);
+    }
     // Show the Class Grades page
     public function showClassGrades()
     {
@@ -95,6 +105,146 @@ class AnalyticsController extends Controller
     }
 
     // Fetch class grades for the selected school, class, and submission
+    public function fetchSubjectInterventionData(\Illuminate\Http\Request $request)
+    {
+        $schoolId = $request->query('school_id');
+        $classId = $request->query('class_id');
+        $submissionId = $request->query('submission_id');
+        
+        if (!$schoolId || !$classId || !$submissionId) {
+            return response()->json([]);
+        }
+
+        $school = School::where('school_id', $schoolId)->first();
+        if (!$school) return response()->json([]);
+
+        // Get the GradeSubmission by id
+        $gradeSubmission = GradeSubmission::where('id', $submissionId)
+            ->where('school_id', $schoolId)
+            ->where('class_id', $classId)
+            ->first();
+            
+        if (!$gradeSubmission) {
+            return response()->json([
+                'error' => 'Submission not found',
+                'submission_status' => 'not_found'
+            ]);
+        }
+
+        // Get all subjects for this submission
+        $subjects = $gradeSubmission->subjects()->get();
+        
+        // Get all students with their grades for this submission
+        $studentGrades = DB::table('grade_submission_subject')
+            ->join('subjects', 'subjects.id', '=', 'grade_submission_subject.subject_id')
+            ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
+            ->where('grade_submission_subject.status', 'approved')
+            ->select(
+                'grade_submission_subject.user_id',
+                'subjects.id as subject_id',
+                'subjects.name as subject_name',
+                'grade_submission_subject.grade',
+                'grade_submission_subject.student_status'
+            )
+            ->get()
+            ->groupBy('subject_name');
+            
+        // Initialize results array
+        $subjectResults = [];
+        
+        foreach ($subjects as $subject) {
+            $passed = 0;
+            $failed = 0;
+            $inc = 0;
+            $dr = 0;
+            $nc = 0;
+            $pending = false;
+            $needIntervention = false;
+            
+            // Get grades for this specific subject
+            $subjectGrades = $studentGrades->get($subject->name, collect());
+            
+            // Count unique students per grade category for this subject
+            $uniqueStudents = [];
+            
+            foreach ($subjectGrades as $grade) {
+                $studentId = $grade->user_id;
+                
+                // Skip if we've already processed this student for this subject
+                if (in_array($studentId, $uniqueStudents)) {
+                    continue;
+                }
+                
+                $uniqueStudents[] = $studentId;
+                $gradeValue = $grade->grade;
+                
+                // Check student status first
+                if ($grade->student_status !== 'approved') {
+                    continue; // Skip unapproved student grades
+                }
+                
+                // Check grade status
+                if ($gradeValue === 'INC') {
+                    $inc++;
+                    $pending = true;
+                } elseif ($gradeValue === 'DR') {
+                    $dr++;
+                    $pending = true;
+                } elseif ($gradeValue === 'NC') {
+                    $nc++;
+                    $needIntervention = true;
+                } elseif (is_numeric($gradeValue)) {
+                    $gradeValue = (float)$gradeValue;
+                    if ($gradeValue >= $school->passing_grade_min && $gradeValue <= $school->passing_grade_max) {
+                        $passed++;
+                    } else {
+                        $failed++;
+                        $needIntervention = true;
+                    }
+                }
+            }
+            
+            // Determine remarks
+            $remarks = '';
+            $totalGrades = $passed + $failed + $inc + $dr + $nc;
+            
+            if ($totalGrades === 0) {
+                $remarks = 'No Submission Recorded';
+            } elseif ($pending) {
+                $remarks = 'Pending';
+            } elseif ($needIntervention || $nc > 0 || $failed > 0) {
+                $remarks = 'Need Intervention';
+            } else {
+                $remarks = 'No Intervention Needed';
+            }
+            
+            $subjectResults[] = [
+                'subject' => $subject->name,
+                'passed' => $passed,
+                'failed' => $failed,
+                'inc' => $inc,
+                'dr' => $dr,
+                'nc' => $nc,
+                'remarks' => $remarks
+            ];
+        }
+        
+        return response()->json([
+            'subjects' => $subjectResults,
+            'submission' => [
+                'term' => $gradeSubmission->term,
+                'semester' => $gradeSubmission->semester,
+                'academic_year' => $gradeSubmission->academic_year,
+            ],
+            'school' => [
+                'name' => $school->name,
+                'passing_grade_min' => $school->passing_grade_min,
+                'passing_grade_max' => $school->passing_grade_max
+            ],
+            'class_name' => $gradeSubmission->classModel->class_name ?? 'Unknown Class'
+        ]);
+    }
+    
     public function fetchClassGrades(\Illuminate\Http\Request $request)
     {
         $schoolId = $request->query('school_id');
@@ -290,10 +440,18 @@ class AnalyticsController extends Controller
                 'academic_year' => $gradeSubmission->academic_year,
                 'status' => 'individual_status' // Indicate that status is handled per student
             ],
+            // Add submission data at root level for easier access
+            'term' => $gradeSubmission->term,
+            'semester' => $gradeSubmission->semester,
+            'academic_year' => $gradeSubmission->academic_year,
+            // School and class info
             'school' => [
+                'name' => $school->name,
                 'passing_grade_min' => $school->passing_grade_min,
                 'passing_grade_max' => $school->passing_grade_max
-            ]
+            ],
+            'class_name' => $gradeSubmission->classModel->class_name ?? 'Unknown Class',
+            'school_name' => $school->name
         ];
         
         return response()->json($response);

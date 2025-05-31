@@ -35,10 +35,12 @@
 
     <div class="card shadow-sm">
         <div class="card-body p-0">
-            <div id="gradesTableContainer">
-                <div class="text-center p-5 text-muted">
-                    <i class="bi bi-graph-up" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                    <p class="mt-3 mb-0">Select a school, class, and submission to view grade report</p>
+            <div id="gradesTableContainer" class="w-100" style="min-height: 300px; display: flex; justify-content: center; align-items: center;">
+                <div class="text-center text-muted w-100">
+                    <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 2rem;">
+                        <i class="bi bi-graph-up" style="font-size: 3rem; color: #6c757d; opacity: 0.7; display: block; margin: 0 auto 1rem;"></i>
+                        <p class="instruction-text" style="margin: 0; padding: 0 1rem;">Select a school, class, and submission to view grade report</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -110,8 +112,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         classSelect.innerHTML = '<option value="">No classes found</option>';
                         container.innerHTML = `
                             <div class="text-center p-5">
-                                <i class="bi bi-collection" style="font-size: 3rem; color: #6c757d; opacity: 0.5;"></i>
-                                <p class="mt-3 mb-0">No classes found for this school.</p>
+                                <i class="bi bi-collection" style="font-size: 3rem;"></i>
+                                <p class="mt-3 mb-0 instruction-text">No classes found for this school.</p>
                             </div>`;
                     } else {
                         data.forEach(cls => {
@@ -122,8 +124,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         container.innerHTML = `
                             <div class="text-center p-5 text-muted">
-                                <i class="bi bi-graph-up" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                                <p class="mt-3 mb-0">Select a class and submission to view grade report</p>
+                                <i class="bi bi-graph-up" style="font-size: 2.5rem;"></i>
+                                <p class="mt-3 mb-0 instruction-text">Select a class and submission to view grade report</p>
                             </div>`;
                     }
                     classSelect.disabled = false;
@@ -139,8 +141,8 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             container.innerHTML = `
                 <div class="text-center p-5 text-muted">
-                    <i class="bi bi-graph-up" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                    <p class="mt-3 mb-0">Select a school, class, and submission to view grade report</p>
+                    <i class="bi bi-graph-up" style="font-size: 2.5rem;"></i>
+                    <p class="mt-3 mb-0 instruction-text">Select a school, class, and submission to view grade report</p>
                 </div>`;
         }
     });
@@ -253,7 +255,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         throw new Error(data.error || `HTTP error! status: ${res.status}`);
                     }
                     
-                    console.log('Grades data:', data);
+                    // Debug: Log the complete response data
+                    console.log('Complete response data:', JSON.stringify(data, null, 2));
+                    
+                    console.log('Grades data received:', data);
+                    
+                    // Ensure we have the school and class names in the response
+                    if (!data.school_name && data.school) {
+                        data.school_name = data.school.name;
+                    }
+                    if (!data.class_name && data.class) {
+                        data.class_name = data.class.name;
+                    }
                     
                     // Get passing grade range from the school settings or use defaults
                     const defaultPassingMin = {{ $defaultSchool->passing_grade_min ?? 75 }};
@@ -377,53 +390,73 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Show submission info
-        const submissionInfo = data.submission ? `
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="card-title mb-1">${data.submission.term} ${data.submission.academic_year}</h5>
-                            <p class="text-muted mb-0">
-                                ${data.submission.semester} Semester
-                                <span class="mx-2">•</span>
-                                Status: 
-                                <span class="badge bg-${data.submission.status === 'approved' ? 'success' : 'warning'}">
-                                    ${data.submission.status}
-                                </span>
-                            </p>
-                        </div>
-                        ${data.submission.status !== 'approved' ? `
-                            <div class="alert alert-warning mb-0 py-2">
-                                <i class="bi bi-info-circle me-2"></i>
-                                This submission is ${data.submission.status}. Some features may be limited.
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            </div>` : '';
-
         // Process data
         let students = data.students;
         let subjects = data.subjects || [];
         
+        // Log the data structure for debugging
+        console.log('Data structure:', data);
+        
+        // Get school and class information
+        // Extract data from the response
+        console.log('Raw data:', data); // Log the complete data object
+        
+        const schoolName = data.school_name || (data.school ? data.school.name : 'N/A');
+        const className = data.class_name || (data.class ? data.class.name : 'N/A');
+        
+        // Get submission data - check both submission object and root level
+        const submission = data.submission || {};
+        console.log('Submission data:', submission);
+        
+        // Extract values with multiple fallbacks
+        const semester = submission.semester || data.semester || 'N/A';
+        const term = submission.term || data.term || 'N/A';
+        const academicYear = submission.academic_year || data.academic_year || 'N/A';
+        
+        console.log('Extracted values:', { 
+            schoolName, 
+            className, 
+            semester, 
+            term, 
+            academicYear,
+            submissionExists: !!data.submission
+        });
+        
         let table = `
-            ${submissionInfo}
-            <div class="table-responsive">
-                <table class="grades-table table-hover">
+            <div class="table-responsive" style="width: 100%; max-width: 100%; overflow-x: auto;">
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div style="width: 100%; text-align: center;">
+                            <div style="display: inline-block; text-align: center; width: 100%;">
+                                <h4 class="mb-3" style="font-size: 1.5rem; font-weight: 500; line-height: 1.3; color: #2c3e50;">
+                                    ${schoolName || 'N/A'} - ${className || 'N/A'}
+                                </h4>
+                                <div class="text-muted" style="font-size: 1rem; letter-spacing: 0.3px; line-height: 1.5;">
+                                    <span><strong>Semester:</strong> ${semester || 'N/A'}</span>
+                                    <span class="mx-2">|</span>
+                                    <span><strong>Term:</strong> ${term || 'N/A'}</span>
+                                    <span class="mx-2">|</span>
+                                    <span><strong>Academic Year:</strong> ${academicYear || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <table class="table table-hover align-middle grades-table" style="width: 100%; min-width: 1200px;">
                     <thead>
                         <tr>
-                            <th>Student ID</th>
-                            <th>Full Name</th>`;
+                            <th style="background-color: #22BBEA; color: white; border-color: #22BBEA;">Student ID</th>
+                            <th style="background-color: #22BBEA; color: white; border-color: #22BBEA;">Full Name</th>`;
         
         // Add subject headers
         subjects.forEach(sub => {
-            table += `<th>${sub}</th>`;
+            table += `<th style="background-color: #22BBEA; color: white; border-color: #22BBEA;">${sub}</th>`;
         });
         
         table += `
-                            <th>Average</th>
-                            <th>Status</th>
+                            <th style="background-color: #22BBEA; color: white; border-color: #22BBEA;">Average</th>
+                            <th style="background-color: #22BBEA; color: white; border-color: #22BBEA;">Status</th>
                         </tr>
                     </thead>
                     <tbody>`;
@@ -518,9 +551,6 @@ document.addEventListener('DOMContentLoaded', function() {
         table += `
                     </tbody>
                 </table>
-            </div>
-            <div class="p-3 bg-light border-top">
-                <small class="text-muted">Showing ${students.length} students</small>
             </div>`;
         
         container.innerHTML = table;
@@ -577,6 +607,34 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+.instruction-text {
+    font-size: 1.1rem;
+    color: #495057;
+    font-weight: 500;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+.text-muted .instruction-text {
+    color: #6c757d;
+}
+
+.bi-graph-up, .bi-collection {
+    color: #6c757d;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    margin: 0 auto;
+    display: block;
+}
+
+.text-center:hover .bi-graph-up,
+.text-center:hover .bi-collection {
+    transform: scale(1.1);
+    opacity: 0.9;
 }
 </style>
 @endsection

@@ -240,7 +240,7 @@
                         <a href="#" class="{{ request()->routeIs('analytics.class-subject-progress') ? 'active' : '' }}">
                             <img src="{{ asset('images/subject progress.png') }}" alt="Class Subject Progress"> Class Subject Progress
                         </a>
-                        <a href="#" class="{{ request()->routeIs('analytics.subject-intervention') ? 'active' : '' }}">
+                        <a href="{{ route('training.analytics.subject-intervention') }}" class="{{ request()->routeIs('training.analytics.subject-intervention') ? 'active' : '' }}">
                             <img src="{{ asset('images/subject intervention.png') }}" alt="Subject Intervention"> Subject Intervention
                         </a>
                         <a href="#" class="{{ request()->routeIs('analytics.internship-grades-progress') ? 'active' : '' }}">

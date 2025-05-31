@@ -80,12 +80,19 @@ Route::middleware('auth')->group(function () {
     Route::prefix('training')->name('training.')->middleware(['auth', 'can:training-access'])->group(function () {
         // Analytics routes
         Route::prefix('analytics')->name('analytics.')->group(function() {
+            // Class Grades Analytics
             Route::get('/class-grades', [AnalyticsController::class, 'showClassGrades'])->name('class-grades');
+            Route::get('/class-grades-data', [AnalyticsController::class, 'fetchClassGrades'])->name('class-grades-data');
+            
+            // Subject Intervention Analytics
+            Route::get('/subject-intervention', [AnalyticsController::class, 'showSubjectIntervention'])->name('subject-intervention');
+            Route::get('/subject-intervention-data', [AnalyticsController::class, 'fetchSubjectInterventionData'])->name('subject-intervention-data');
+            
+            // Shared routes
             Route::get('/schools', [AnalyticsController::class, 'getSchools'])->name('schools');
             Route::get('/classes/{school}', [AnalyticsController::class, 'getClassesBySchool'])->name('classes');
             Route::get('/terms/{school}', [AnalyticsController::class, 'getTermsBySchool'])->name('terms');
             Route::get('/class-submissions/{school}/{class}', [AnalyticsController::class, 'getClassSubmissions'])->name('class-submissions');
-            Route::get('/class-grades-data', [AnalyticsController::class, 'fetchClassGrades'])->name('class-grades-data');
         });
 
 

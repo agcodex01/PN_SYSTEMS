@@ -13,7 +13,8 @@ class InternGrade extends Model
 
     protected $casts = [
         'grades' => 'array',
-        'final_grade' => 'decimal:1' // Optional: Cast final_grade to decimal with 1 place
+        'final_grade' => 'decimal:1',
+        'submission_date' => 'date'
     ];
 
     protected $fillable = [
@@ -21,10 +22,14 @@ class InternGrade extends Model
         'class_id',
         'intern_id',
         'company_name',
-        'grade',
+        'submission_date',
+        'submission_number',
+        'grades',
+        'final_grade',
         'status',
-        'created_at',
-        'updated_at'
+        'remarks',
+        'created_by',
+        'updated_by'
     ];
 
     public function school()
@@ -34,7 +39,7 @@ class InternGrade extends Model
 
     public function classModel()
     {
-        return $this->belongsTo(ClassModel::class, 'class_id', 'id');
+        return $this->belongsTo(ClassModel::class, 'class_id', 'class_id');
     }
 
     public function intern()

@@ -11,7 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // (Removed failing_grade_min and failing_grade_max columns, as they already exist.)
+        // Commented out (duplicate migration) – see 2025_04_28_153544_add_failing_grade_columns_to_schools_table.php
+        // Schema::table('schools', function (Blueprint $table) {
+        //     $table->decimal('failing_grade_min', 3, 1)->after('passing_grade_max');
+        //     $table->decimal('failing_grade_max', 3, 1)->after('failing_grade_min');
+        // });
     }
 
     /**
@@ -19,6 +23,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // (No down migration needed.)
+        // Commented out (duplicate migration) – see 2025_04_28_153544_add_failing_grade_columns_to_schools_table.php
+        // Schema::table('schools', function (Blueprint $table) {
+        //     $table->dropColumn(['failing_grade_min', 'failing_grade_max']);
+        // });
     }
 };

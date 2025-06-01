@@ -95,19 +95,19 @@
             <label>Terms</label>
             <div class="checkbox-group">
                 <label class="checkbox-label">
-                    <input type="checkbox" name="terms[]" value="prelim" {{ in_array('prelim', old('terms', $school->terms ?? [])) ? 'checked' : '' }}>
+                    <input type="checkbox" name="terms[]" value="prelim" {{ in_array('prelim', old('terms', (array)($school->terms ?? []))) ? 'checked' : '' }}>
                     Prelim
                 </label>
                 <label class="checkbox-label">
-                    <input type="checkbox" name="terms[]" value="midterm" {{ in_array('midterm', old('terms', $school->terms ?? [])) ? 'checked' : '' }}>
+                    <input type="checkbox" name="terms[]" value="midterm" {{ in_array('midterm', old('terms', (array)($school->terms ?? []))) ? 'checked' : '' }}>
                     Midterm
                 </label>
                 <label class="checkbox-label">
-                    <input type="checkbox" name="terms[]" value="semi_final" {{ in_array('semi_final', old('terms', $school->terms ?? [])) ? 'checked' : '' }}>
+                    <input type="checkbox" name="terms[]" value="semi_final" {{ in_array('semi_final', old('terms', (array)($school->terms ?? []))) ? 'checked' : '' }}>
                     Semi Final
                 </label>
                 <label class="checkbox-label">
-                    <input type="checkbox" name="terms[]" value="final" {{ in_array('final', old('terms', $school->terms ?? [])) ? 'checked' : '' }}>
+                    <input type="checkbox" name="terms[]" value="final" {{ in_array('final', old('terms', (array)($school->terms ?? []))) ? 'checked' : '' }}>
                     Final
                 </label>
             </div>
@@ -211,7 +211,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     window.location.href = data.redirect || '{{ route("training.manage-students") }}';
                 } else {
-                    alert(data.message || 'An error occurred');
+                    // Display validation errors if available
+                    if (data.errors) {
+                        let errorMessages = 'Validation failed:\n';
+                        for (const [field, messages] of Object.entries(data.errors)) {
+                            errorMessages += `${field}: ${messages.join(', ')}\n`;
+                        }
+                        alert(errorMessages);
+                    } else {
+                        alert(data.message || 'An error occurred');
+                    }
                 }
             }
         })

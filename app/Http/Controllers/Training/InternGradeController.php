@@ -26,13 +26,20 @@ class InternGradeController extends Controller
 
         $internGrades = $query->get();
 
-        \Log::info('InternGradeController@index: Fetched Intern Grades', ['count' => $internGrades->count(), 'grades' => $internGrades->toArray()]);
+        \Log::info('InternGradeController@index: Fetched Intern Grades', [
+            'count' => $internGrades->count(), 
+            'grades' => $internGrades->toArray(),
+            'first_grade_class' => $internGrades->first()?->classModel?->toArray()
+        ]);
 
         $schools = School::all();
 
         $groupedGrades = $internGrades->groupBy('class_id');
 
-        \Log::info('InternGradeController@index: Grouped Intern Grades', ['groupedGrades' => $groupedGrades->toArray()]);
+        \Log::info('InternGradeController@index: Grouped Intern Grades', [
+            'groupedGrades' => $groupedGrades->toArray(),
+            'first_group_class' => $groupedGrades->first()?->first()?->classModel?->toArray()
+        ]);
 
         return view('training.intern.index', compact('groupedGrades', 'schools'));
     }
@@ -52,6 +59,8 @@ class InternGradeController extends Controller
                 'class_id' => 'required|exists:classes,class_id',
                 'intern_id' => 'required|exists:pnph_users,user_id',
                 'company_name' => 'required|string',
+                'submission_date' => 'required|date',
+                'submission_number' => 'required|in:1st,2nd,3rd,4th',
                 'grades' => 'required|array',
                 'grades.ict_learning_competency' => 'required|integer|min:1|max:4',
                 'grades.twenty_first_century_skills' => 'required|integer|min:1|max:4',
@@ -65,17 +74,20 @@ class InternGradeController extends Controller
                 'validated_data' => $validated
             ]);
 
-            // Check if a grade already exists for this intern in this class
+            // Check if a grade already exists for this intern in this class and submission number
             $existingGrade = InternGrade::where('intern_id', $validated['intern_id'])
                 ->where('class_id', $validated['class_id'])
+                ->where('submission_number', $validated['submission_number'])
                 ->first();
 
             if ($existingGrade) {
                 \Log::warning('Grade already exists for intern', [
                     'intern_id' => $validated['intern_id'],
-                    'class_id' => $validated['class_id']
+                    'class_id' => $validated['class_id'],
+                    'submission_number' => $validated['submission_number']
                 ]);
-                return redirect()->route('training.intern-grades.index')->with('error', 'A grade already exists for this intern in this class.');
+                return redirect()->route('training.intern-grades.index')
+                    ->with('error', 'A grade already exists for this intern in this class for the selected submission number.');
             }
 
             DB::beginTransaction();
@@ -87,6 +99,8 @@ class InternGradeController extends Controller
                 $internGrade->school_id = $validated['school_id'];
                 $internGrade->class_id = $validated['class_id'];
                 $internGrade->company_name = $validated['company_name'];
+                $internGrade->submission_date = $validated['submission_date'];
+                $internGrade->submission_number = $validated['submission_number'];
                 // Store individual grades as an array (Laravel will cast to JSON)
                 $internGrade->grades = $validated['grades'];
                 $internGrade->remarks = $validated['remarks'] ?? null;

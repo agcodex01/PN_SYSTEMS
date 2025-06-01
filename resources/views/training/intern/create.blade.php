@@ -16,12 +16,17 @@
     <form action="{{ route('training.intern-grades.store') }}" method="POST" class="submission-form">
         @csrf
 
-        <div class="form-section">
-            <h3>Intern Information</h3>
+        <!-- Intern Information Card -->
+        <div class="form-card">
+            <div class="card-header">
+                <h3><i class="fas fa-user-graduate"></i> Intern Information</h3>
+            </div>
+            <div class="card-body">
             <div class="form-grid">
+                    <!-- School Selection -->
                 <div class="form-group">
-                    <label for="school_id">School:</label>
-                    <select name="school_id" id="school_id" required>
+                        <label for="school_id">School</label>
+                        <select name="school_id" id="school_id" required class="form-control">
                         <option value="">-- Select School --</option>
                         @foreach ($schools as $school)
                             <option value="{{ $school->school_id }}" 
@@ -35,46 +40,85 @@
                     @enderror
                 </div>
 
+                    <!-- Class Selection -->
+                    <div class="form-group">
+                        <label for="class_id">Class</label>
+                        <select name="class_id" id="class_id" required class="form-control" disabled>
+                            <option value="">-- Select Class --</option>
+                        </select>
+                        @error('class_id')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <!-- Intern Selection -->
+                    <div class="form-group">
+                        <label for="intern_id">Intern</label>
+                        <select name="intern_id" id="intern_id" required class="form-control" disabled>
+                            <option value="">-- Select Intern --</option>
+                        </select>
+                        @error('intern_id')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <!-- Company Name -->
                 <div class="form-group">
-                    <label for="company_name">Company Name:</label>
+                        <label for="company_name">Company Name</label>
                     <input type="text" 
                            name="company_name" 
                            id="company_name" 
                            value="{{ old('company_name') }}"
                            required
+                               class="form-control"
                            placeholder="Enter company name">
                     @error('company_name')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
 
+                    <!-- Submission Date -->
                 <div class="form-group">
-                    <label for="class_id">Class:</label>
-                    <select name="class_id" id="class_id" required disabled>
-                        <option value="">-- Select Class --</option>
-                    </select>
-                    @error('class_id')
+                        <label for="submission_date">Submission Date</label>
+                        <input type="date" 
+                               name="submission_date" 
+                               id="submission_date" 
+                               value="{{ old('submission_date', date('Y-m-d')) }}"
+                               required
+                               class="form-control">
+                        @error('submission_date')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
 
+                    <!-- Submission Number -->
                 <div class="form-group">
-                    <label for="intern_id">Intern:</label>
-                    <select name="intern_id" id="intern_id" required disabled>
-                        <option value="">-- Select Intern --</option>
+                        <label for="submission_number">Submission Number</label>
+                        <select name="submission_number" id="submission_number" required class="form-control">
+                            <option value="">-- Select Submission --</option>
+                            <option value="1st" {{ old('submission_number') == '1st' ? 'selected' : '' }}>1st Submission</option>
+                            <option value="2nd" {{ old('submission_number') == '2nd' ? 'selected' : '' }}>2nd Submission</option>
+                            <option value="3rd" {{ old('submission_number') == '3rd' ? 'selected' : '' }}>3rd Submission</option>
+                            <option value="4th" {{ old('submission_number') == '4th' ? 'selected' : '' }}>4th Submission</option>
                     </select>
-                    @error('intern_id')
+                        @error('submission_number')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="form-section">
-            <h3>Evaluation Grades</h3>
+        <!-- Evaluation Grades Card -->
+        <div class="form-card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-bar"></i> Evaluation Grades</h3>
+            </div>
+            <div class="card-body">
             <div class="grades-grid">
+                    <!-- ICT Learning Competency -->
                 <div class="grade-item">
-                    <label for="ict_learning">ICT Learning Competency:</label>
+                        <label for="ict_learning">ICT Learning Competency</label>
                     <div class="grade-input-wrapper">
                         <input type="number" 
                                name="grades[ict_learning_competency]" 
@@ -85,13 +129,18 @@
                                required
                                value="{{ old('grades.ict_learning_competency') }}"
                                onchange="calculateFinalGrade()"
-                               onkeypress="return event.charCode >= 49 && event.charCode <= 52">
+                                   onkeypress="return event.charCode >= 49 && event.charCode <= 52"
+                                   class="form-control">
                         <span class="grade-weight">(40%)</span>
                     </div>
+                        @error('grades.ict_learning_competency')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
                 </div>
 
+                    <!-- 21st Century Skills -->
                 <div class="grade-item">
-                    <label for="century_skills">21st Century Skills:</label>
+                        <label for="century_skills">21st Century Skills</label>
                     <div class="grade-input-wrapper">
                         <input type="number" 
                                name="grades[twenty_first_century_skills]" 
@@ -102,13 +151,18 @@
                                required
                                value="{{ old('grades.twenty_first_century_skills') }}"
                                onchange="calculateFinalGrade()"
-                               onkeypress="return event.charCode >= 49 && event.charCode <= 52">
+                                   onkeypress="return event.charCode >= 49 && event.charCode <= 52"
+                                   class="form-control">
                         <span class="grade-weight">(30%)</span>
                     </div>
+                        @error('grades.twenty_first_century_skills')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
                 </div>
 
+                    <!-- Expected Outputs -->
                 <div class="grade-item">
-                    <label for="outputs">Expected Outputs/Deliverables:</label>
+                        <label for="outputs">Expected Outputs/Deliverables</label>
                     <div class="grade-input-wrapper">
                         <input type="number" 
                                name="grades[expected_outputs_deliverables]" 
@@ -119,38 +173,52 @@
                                required
                                value="{{ old('grades.expected_outputs_deliverables') }}"
                                onchange="calculateFinalGrade()"
-                               onkeypress="return event.charCode >= 49 && event.charCode <= 52">
+                                   onkeypress="return event.charCode >= 49 && event.charCode <= 52"
+                                   class="form-control">
                         <span class="grade-weight">(30%)</span>
                     </div>
+                        @error('grades.expected_outputs_deliverables')
+                            <span class="error-message">{{ $message }}</span>
+                        @enderror
                 </div>
             </div>
 
+                <!-- Final Grade Display -->
             <div class="final-grade-display">
                 <div class="final-grade-box">
-                    <label>Final Grade:</label>
+                        <label>Final Grade</label>
                     <input type="text" 
                            name="final_grade" 
                            id="final_grade" 
                            readonly 
-                           value="{{ old('final_grade') }}">
+                               value="{{ old('final_grade') }}"
+                               class="form-control">
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="form-section">
-            <h3>Additional Information</h3>
+        <!-- Additional Information Card -->
+        <div class="form-card">
+            <div class="card-header">
+                <h3><i class="fas fa-comment-alt"></i> Additional Information</h3>
+            </div>
+            <div class="card-body">
             <div class="form-group">
-                <label for="remarks">Remarks:</label>
+                    <label for="remarks">Remarks</label>
                 <textarea name="remarks" 
                           id="remarks" 
                           rows="3" 
+                              class="form-control"
                           placeholder="Enter any additional remarks about the evaluation">{{ old('remarks') }}</textarea>
                 @error('remarks')
                     <span class="error-message">{{ $message }}</span>
                 @enderror
+                </div>
             </div>
         </div>
 
+        <!-- Form Actions -->
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save"></i> Save Grade
@@ -324,23 +392,15 @@ function calculateFinalGrade() {
 @endpush
 
 <style>
-html, body {
-    height: 100%;
-    margin: 0;
-}
-
 .create-submission-container {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 2rem auto;
-    padding: 2rem;
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 0 1rem;
 }
 
 .page-header {
-    margin-bottom: 2rem;
     text-align: center;
+    margin-bottom: 2rem;
 }
 
 .page-header h1 {
@@ -356,23 +416,40 @@ html, body {
     font-size: 1.1rem;
 }
 
-.form-section {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 1.5rem;
+.form-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     margin-bottom: 2rem;
+    overflow: hidden;
 }
 
-.form-section h3 {
+.card-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.card-header h3 {
+    margin: 0;
     color: #2c3e50;
-    margin: 0 0 1.5rem 0;
-    font-size: 1.3rem;
-    font-weight: 600;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.card-header h3 i {
+    color: #22bbea;
+}
+
+.card-body {
+    padding: 1.5rem;
 }
 
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
 }
 
@@ -387,28 +464,23 @@ html, body {
     font-weight: 500;
 }
 
-.form-group select,
-.form-group input[type="number"],
-.form-group input[type="text"],
-.form-group textarea {
+.form-control {
     width: 100%;
     padding: 0.75rem;
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: all 0.2s;
 }
 
-.form-group select:focus,
-.form-group input:focus,
-.form-group textarea:focus {
+.form-control:focus {
     outline: none;
     border-color: #22bbea;
     box-shadow: 0 0 0 3px rgba(34, 187, 234, 0.1);
 }
 
-.form-group select:disabled {
-    background-color: #f1f5f9;
+.form-control:disabled {
+    background-color: #f8f9fa;
     cursor: not-allowed;
 }
 
@@ -419,7 +491,7 @@ html, body {
 }
 
 .grade-item {
-    background: white;
+    background: #f8f9fa;
     padding: 1.25rem;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
@@ -449,8 +521,8 @@ html, body {
 }
 
 .final-grade-display {
-    margin-top: 2rem;
     text-align: center;
+    margin-top: 2rem;
 }
 
 .final-grade-box {
@@ -467,6 +539,7 @@ html, body {
     font-weight: 600;
     font-size: 1.1rem;
     margin: 0;
+    color: white;
 }
 
 .final-grade-box input {
@@ -499,6 +572,7 @@ html, body {
     transition: all 0.2s;
     border: none;
     text-decoration: none;
+    font-size: 1rem;
 }
 
 .btn i {
@@ -527,6 +601,7 @@ html, body {
     color: #dc2626;
     font-size: 0.875rem;
     margin-top: 0.5rem;
+    display: block;
 }
 
 .alert {
@@ -544,7 +619,7 @@ html, body {
 @media (max-width: 768px) {
     .create-submission-container {
         margin: 1rem;
-        padding: 1rem;
+        padding: 0;
     }
 
     .form-grid {
@@ -567,6 +642,15 @@ html, body {
     .btn {
         width: 100%;
         justify-content: center;
+    }
+
+    .final-grade-box {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .final-grade-box input {
+        width: 100%;
     }
 }
 </style>

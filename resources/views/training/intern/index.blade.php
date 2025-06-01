@@ -342,7 +342,7 @@
     @if (count($groupedGrades) > 0)
         @foreach ($groupedGrades as $classId => $grades)
             <div class="class-grades-section">
-                <h2>Class: {{ $grades->first()->class_name }}</h2>
+                <h2>Class: {{ $grades->first()->classModel->class_name ?? 'N/A' }}</h2>
                 <div class="table-responsive">
                     <table class="table">
                         <thead>

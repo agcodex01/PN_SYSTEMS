@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Dashboard' }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="{{ asset('css/nav.css') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <style>
     body {
@@ -49,12 +52,12 @@
     }
 
     .sidebar {
-        background-color: #ffffff; /* WHITE background na */
+        background-color: #ffffff;
         width: 250px;
         padding: 20px 0;
         display: flex;
         flex-direction: column;
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* subtle shadow for divider effect */
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
         flex-shrink: 0;
     }
 
@@ -139,16 +142,7 @@
         width: 24px;
         height: 24px;
     }
-
-    .content {
-        flex-grow: 1;
-        padding: 20px;
-        overflow-y: auto;
-        background-color: #f8f9fa;
-        margin-left: 250px;
-    }
-</style>
-
+    </style>
 </head>
 <body>
     <div class="top-bar">
@@ -227,6 +221,11 @@
                         <a href="{{ route('training.grade-submissions.recent') }}" class="{{ request()->routeIs('training.grade-submissions.recent') ? 'active' : '' }}">
                             <img src="{{ asset('images/analytics.png') }}" alt="Recent"> Recent
                         </a>
+
+                        <a href="{{ route('training.intern-grades.index') }}" class="{{ request()->routeIs('training.intern-grades.*') ? 'active' : '' }}">
+                            <img src="{{ asset('images/intern.png') }}" alt="Intern"> Intern
+                        </a>
+
                     </div>
                 </li>
                 <li class="dropdown {{ request()->routeIs('training.analytics.*') ? 'active' : '' }}" id="analyticsDropdown">
@@ -243,7 +242,7 @@
                         <a href="{{ route('training.analytics.subject-intervention') }}" class="{{ request()->routeIs('training.analytics.subject-intervention') ? 'active' : '' }}">
                             <img src="{{ asset('images/subject intervention.png') }}" alt="Subject Intervention"> Subject Intervention
                         </a>
-                        <a href="#" class="{{ request()->routeIs('analytics.internship-grades-progress') ? 'active' : '' }}">
+                        <a href="{{ route('training.intern-grades-analytics.index') }}" class="{{ request()->routeIs('training.intern-grades-analytics.*') ? 'active' : '' }}">
                             <img src="{{ asset('images/internship grades.png') }}" alt="Internship Grades Progress"> Internship Grades Progress
                         </a>
                     </div>
@@ -279,7 +278,5 @@
     </script>
 
 @stack('scripts')
-
-   
 </body>
 </html>

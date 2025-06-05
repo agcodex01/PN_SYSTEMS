@@ -88,8 +88,10 @@ class ClassController extends Controller
                 $class->students()->detach();
             }
 
+            $successMessage = 'Class information and student list have been updated successfully.';
+            
             return redirect()->route('training.schools.show', ['school' => $class->school_id])
-                ->with('success', 'Class updated successfully.');
+                ->with('success', $successMessage);
 
         } catch (\Exception $e) {
             return redirect()

@@ -85,14 +85,22 @@ class EducatorController extends Controller
     // Get all unique batch numbers to display in the dropdown
     $batches = StudentDetail::distinct()->pluck('batch');
     
-    // Get students, filter by batch if a batch is selected
+    // Get students, filter by batch if a batch is selected, or filter by N/A student_id if selected
     $students = PNUser::where('user_role', 'Student')
         ->where('status', 'active')
         ->with('studentDetail')
         ->when($request->has('batch') && $request->batch != '', function ($query) use ($request) {
-            return $query->whereHas('studentDetail', function ($q) use ($request) {
-                $q->where('batch', $request->batch);
-            });
+            if ($request->batch === 'N/A') {
+                // Filter for students with no student_id or empty student_id
+                return $query->whereDoesntHave('studentDetail', function($q) {
+                    $q->whereNotNull('student_id')->where('student_id', '!=', '');
+                });
+            } else {
+                // Filter by batch
+                return $query->whereHas('studentDetail', function ($q) use ($request) {
+                    $q->where('batch', $request->batch);
+                });
+            }
         })
         ->paginate(10);
 
@@ -134,13 +142,47 @@ public function viewStudent($user_id)
     return view('educator.view-student', compact('student'));
 }
 
+public function edit($user_id)
+{
+    $student = PNUser::with('studentDetail')
+        ->where('user_id', $user_id)
+        ->firstOrFail();
+    return view('educator.edit-student', compact('student'));
+}
 
+public function update(Request $request, $user_id)
+{
+    $student = PNUser::where('user_id', $user_id)->firstOrFail();
+    $student = PNUser::with('studentDetail')->where('user_id', $user_id)->firstOrFail();
 
+    $request->validate([
+        'batch' => 'required|digits:4',
+        'gender' => 'required|in:Male,Female',
+        'user_email' => 'required|email|unique:pnph_users,user_email,' . $user_id . ',user_id',
+    ]);
 
+    // Update the student details
+    $student->update($request->only([
+        'user_lname',
+        'user_fname',
+        'user_mInitial',
+        'user_suffix',
+        'user_email',
+    ]));
 
+    $student->studentDetail()->updateOrCreate(
+        ['user_id' => $student->user_id],
+        [
+            'batch' => $request->batch,
+            'group' => $request->group,
+            'student_number' => $request->student_number,
+            'training_code' => $request->training_code,
+            'student_id' => $request->batch . $request->group . $request->student_number . $request->training_code,
+            'gender' => $request->gender,
+        ]
+    );
 
-
-
-
+    return redirect()->route('educator.students.index')->with('success', 'Student updated successfully.');
+}
 }
 

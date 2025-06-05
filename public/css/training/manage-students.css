@@ -72,48 +72,69 @@ body{
 .action-buttons {
     display: flex;
     gap: 8px;
+    justify-content: center;
+    flex-wrap: nowrap;
 }
 
-.action-btn {
-    width: 50px;
-    height: 35px;
+/* Icon Buttons */
+.btn-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: #fff;
+    background-color: #4a90e2;
     border: none;
     cursor: pointer;
+    transition: all 0.2s ease;
     text-decoration: none;
 }
 
-.view {
-    background: #22bbea;
-    color: white;
+.btn-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.view:hover {
-    background: #17a2b8;
-    color: white;
+.btn-icon i {
+    font-size: 14px;
 }
 
-.edit {
-    background:rgb(7, 210, 54);
-    color: white;
+/* View button */
+.btn-icon[title="View"] {
+    background-color: #4a90e2;
 }
 
-.edit:hover {
-    background:rgb(2, 163, 40);
-    color: white;
+.btn-icon[title="View"]:hover {
+    background-color: #357abd;
 }
 
-.delete {
-    background: #ff9933;
-    color: white;
+/* Edit button */
+.btn-icon[title="Edit"] {
+    background-color: #f39c12;
 }
 
-.delete:hover {
-    background:rgb(255, 134, 13);
-    color: white;
+.btn-icon[title="Edit"]:hover {
+    background-color: #d68910;
+}
+
+/* Delete button */
+.delete-form .btn-icon[title="Delete"],
+.btn-icon[title="Delete"] {
+    background-color: #dc3545 !important;
+}
+
+.delete-form .btn-icon[title="Delete"]:hover,
+.btn-icon[title="Delete"]:hover {
+    background-color: #c82333 !important;
+}
+
+/* Form styles */
+.delete-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
 }
 
 .empty-message {

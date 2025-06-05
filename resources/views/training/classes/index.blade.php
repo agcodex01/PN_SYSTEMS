@@ -44,12 +44,18 @@
                 <div class="cell nos">{{ $class->students->count() }} student(s)</div>
                 <div class="cell">
                     <div class="action-buttons">
-                        <a href="{{ route('training.classes.show', $class) }}" class="action-btn view">view</a>
-                        <a href="{{ route('training.classes.edit', $class) }}" class="action-btn edit">edit</a>
-                        <form action="{{ route('training.classes.destroy', $class) }}" method="POST" class="d-inline" id="delete-form-{{ $class->id }}">
+                        <a href="{{ route('training.classes.show', $class) }}" class="btn-icon" title="View">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ route('training.classes.edit', $class) }}" class="btn-icon" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form action="{{ route('training.classes.destroy', $class) }}" method="POST" class="d-inline delete-form" id="delete-form-{{ $class->id }}" onsubmit="return confirm('Are you sure you want to delete this class?');">
                             @csrf
                             @method('DELETE')
-                            <button type="button" style="background-color: #dc3545; padding-left: 15px;cursor: pointer;" class="action-btn delete" onclick="confirmDelete({{ $class->id }})">delete</button>
+                            <button type="submit" class="btn-icon" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -158,11 +164,75 @@ function confirmDelete(classId) {
     color: white;
 }
 
-.actions{
+.actions {
     margin-left: 15px;
     display: flex;
     gap: 10px;
     justify-content: center;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: #fff;
+    background-color: #4a90e2;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-icon i {
+    font-size: 14px;
+}
+
+/* View button */
+.btn-icon[title="View"] {
+    background-color: #4a90e2;
+}
+
+.btn-icon[title="View"]:hover {
+    background-color: #357abd;
+}
+
+/* Edit button */
+.btn-icon[title="Edit"] {
+    background-color: #f39c12;
+}
+
+.btn-icon[title="Edit"]:hover {
+    background-color: #d68910;
+}
+
+/* Delete button */
+.btn-icon[title="Delete"] {
+    background-color: #dc3545;
+}
+
+.btn-icon[title="Delete"]:hover {
+    background-color: #c82333;
+}
+
+/* Form styles */
+.delete-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
 }
 
 .nos {

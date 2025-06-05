@@ -23,12 +23,14 @@
 
     <form method="GET" action="{{ route('educator.students.index') }}" class="filter-form">
         <div class="form-group">
-            <label for="batch">Filter by Batch</label>
+            <label for="batch">Filter Students</label>
             <select name="batch" id="batch" class="form-control" onchange="this.form.submit()">
-                <option value="">Select Batch</option>
+                <option value="">All Students</option>
+                <option value="N/A" {{ request('batch') === 'N/A' ? 'selected' : '' }}>No Student ID (N/A)</option>
+                <option disabled>──────────</option>
                 @foreach ($batches as $batch)
                     <option value="{{ $batch }}" {{ request('batch') == $batch ? 'selected' : '' }}>
-                        {{ $batch }}
+                        Batch: {{ $batch }}
                     </option>
                 @endforeach
             </select>
@@ -62,9 +64,12 @@
                 <div class="cell">{{ $student->user_email }}</div>
                 <div class="cell">
                     <div class="action-buttons">
-                        <a href="{{ route('educator.students.view', $student->user_id) }}" class="btn btn-view">View</a>
-
-                       
+                        <a href="{{ route('educator.students.view', $student->user_id) }}" class="btn-icon" title="View">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{ route('educator.students.edit', $student->user_id) }}" class="btn-icon" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -75,9 +80,99 @@
         @endforelse
     </div>
 
+    @if ($students->hasPages())
     <div class="pagination-container">
-        {{ $students->links() }}
+        <div class="pagination-info">
+            Showing {{ $students->firstItem() }} to {{ $students->lastItem() }} of {{ $students->total() }} entries
+        </div>
+        <div class="pagination-buttons">
+            @if ($students->onFirstPage())
+                <span class="pagination-button disabled">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </span>
+            @else
+                <a href="{{ $students->previousPageUrl() }}" class="pagination-button">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            @endif
+
+            <div class="page-info">
+                Page {{ $students->currentPage() }} of {{ $students->lastPage() }}
+            </div>
+
+            @if ($students->hasMorePages())
+                <a href="{{ $students->nextPageUrl() }}" class="pagination-button">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            @else
+                <span class="pagination-button disabled">
+                    Next <i class="fas fa-chevron-right"></i>
+                </span>
+            @endif
+        </div>
     </div>
+    @endif
+    
+    <style>
+    /* Pagination */
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-top: 1px solid #eee;
+        margin-top: 20px;
+    }
+
+    .pagination-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .pagination-buttons {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .pagination-button {
+        padding: 8px 16px;
+        border-radius: 6px;
+        background: white;
+        border: 1px solid #ddd;
+        color: #333;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .pagination-button:hover:not(.disabled) {
+        background: #f5f5f5;
+        border-color: #ccc;
+    }
+
+    .pagination-button.disabled {
+        color: #aaa;
+        cursor: not-allowed;
+    }
+
+    .page-info {
+        margin: 0 10px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    @media (max-width: 768px) {
+        .pagination-container {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+    }
+    </style>
 </div>
 
 @endsection

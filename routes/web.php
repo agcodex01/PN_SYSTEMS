@@ -67,6 +67,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/students-info', [EducatorController::class, 'index'])->name('educator.students.index');
     Route::get('/students/{user_id}/view', [EducatorController::class, 'viewStudent'])->name('students.view');
+    Route::get('/students/{user_id}/edit', [EducatorController::class, 'edit'])->name('students.edit');
+    Route::put('/students/{user_id}', [EducatorController::class, 'update'])->name('students.update');
     Route::get('/students-info', [EducatorController::class, 'index'])->name('students.index');
         
 

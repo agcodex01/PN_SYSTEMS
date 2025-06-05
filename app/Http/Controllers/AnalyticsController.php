@@ -141,28 +141,25 @@ class AnalyticsController extends Controller
             ]);
         }
 
-        // Get all subjects for this submission
-        $subjects = $gradeSubmission->subjects()->get();
-        
-        // Get all students with their grades for this submission
-        $studentGrades = DB::table('grade_submission_subject')
+        // Get all grades for this submission
+        $grades = DB::table('grade_submission_subject')
             ->join('subjects', 'subjects.id', '=', 'grade_submission_subject.subject_id')
             ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
-            ->where('grade_submission_subject.status', 'approved')
+            ->where('grade_submission_subject.student_status', 'approved')
             ->select(
-                'grade_submission_subject.user_id',
                 'subjects.id as subject_id',
                 'subjects.name as subject_name',
                 'grade_submission_subject.grade',
-                'grade_submission_subject.student_status'
+                'grade_submission_subject.user_id'
             )
-            ->get()
-            ->groupBy('subject_name');
+            ->get();
             
-        // Initialize results array
+        // Group grades by subject
+        $groupedGrades = $grades->groupBy('subject_name');
+        
         $subjectResults = [];
         
-        foreach ($subjects as $subject) {
+        foreach ($groupedGrades as $subjectName => $grades) {
             $passed = 0;
             $failed = 0;
             $inc = 0;
@@ -171,29 +168,22 @@ class AnalyticsController extends Controller
             $pending = false;
             $needIntervention = false;
             
-            // Get grades for this specific subject
-            $subjectGrades = $studentGrades->get($subject->name, collect());
+            // Track unique students to avoid counting duplicates
+            $processedStudents = [];
             
-            // Count unique students per grade category for this subject
-            $uniqueStudents = [];
-            
-            foreach ($subjectGrades as $grade) {
+            // Process each grade for this subject
+            foreach ($grades as $grade) {
                 $studentId = $grade->user_id;
                 
                 // Skip if we've already processed this student for this subject
-                if (in_array($studentId, $uniqueStudents)) {
+                if (in_array($studentId, $processedStudents)) {
                     continue;
                 }
                 
-                $uniqueStudents[] = $studentId;
+                $processedStudents[] = $studentId;
                 $gradeValue = $grade->grade;
                 
-                // Check student status first
-                if ($grade->student_status !== 'approved') {
-                    continue; // Skip unapproved student grades
-                }
-                
-                // Check grade status
+                // Categorize the grade
                 if ($gradeValue === 'INC') {
                     $inc++;
                     $pending = true;
@@ -214,22 +204,22 @@ class AnalyticsController extends Controller
                 }
             }
             
-            // Determine remarks
-            $remarks = '';
+            // Determine remarks based on the new criteria
             $totalGrades = $passed + $failed + $inc + $dr + $nc;
+            $remarks = 'No Submission Recorded';
             
-            if ($totalGrades === 0) {
-                $remarks = 'No Submission Recorded';
-            } elseif ($pending) {
-                $remarks = 'Pending';
-            } elseif ($needIntervention || $nc > 0 || $failed > 0) {
-                $remarks = 'Need Intervention';
-            } else {
-                $remarks = 'No Intervention Needed';
+            if ($totalGrades > 0) {
+                // If any student has Failed, INC, DR, or NC, mark as 'Need Intervention'
+                if ($failed > 0 || $inc > 0 || $dr > 0 || $nc > 0) {
+                    $remarks = 'Need Intervention';
+                } else {
+                    // Only mark as 'No Need Intervention' if all students have passed
+                    $remarks = 'No Need Intervention';
+                }
             }
             
             $subjectResults[] = [
-                'subject' => $subject->name,
+                'subject' => $subjectName,
                 'passed' => $passed,
                 'failed' => $failed,
                 'inc' => $inc,

@@ -16,7 +16,14 @@ class TrainingController extends Controller
     {
         $schoolsCount = \App\Models\School::count();
         $classesCount = \App\Models\ClassModel::count();
-        $studentsCount = PNUser::where('user_role', 'Student')->where('status', 'active')->count();
+        
+        // Get all students count (regardless of status)
+        $studentsCount = PNUser::where('user_role', 'Student')->count();
+        
+        // Get active students count
+        $activeStudentsCount = PNUser::where('user_role', 'Student')
+            ->where('status', 'active')
+            ->count();
         
         // Get gender distribution from student_details table
         $maleCount = \App\Models\StudentDetail::where('gender', 'Male')->count();
@@ -91,14 +98,22 @@ class TrainingController extends Controller
         // Get all unique batch numbers to display in the dropdown
         $batches = StudentDetail::distinct()->pluck('batch');
     
-        // Get students, filter by batch if a batch is selected
+        // Get students, filter by batch if a batch is selected, or filter by N/A student_id if selected
         $students = PNUser::where('user_role', 'Student')
             ->where('status', 'active')
             ->with('studentDetail')
             ->when($request->has('batch') && $request->batch != '', function ($query) use ($request) {
-                return $query->whereHas('studentDetail', function ($q) use ($request) {
-                    $q->where('batch', $request->batch);
-                });
+                if ($request->batch === 'N/A') {
+                    // Filter for students with no student_id or empty student_id
+                    return $query->whereDoesntHave('studentDetail', function($q) {
+                        $q->whereNotNull('student_id')->where('student_id', '!=', '');
+                    });
+                } else {
+                    // Filter by batch
+                    return $query->whereHas('studentDetail', function ($q) use ($request) {
+                        $q->where('batch', $request->batch);
+                    });
+                }
             })
             ->paginate(10);
     // Pass the role to the view to conditionally show "Edit" button

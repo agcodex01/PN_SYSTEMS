@@ -277,7 +277,40 @@
             </div>
         @endif
     @endforeach
-     </div>
+
+    @if(isset($submissions) && $submissions->hasPages())
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Showing {{ $submissions->firstItem() }} to {{ $submissions->lastItem() }} of {{ $submissions->total() }} entries
+        </div>
+        <div class="pagination-buttons">
+            @if ($submissions->onFirstPage())
+                <span class="pagination-button disabled">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </span>
+            @else
+                <a href="{{ $submissions->previousPageUrl() }}" class="pagination-button">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+            @endif
+
+            <div class="page-info">
+                Page {{ $submissions->currentPage() }} of {{ $submissions->lastPage() }}
+            </div>
+
+            @if ($submissions->hasMorePages())
+                <a href="{{ $submissions->nextPageUrl() }}" class="pagination-button">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+            @else
+                <span class="pagination-button disabled">
+                    Next <i class="fas fa-chevron-right"></i>
+                </span>
+            @endif
+        </div>
+    </div>
+    @endif
+</div>
 
 <style>
     :root {
@@ -492,8 +525,69 @@
     }
 
     tr[data-submission-id]:hover .btn-custom {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    /* Pagination Styles */
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        margin-top: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .pagination-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .pagination-buttons {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .pagination-button {
+        padding: 8px 16px;
+        border-radius: 6px;
+        background: white;
+        border: 1px solid #ddd;
+        color: #333;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .pagination-button:hover:not(.disabled) {
+        background: #f5f5f5;
+        border-color: #ccc;
+    }
+
+    .pagination-button.disabled {
+        color: #aaa;
+        cursor: not-allowed;
+    }
+
+    .page-info {
+        margin: 0 10px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    @media (max-width: 768px) {
+        .pagination-container {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
     }
 
     .btn-custom:hover {

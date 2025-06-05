@@ -51,14 +51,22 @@ class GradeSubmissionController extends Controller
             }
         }
         
-        // Get submissions with related data
-        $submissions = $query->with(['students', 'proofs', 'subjects'])->get();
+        // Clone the query for filter options before pagination
+        $filterQuery = clone $query;
         
-        // Group submissions by school
+        // Get all submissions for filter options (without pagination)
+        $allSubmissions = $filterQuery->with(['students', 'proofs', 'subjects'])->get();
+        
+        // Get paginated submissions
+        $submissions = $query->with(['students', 'proofs', 'subjects'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        
+        // Group paginated submissions by school
         $submissionsBySchool = $submissions->groupBy('school_id');
 
-        // Get unique filter options from submissions
-        $filterOptions = $submissions->map(function($submission) {
+        // Get unique filter options from all submissions
+        $filterOptions = $allSubmissions->map(function($submission) {
             return $submission->semester . ',' . $submission->term . ',' . $submission->academic_year;
         })->unique()->sortDesc()->values();
 
@@ -66,7 +74,8 @@ class GradeSubmissionController extends Controller
             'schools', 
             'classesBySchool',
             'submissionsBySchool',
-            'filterOptions'
+            'filterOptions',
+            'submissions' // Pass the paginated results
         ))
         ->with('filter_key', $request->filter_key)
         ->with('school_id', $request->school_id)

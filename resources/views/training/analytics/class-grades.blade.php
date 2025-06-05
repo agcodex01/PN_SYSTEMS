@@ -35,7 +35,7 @@
 
     <div class="card shadow-sm">
         <div class="card-body p-0">
-            <div id="gradesTableContainer" class="w-100" style="min-height: 300px; display: flex; justify-content: center; align-items: center;">
+            <div id="gradesTableContainer" class="w-100" style="min-height: 300px; display: flex; flex-direction: column;">
                 <div class="text-center text-muted w-100">
                     <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 2rem;">
                         <i class="bi bi-graph-up" style="font-size: 3rem; color: #6c757d; opacity: 0.7; display: block; margin: 0 auto 1rem;"></i>
@@ -231,8 +231,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const schoolId = document.getElementById('schoolSelect').value;
         const classId = document.getElementById('classSelect').value;
         const submissionId = document.getElementById('submissionSelect').value;
-        if (schoolId && classId && submissionId) {
-            console.log(`Loading grades for school ${schoolId}, class ${classId}, submission ${submissionId}...`);
+        
+        if (!schoolId || !classId || !submissionId) {
+            return;
+        }
             
             // Show loading state
             const container = document.getElementById('gradesTableContainer');
@@ -246,134 +248,40 @@ document.addEventListener('DOMContentLoaded', function() {
             
             fetch(`/training/analytics/class-grades-data?school_id=${schoolId}&class_id=${classId}&submission_id=${submissionId}`)
                 .then(async res => {
-                    console.log('Grades response status:', res.status);
-                    console.log('Grades response headers:', [...res.headers.entries()]);
-                    
-                    const data = await res.json();
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await res.text();
+                    console.error('Non-JSON response:', text);
+                    throw new Error('Server returned non-JSON response. Please try again.');
+                }
                     
                     if (!res.ok) {
-                        throw new Error(data.error || `HTTP error! status: ${res.status}`);
-                    }
-                    
-                    // Debug: Log the complete response data
-                    console.log('Complete response data:', JSON.stringify(data, null, 2));
-                    
-                    console.log('Grades data received:', data);
-                    
-                    // Ensure we have the school and class names in the response
-                    if (!data.school_name && data.school) {
-                        data.school_name = data.school.name;
-                    }
-                    if (!data.class_name && data.class) {
-                        data.class_name = data.class.name;
-                    }
-                    
-                    // Get passing grade range from the school settings or use defaults
-                    const defaultPassingMin = {{ $defaultSchool->passing_grade_min ?? 75 }};
-                    const defaultPassingMax = {{ $defaultSchool->passing_grade_max ?? 100 }};
-                    
-                    // Use the school data from the response if available, otherwise use defaults
-                    const passingGradeMin = data.school?.passing_grade_min || defaultPassingMin;
-                    const passingGradeMax = data.school?.passing_grade_max || defaultPassingMax;
-                    
-                    // Process student data and determine status independently for each student
-                    if (data.students && data.students.length > 0) {
-                        data.students = data.students.map(student => {
-                            // Calculate average and determine status
-                            let total = 0;
-                            let count = 0;
-                            let hasApprovedGrade = false;
-                            let hasFailing = false;
-                            let hasPending = false;
-                            
-                            // Process each grade
-                            student.grades = student.grades || [];
-                            
-                            // Check for any INC grades first
-                            const hasIncGrade = student.grades.some(grade => {
-                                const gradeValue = grade?.grade?.toString().toLowerCase();
-                                return gradeValue === 'inc';
-                            });
-                            
-                            if (hasIncGrade) {
-                                student.average = '-';
-                                student.status = 'Pending';
-                            } else {
-                                // Process all grades for calculation
-                                student.grades.forEach(grade => {
-                                    const status = (grade?.status || 'pending').toLowerCase().trim();
-                                    const gradeValue = grade?.grade;
-                                    
-                                    if (status === 'approved' || status === 'approve') {
-                                        hasApprovedGrade = true;
-                                        
-                                        // Only include numeric grades in calculations
-                                        if (gradeValue && !isNaN(gradeValue)) {
-                                            total += parseFloat(gradeValue);
-                                            count++;
-                                            
-                                            // Check if grade is within passing range
-                                            const numericGrade = parseFloat(gradeValue);
-                                            if (numericGrade < passingGradeMin || numericGrade > passingGradeMax) {
-                                                hasFailing = true;
-                                            }
-                                        } else if (['nc', 'dr'].includes(gradeValue?.toString().toLowerCase())) {
-                                            hasFailing = true;
-                                        }
-                                    } else if (status === 'pending' || status === 'pending_approval') {
-                                        hasPending = true;
-                                    }
-                                });
-                                
-                                // Calculate average if we have valid grades
-                                if (count > 0) {
-                                    student.average = (total / count).toFixed(2);
-                                    
-                                    // Determine overall status based on school's passing grade range
-                                    const numericAverage = parseFloat(student.average);
-                                    if (hasFailing || numericAverage < passingGradeMin || numericAverage > passingGradeMax) {
-                                        student.status = 'Failed';
-                                    } else {
-                                        student.status = 'Passed';
-                                    }
-                                } else {
-                                    student.average = null;
-                                    student.status = 'No Valid Grades';
-                                }
-                            }
-                            
-                            // Add a note about the student's status
-                            const approvedCount = student.grades.filter(g => {
-                                const s = (g?.status || '').toLowerCase().trim();
-                                return s === 'approved' || s === 'approve';
-                            }).length;
-                            
-                            const pendingCount = student.grades.filter(g => {
-                                const s = (g?.status || '').toLowerCase().trim();
-                                return s === 'pending' || s === 'pending_approval';
-                            }).length;
-                            
-                            if (pendingCount > 0) {
-                                student.status += ` (${pendingCount} Pending)`;
-                            } else if (approvedCount === 0) {
-                                student.status = 'No Approved Grades';
-                            }
-                            
-                            return student;
-                        }).filter(student => student !== null);
-                    }
-                    
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
+                }
+                
+                return res.json();
+            })
+            .then(data => {
+                if (!data) {
+                    throw new Error('No data received from server');
+                }
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                console.log('Grades data received:', data);
                     renderGradesTable(data);
                 })
                 .catch(error => {
                     console.error('Error fetching grades:', error);
                     container.innerHTML = `
-                        <div class="alert alert-danger">
+                    <div class="alert alert-danger m-3">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
                             ${error.message || 'Error loading grade data. Please try again.'}
                         </div>`;
                 });
-        }
     }
 
     function renderGradesTable(data) {
@@ -394,36 +302,27 @@ document.addEventListener('DOMContentLoaded', function() {
         let students = data.students;
         let subjects = data.subjects || [];
         
-        // Log the data structure for debugging
-        console.log('Data structure:', data);
-        
         // Get school and class information
-        // Extract data from the response
-        console.log('Raw data:', data); // Log the complete data object
-        
         const schoolName = data.school_name || (data.school ? data.school.name : 'N/A');
         const className = data.class_name || (data.class ? data.class.name : 'N/A');
         
-        // Get submission data - check both submission object and root level
+        // Get submission data
         const submission = data.submission || {};
-        console.log('Submission data:', submission);
-        
-        // Extract values with multiple fallbacks
         const semester = submission.semester || data.semester || 'N/A';
         const term = submission.term || data.term || 'N/A';
         const academicYear = submission.academic_year || data.academic_year || 'N/A';
         
-        console.log('Extracted values:', { 
-            schoolName, 
-            className, 
-            semester, 
-            term, 
-            academicYear,
-            submissionExists: !!data.submission
-        });
-        
-        let table = `
-            <div class="table-responsive" style="width: 100%; max-width: 100%; overflow-x: auto;">
+        // Pagination settings
+        const itemsPerPage = 10;
+        let currentPage = 1;
+        const totalPages = Math.ceil(students.length / itemsPerPage);
+
+        function renderTable(page) {
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageStudents = students.slice(start, end);
+            
+            let tableHtml = `
                 <div class="card mb-4 border-0 shadow-sm">
                     <div class="card-body p-4">
                         <div style="width: 100%; text-align: center;">
@@ -442,33 +341,34 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </div>
-                <br>
+                <div class="table-responsive" style="width: 100%; max-width: 100%; overflow-x: auto;">
                 <table class="table table-hover align-middle grades-table" style="width: 100%; min-width: 1200px;">
                     <thead>
                         <tr>
-                            <th style="background-color: #22BBEA; color: white; border-color: #22BBEA;">Student ID</th>
-                            <th style="background-color: #22BBEA; color: white; border-color: #22BBEA;">Full Name</th>`;
-        
-        // Add subject headers
-        subjects.forEach(sub => {
-            table += `<th style="background-color: #22BBEA; color: white; border-color: #22BBEA;">${sub}</th>`;
-        });
-        
-        table += `
-                            <th style="background-color: #22BBEA; color: white; border-color: #22BBEA;">Average</th>
-                            <th style="background-color: #22BBEA; color: white; border-color: #22BBEA;">Status</th>
+                                <th style="background-color: #22BBEA; color: white; border-color: #22BBEA; width: 120px;">Student ID</th>
+                                <th style="background-color: #22BBEA; color: white; border-color: #22BBEA; width: 200px;">Full Name</th>`;
+            
+            // Add subject headers - only once
+            subjects.forEach(subject => {
+                tableHtml += `<th style="background-color: #22BBEA; color: white; border-color: #22BBEA; width: calc((100% - 520px) / ${subjects.length});">${subject}</th>`;
+            });
+            
+            tableHtml += `
+                                <th style="background-color: #22BBEA; color: white; border-color: #22BBEA; width: 100px;">Average</th>
+                                <th style="background-color: #22BBEA; color: white; border-color: #22BBEA; width: 100px;">Status</th>
                         </tr>
                     </thead>
                     <tbody>`;
 
-        // Add student rows
-        students.forEach(student => {
-            table += `
+            // Add student rows for current page
+            pageStudents.forEach(student => {
+                tableHtml += `
                 <tr>
                     <td>${student.student_id || ''}</td>
                     <td>${student.full_name || ''}</td>`;
 
-            // Add grades for each subject with status indicators
+                // Add grades for each subject
+                if (student.grades && student.grades.length > 0) {
             student.grades.forEach(gradeData => {
                 const grade = typeof gradeData === 'object' ? gradeData.grade : gradeData;
                 const status = typeof gradeData === 'object' ? (gradeData.status || 'pending') : 'approved';
@@ -483,77 +383,154 @@ document.addEventListener('DOMContentLoaded', function() {
                     statusBadge = ' <span class="badge bg-warning text-dark" title="Pending Approval"><i class="bi bi-hourglass"></i></span>';
                 } else if (statusLower === 'rejected') {
                     statusBadge = ' <span class="badge bg-danger" title="Rejected"><i class="bi bi-x-circle"></i></span>';
-                    gradeClass = 'text-decoration-line-through text-muted';
+                    gradeClass = 'text-decoration-line-through text-muted'; // Strikethrough and muted for rejected
                 } else if (statusLower === 'approved' || statusLower === 'approve') {
                     statusBadge = ' <span class="badge bg-success" title="Approved"><i class="bi bi-check-circle"></i></span>';
                 }
                 
-                // Style based on grade value (only if not rejected)
-                if (status !== 'rejected') {
-                    if (displayGrade === 'INC' || displayGrade === 'NC' || displayGrade === 'DR') {
-                        gradeClass = 'text-warning fw-bold';
+                // Style based on grade value (only for approved grades)
+                if (statusLower === 'approved') {
+                    if (displayGrade === 'INC') {
+                        gradeClass = 'grade-inc'; // Apply custom class for approved INC
+                    } else if (displayGrade === 'NC' || displayGrade === 'DR') {
+                        gradeClass = 'grade-dr-nc'; // Apply custom class for approved NC/DR
                     } else if (displayGrade !== '-' && !isNaN(displayGrade)) {
                         const numericGrade = parseFloat(displayGrade);
-                        if (numericGrade < 75) {
-                            gradeClass = 'text-danger fw-bold';
-                        } else if (numericGrade >= 90) {
-                            gradeClass = 'text-success fw-bold';
+                        // Check if lower grades are better or higher grades are better
+                        const isLowerBetter = parseFloat(data.school.passing_grade_min) < parseFloat(data.school.passing_grade_max);
+                        let isFailing = false;
+                        if(isLowerBetter) {
+                             isFailing = numericGrade > parseFloat(data.school.passing_grade_max);
+                        } else {
+                             isFailing = numericGrade < parseFloat(data.school.passing_grade_min);
+                        }
+
+                        if (isFailing) {
+                            gradeClass = 'text-danger fw-bold'; // Use Bootstrap for numeric failing
+                        } else {
+                             gradeClass = 'text-success fw-bold'; // Use Bootstrap for numeric passing
                         }
                     }
+                } else if (statusLower === 'pending' || statusLower === 'pending_approval') {
+                    // Style for pending grades
+                     gradeClass = 'text-muted'; // Muted color for pending grades
                 }
+                // Rejected grades are handled above with strikethrough and muted color
+
                 
-                // Add the grade cell with status
-                table += `<td class="${gradeClass}">
+                // Add the grade cell with status and appropriate class
+                tableHtml += `<td class="${gradeClass}">
                     <div class="d-flex flex-column">
                         <span>${displayGrade}</span>
                         ${statusBadge}
                     </div>
                 </td>`;
             });
+                } else {
+                    // If no grades, add empty cells for each subject
+                    subjects.forEach(() => {
+                        tableHtml += `<td>-</td>`;
+                    });
+                }
 
-            // Add average and status
-            let statusText = student.status || 'No Approved Grades';
-            let statusClass = 'text-secondary';
-            
-            // Determine status class based on the status text
-            if (statusText.includes('Passed')) {
-                statusClass = 'text-success';
-            } else if (statusText.includes('Failed')) {
-                statusClass = 'text-danger';
-            } else if (statusText.includes('Pending')) {
-                statusClass = 'text-warning';
-            }
-            
-            // Format average with 2 decimal places if it's a number
-            let averageDisplay = '-';
-            if (student.average !== null && !isNaN(student.average)) {
-                averageDisplay = parseFloat(student.average).toFixed(2);
-            }
-            
-            // Add a note if there are pending grades
-            let statusNote = '';
-            if (student.grades && student.grades.some(g => {
-                const status = (g?.status || '').toLowerCase().trim();
-                return status === 'pending' || status === 'pending_approval';
-            })) {
-                statusNote = ' <span class="badge bg-warning text-dark">Pending Grades</span>';
-            }
-            
-            table += `
+                // Add average and status
+                let statusText = student.status || 'No Approved Grades';
+                let statusClass = 'text-secondary'; // Default class
+                
+                // Determine status class based on the status text
+                if (statusText.includes('Passed')) {
+                    statusClass = 'text-success'; // Green
+                } else if (statusText.includes('Failed')) {
+                    statusClass = 'text-danger'; // Red
+                } else if (statusText.includes('Pending')) {
+                    statusClass = 'text-warning'; // Orange
+                } else if (statusText.includes('No Grades Submitted') || statusText.includes('No Calculable Average')) {
+                     statusClass = 'text-muted'; // Muted color for informational statuses
+                }
+                
+                // Format average with 2 decimal places if it's a number
+                let averageDisplay = '-';
+                if (student.average !== null && !isNaN(student.average)) {
+                    averageDisplay = parseFloat(student.average).toFixed(2);
+                } else if (student.average === 0) {
+                    averageDisplay = '0.00';
+                }
+                
+                // Add a note if there are pending grades
+                let statusNote = '';
+                if (student.grades && student.grades.some(g => {
+                    const status = (g?.status || '').toLowerCase().trim();
+                    return status === 'pending' || status === 'pending_approval';
+                })) {
+                    statusNote = ' <span class="badge bg-warning text-dark">Pending Grades</span>';
+                }
+                
+                tableHtml += `
                     <td class="text-center fw-bold">${averageDisplay}</td>
                     <td class="text-center fw-bold ${statusClass}">
                         ${statusText}
                         ${statusNote}
                     </td>
                 </tr>`;
-        });
+            });
 
-        table += `
+            tableHtml += `
                     </tbody>
                 </table>
             </div>`;
         
-        container.innerHTML = table;
+            // Add pagination controls below the table
+            let paginationHtml = `
+                <div class="d-flex flex-column align-items-center mt-3" style="width: 100%;">
+                    <div class="text-muted mb-2">
+                        Showing ${start + 1} to ${Math.min(end, students.length)} of ${students.length} students
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination mb-0">
+                            <li class="page-item ${page === 1 ? 'disabled' : ''}">
+                                <a class="page-link" href="#" data-page="${page - 1}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>`;
+
+            // Add page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHtml += `
+                    <li class="page-item ${i === page ? 'active' : ''}">
+                        <a class="page-link" href="#" data-page="${i}">${i}</a>
+                    </li>`;
+            }
+
+            paginationHtml += `
+                            <li class="page-item ${page === totalPages ? 'disabled' : ''}">
+                                <a class="page-link" href="#" data-page="${page + 1}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>`;
+
+            container.innerHTML = `
+                <div class="table-container-wrapper">${tableHtml}</div>
+                <div class="pagination-container-wrapper">${paginationHtml}</div>
+            `;
+
+            // Add event listeners for pagination
+            document.querySelectorAll('.page-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const newPage = parseInt(e.target.closest('.page-link').dataset.page);
+                    if (newPage >= 1 && newPage <= totalPages) {
+                        currentPage = newPage;
+                        renderTable(currentPage);
+                    }
+                });
+            });
+        }
+
+        // Initial render
+        renderTable(currentPage);
     }
 });
 </script>
@@ -563,12 +540,16 @@ document.addEventListener('DOMContentLoaded', function() {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.9rem;
+    table-layout: fixed;
 }
 .grades-table th, .grades-table td {
     border: 1px solid #e0e0e0;
     padding: 0.75rem;
     text-align: center;
     vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .grades-table th {
     background-color: #f8f9fa;
@@ -585,17 +566,46 @@ document.addEventListener('DOMContentLoaded', function() {
     color: #212529;
 }
 .status-passed {
-    color: #198754;
+    color: #198754 !important;
     font-weight: 600;
 }
 .status-failed {
-    color: #dc3545;
+    color: #dc3545 !important;
     font-weight: 600;
 }
 .status-pending {
-    color: #ffc107;
+    color: #ffc107 !important;
     font-weight: 600;
 }
+
+/* Custom styles for individual grades */
+.grades-table td.grade-inc {
+    color: #ffc107 !important; /* Orange */
+    font-weight: bold;
+}
+
+.grades-table td.grade-dr-nc {
+    color: #dc3545 !important; /* Red */
+    font-weight: bold;
+}
+
+/* Ensure Bootstrap text colors have higher specificity if needed */
+.grades-table td.text-success {
+    color: #198754 !important;
+}
+
+.grades-table td.text-danger {
+     color: #dc3545 !important;
+}
+
+.grades-table td.text-warning {
+     color: #ffc107 !important;
+}
+
+.grades-table td.text-muted {
+     color: #6c757d !important;
+}
+
 .loading-spinner {
     display: inline-block;
     width: 2rem;
@@ -635,6 +645,56 @@ document.addEventListener('DOMContentLoaded', function() {
 .text-center:hover .bi-collection {
     transform: scale(1.1);
     opacity: 0.9;
+}
+
+.pagination {
+    margin-bottom: 0;
+    justify-content: center;
+}
+.pagination .page-item {
+    display: inline-block; /* Make list items display horizontally */
+}
+.pagination .page-link {
+    color: #22BBEA;
+    border-color: #dee2e6;
+    padding: 0.5rem 0.75rem;
+}
+.pagination .page-item.active .page-link {
+    background-color: #22BBEA;
+    border-color: #22BBEA;
+    color: white;
+}
+.pagination .page-link:hover {
+    color: #1a9bc7;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+.pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+#gradesTableContainer {
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Keep align-items: center to center the block children */
+}
+
+#gradesTableContainer > div {
+    width: 100%; /* Ensure direct children take full width */
+}
+
+.table-container-wrapper,
+.pagination-container-wrapper {
+    width: 100%;
+    display: block; /* Ensure these are block elements */
+}
+
+.table-responsive {
+    display: block; /* Explicitly make table-responsive a block element */
+    width: 100%;
 }
 </style>
 @endsection

@@ -260,6 +260,11 @@
                         <a href="{{ route('training.analytics.subject-intervention') }}" class="{{ request()->routeIs('training.analytics.subject-intervention') ? 'active' : '' }}">
                             <img src="{{ asset('images/subject intervention.png') }}" alt="Subject Intervention"> Subject Intervention
                         </a>
+
+                        <a href="{{ route('training.analytics.class-progress') }}" class="{{ request()->routeIs('training.analytics.class-progress') ? 'active' : '' }}">
+    <img src="{{ asset('images/analytics.png') }}" alt="Class Progress"> Class Progress
+</a>
+
                         <a href="{{ route('training.intern-grades-analytics.index') }}" class="{{ request()->routeIs('training.intern-grades-analytics.*') ? 'active' : '' }}">
                             <img src="{{ asset('images/internship grades.png') }}" alt="Internship Grades Progress"> Internship Grades Progress
                         </a>

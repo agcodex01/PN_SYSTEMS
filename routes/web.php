@@ -198,3 +198,19 @@ Route::middleware('auth')->group(function () {
     
 
 });
+
+// Analytics Routes
+Route::prefix('training/analytics')->name('training.analytics.')->group(function () {
+    Route::get('/subject-progress', 'App\\Http\\Controllers\\AnalyticsController@showSubjectProgress')->name('subject-progress');
+    Route::get('/subject-intervention', 'App\\Http\\Controllers\\AnalyticsController@showSubjectIntervention')->name('subject-intervention');
+    Route::get('/class-grades', 'App\\Http\\Controllers\\AnalyticsController@showClassGrades')->name('class-grades');
+
+    // New Class Progress Routes
+    Route::get('/class-progress', 'App\\Http\\Controllers\\AnalyticsController@showClassProgress')->name('class-progress');
+    Route::get('/class-progress-data', 'App\\Http\\Controllers\\AnalyticsController@fetchClassProgressData')->name('class-progress-data');
+
+    // Existing API routes for dropdowns
+    Route::get('/schools', 'App\\Http\\Controllers\\AnalyticsController@getSchools');
+    Route::get('/classes/{schoolId}', 'App\\Http\\Controllers\\AnalyticsController@getClassesBySchool');
+    Route::get('/class-submissions/{schoolId}/{classId}', 'App\\Http\\Controllers\\AnalyticsController@getClassSubmissions');
+});

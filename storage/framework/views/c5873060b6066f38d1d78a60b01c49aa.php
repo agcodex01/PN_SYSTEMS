@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? 'Dashboard' }}</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="stylesheet" href="{{ asset('css/nav.css') }}">
+    <title><?php echo e($title ?? 'Dashboard'); ?></title>
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
+    <link rel="stylesheet" href="<?php echo e(asset('css/nav.css')); ?>">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -174,26 +174,28 @@
 </head>
 <body>
     <div class="top-bar">
-        <img class="PN-logo" src="{{ asset('images/PN-logo.png') }}" alt="PN Logo">
+        <img class="PN-logo" src="<?php echo e(asset('images/PN-logo.png')); ?>" alt="PN Logo">
 
-        {{-- Add Logged in as info and Logout --}}
-        @auth
-            @php
+        
+        <?php if(auth()->guard()->check()): ?>
+            <?php
                 $user = Auth::user();
-            @endphp
+            ?>
 
             <div class="user-info" style="color: #333; font-weight: 500; display: flex; align-items: center; gap: 15px;">
                 Logged in as: 
                 <span style="color: white;">
-                    {{ $user->user_fname }} {{ $user->user_mInitial }} {{ $user->user_lname }} {{ $user->suffix }}
+                    <?php echo e($user->user_fname); ?> <?php echo e($user->user_mInitial); ?> <?php echo e($user->user_lname); ?> <?php echo e($user->suffix); ?>
+
                 </span> 
                 | Role: 
                 <span style="color: white;">
-                    {{ ucfirst($user->user_role) }}
+                    <?php echo e(ucfirst($user->user_role)); ?>
+
                 </span>
 
-                <form action="{{ route('logout') }}" method="POST" id="logout-form" style="display: inline;">
-                    @csrf
+                <form action="<?php echo e(route('logout')); ?>" method="POST" id="logout-form" style="display: inline;">
+                    <?php echo csrf_field(); ?>
                     <button type="button" class="logout-btn" onclick="confirmLogout()">
                         <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"/>
@@ -201,7 +203,7 @@
                     </button>
                 </form>
             </div>
-        @endauth
+        <?php endif; ?>
     </div>
 
 
@@ -209,48 +211,48 @@
         <aside class="sidebar">
             <ul class="menu">
 
-                <li class="{{ request()->routeIs('educator.dashboard') ? 'active' : '' }}">
-                    <a href="{{ route('educator.dashboard') }}">
-                        <img src="{{ asset('images/Dashboard.png') }}" alt="Dashboard"> Dashboard
+                <li class="<?php echo e(request()->routeIs('educator.dashboard') ? 'active' : ''); ?>">
+                    <a href="<?php echo e(route('educator.dashboard')); ?>">
+                        <img src="<?php echo e(asset('images/Dashboard.png')); ?>" alt="Dashboard"> Dashboard
                     </a>
                 </li>
-                <li class="{{ request()->routeIs('educator.students-info') ? 'active' : '' }}">
-                    <a href="{{ route('educator.students.index') }}">
-                        <img src="{{ asset('images/mu.png') }}" alt="Students Info"> Students Info
+                <li class="<?php echo e(request()->routeIs('educator.students-info') ? 'active' : ''); ?>">
+                    <a href="<?php echo e(route('educator.students.index')); ?>">
+                        <img src="<?php echo e(asset('images/mu.png')); ?>" alt="Students Info"> Students Info
                     </a>
                 </li>
 
                
-                <li class="dropdown {{ request()->routeIs('educator.analytics.*') ? 'active' : '' }}" id="educatorAnalyticsDropdown">
+                <li class="dropdown <?php echo e(request()->routeIs('educator.analytics.*') ? 'active' : ''); ?>" id="educatorAnalyticsDropdown">
                     <a href="#" onclick="toggleDropdown(event)">
-                        <img src="{{ asset('images/analytics.png') }}" alt="Analytics"> Analytics
+                        <img src="<?php echo e(asset('images/analytics.png')); ?>" alt="Analytics"> Analytics
                     </a>
                     <div class="dropdown-content">
-                        <a href="{{ route('educator.analytics.class-grades') }}" class="{{ request()->routeIs('educator.analytics.class-grades') ? 'active' : '' }}">
-                            <img src="{{ asset('images/class grades.png') }}" alt="Class Grades"> Class Grades
+                        <a href="<?php echo e(route('educator.analytics.class-grades')); ?>" class="<?php echo e(request()->routeIs('educator.analytics.class-grades') ? 'active' : ''); ?>">
+                            <img src="<?php echo e(asset('images/class grades.png')); ?>" alt="Class Grades"> Class Grades
                         </a>
-                        <a href="{{ route('educator.analytics.subject-progress') }}" class="{{ request()->routeIs('educator.analytics.subject-progress') ? 'active' : '' }}">
-                            <img src="{{ asset('images/subject progress.png') }}" alt="Subject Progress"> Subject Progress
+                        <a href="<?php echo e(route('educator.analytics.subject-progress')); ?>" class="<?php echo e(request()->routeIs('educator.analytics.subject-progress') ? 'active' : ''); ?>">
+                            <img src="<?php echo e(asset('images/subject progress.png')); ?>" alt="Subject Progress"> Subject Progress
                         </a>
-                        <a href="{{ route('educator.analytics.subject-intervention') }}" class="{{ request()->routeIs('educator.analytics.subject-intervention') ? 'active' : '' }}">
-                            <img src="{{ asset('images/subject intervention.png') }}" alt="Subject Intervention"> Subject Intervention
+                        <a href="<?php echo e(route('educator.analytics.subject-intervention')); ?>" class="<?php echo e(request()->routeIs('educator.analytics.subject-intervention') ? 'active' : ''); ?>">
+                            <img src="<?php echo e(asset('images/subject intervention.png')); ?>" alt="Subject Intervention"> Subject Intervention
                         </a>
-                        <a href="{{ route('educator.analytics.class-progress') }}" class="{{ request()->routeIs('educator.analytics.class-progress') ? 'active' : '' }}">
-                            <img src="{{ asset('images/analytics.png') }}" alt="Class Progress"> Class Progress
+                        <a href="<?php echo e(route('educator.analytics.class-progress')); ?>" class="<?php echo e(request()->routeIs('educator.analytics.class-progress') ? 'active' : ''); ?>">
+                            <img src="<?php echo e(asset('images/analytics.png')); ?>" alt="Class Progress"> Class Progress
                         </a>
-                        <a href="{{ route('educator.analytics.intern-grades-progress') }}" class="{{ request()->routeIs('educator.analytics.intern-grades-progress') ? 'active' : '' }}">
-                            <img src="{{ asset('images/internship grades.png') }}" alt="Internship Grades Progress"> Internship Grades Progress
+                        <a href="<?php echo e(route('educator.analytics.intern-grades-progress')); ?>" class="<?php echo e(request()->routeIs('educator.analytics.intern-grades-progress') ? 'active' : ''); ?>">
+                            <img src="<?php echo e(asset('images/internship grades.png')); ?>" alt="Internship Grades Progress"> Internship Grades Progress
                         </a>
                     </div>
                 </li>
                 <li>
-                    <a href="{{ route('educator.intervention') }}">
-                        <img src="{{ asset('images/is.png') }}" alt="Intervention Status"> Intervention Status
+                    <a href="<?php echo e(route('educator.intervention')); ?>">
+                        <img src="<?php echo e(asset('images/is.png')); ?>" alt="Intervention Status"> Intervention Status
                     </a>
                 </li>
                 <li>
                     <a href="#">
-                        <img src="{{ asset('images/me.png') }}" alt="Profile"> Profile
+                        <img src="<?php echo e(asset('images/me.png')); ?>" alt="Profile"> Profile
                     </a>
                 </li>
 
@@ -260,7 +262,7 @@
         </aside>
 
         <main class="content">
-            @yield('content')
+            <?php echo $__env->yieldContent('content'); ?>
         </main>
     </div>
 
@@ -283,8 +285,9 @@
     
 </script>
 
-@stack('scripts')
+<?php echo $__env->yieldPushContent('scripts'); ?>
 
    
 </body>
 </html>
+<?php /**PATH C:\laravel\PNPH-CAPSTONE\resources\views/layouts/educator_layout.blade.php ENDPATH**/ ?>

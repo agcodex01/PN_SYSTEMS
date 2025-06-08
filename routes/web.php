@@ -64,12 +64,19 @@ Route::middleware('auth')->group(function () {
     // Educator routes
     Route::prefix('educator')->name('educator.')->middleware('can:educator-access')->group(function () {
         Route::get('/dashboard', [EducatorController::class, 'dashboard'])->name('dashboard');
+        Route::get('/profile', [EducatorController::class, 'profile'])->name('profile');
+        Route::get('/intern-grades-progress', [App\Http\Controllers\Educator\InternGradesAnalytics::class, 'index'])->name('intern-grades-progress');
+        Route::get('/intern-grades-progress-data', [App\Http\Controllers\Educator\InternGradesAnalytics::class, 'getAnalyticsData'])->name('intern-grades-progress-data');
 
-    Route::get('/students-info', [EducatorController::class, 'index'])->name('educator.students.index');
-    Route::get('/students/{user_id}/view', [EducatorController::class, 'viewStudent'])->name('students.view');
-    Route::get('/students/{user_id}/edit', [EducatorController::class, 'edit'])->name('students.edit');
-    Route::put('/students/{user_id}', [EducatorController::class, 'update'])->name('students.update');
-    Route::get('/students-info', [EducatorController::class, 'index'])->name('students.index');
+        // Intervention routes
+        Route::get('/intervention', [App\Http\Controllers\Educator\InterventionController::class, 'index'])->name('intervention');
+        Route::get('/intervention-data', [App\Http\Controllers\Educator\InterventionController::class, 'getInterventionData'])->name('intervention-data');
+
+        Route::get('/students-info', [EducatorController::class, 'index'])->name('educator.students.index');
+        Route::get('/students/{user_id}/view', [EducatorController::class, 'viewStudent'])->name('students.view');
+        Route::get('/students/{user_id}/edit', [EducatorController::class, 'edit'])->name('students.edit');
+        Route::put('/students/{user_id}', [EducatorController::class, 'update'])->name('students.update');
+        Route::get('/students-info', [EducatorController::class, 'index'])->name('students.index');
         
 
 
@@ -213,4 +220,28 @@ Route::prefix('training/analytics')->name('training.analytics.')->group(function
     Route::get('/schools', 'App\\Http\\Controllers\\AnalyticsController@getSchools');
     Route::get('/classes/{schoolId}', 'App\\Http\\Controllers\\AnalyticsController@getClassesBySchool');
     Route::get('/class-submissions/{schoolId}/{classId}', 'App\\Http\\Controllers\\AnalyticsController@getClassSubmissions');
+});
+
+// Educator Analytics Routes
+Route::prefix('educator/analytics')->name('educator.analytics.')->group(function () {
+    Route::get('/class-grades', [App\Http\Controllers\Educator\AnalyticsController::class, 'showClassGrades'])->name('class-grades');
+    Route::get('/class-grades-data', [App\Http\Controllers\Educator\AnalyticsController::class, 'fetchClassGrades'])->name('class-grades-data');
+    
+    Route::get('/subject-progress', [App\Http\Controllers\Educator\AnalyticsController::class, 'showSubjectProgress'])->name('subject-progress');
+    Route::get('/subject-progress-data', [App\Http\Controllers\Educator\AnalyticsController::class, 'fetchSubjectProgressData'])->name('subject-progress-data');
+    
+    Route::get('/subject-intervention', [App\Http\Controllers\Educator\AnalyticsController::class, 'showSubjectIntervention'])->name('subject-intervention');
+    Route::get('/subject-intervention-data', [App\Http\Controllers\Educator\AnalyticsController::class, 'fetchSubjectInterventionData'])->name('subject-intervention-data');
+    
+    Route::get('/class-progress', [App\Http\Controllers\Educator\AnalyticsController::class, 'showClassProgress'])->name('class-progress');
+    Route::get('/class-progress-data', [App\Http\Controllers\Educator\AnalyticsController::class, 'fetchClassProgressData'])->name('class-progress-data');
+
+    // API routes for dropdowns
+    Route::get('/schools', [App\Http\Controllers\Educator\AnalyticsController::class, 'getSchools'])->name('schools');
+    Route::get('/classes/{schoolId}', [App\Http\Controllers\Educator\AnalyticsController::class, 'getClassesBySchool'])->name('classes');
+    Route::get('/class-submissions/{schoolId}/{classId}', [App\Http\Controllers\Educator\AnalyticsController::class, 'getClassSubmissions'])->name('class-submissions');
+
+    // Intern Grades Progress Routes
+    Route::get('/intern-grades-progress', [App\Http\Controllers\Educator\InternGradesAnalytics::class, 'index'])->name('intern-grades-progress');
+    Route::get('/intern-grades-progress-data', [App\Http\Controllers\Educator\InternGradesAnalytics::class, 'getAnalyticsData'])->name('intern-grades-progress-data');
 });

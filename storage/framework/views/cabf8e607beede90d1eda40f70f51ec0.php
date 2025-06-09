@@ -4,6 +4,21 @@
 
 <h1 style="font-weight: 300;">Schools</h1>
 <hr>
+
+<?php if(session('success')): ?>
+    <div class="alert alert-success">
+        <?php echo e(session('success')); ?>
+
+    </div>
+<?php endif; ?>
+
+<?php if(session('error')): ?>
+    <div class="alert alert-error">
+        <?php echo e(session('error')); ?>
+
+    </div>
+<?php endif; ?>
+
 <div class="page-container">
     <div class="header-section">
         <a href="<?php echo e(route('training.schools.create')); ?>" class="btn btn-primary">

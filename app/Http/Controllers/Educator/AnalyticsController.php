@@ -49,11 +49,15 @@ class AnalyticsController extends Controller
     {
         // Get the first school's passing grade range as default
         $school = School::select('passing_grade_min', 'passing_grade_max')->first();
-        
+
         return view('educator.analytics.class-progress', [
             'defaultSchool' => $school
         ]);
     }
+
+
+
+
 
     public function getSchools()
     {
@@ -67,6 +71,7 @@ class AnalyticsController extends Controller
     {
         $classes = ClassModel::where('school_id', $schoolId)
             ->select('class_id as id', 'class_name as name')
+            ->orderBy('class_name')
             ->get();
         return response()->json($classes);
     }

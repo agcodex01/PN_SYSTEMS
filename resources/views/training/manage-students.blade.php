@@ -6,6 +6,19 @@
 
 <h1 style="font-weight: 300;">Schools</h1>
 <hr>
+
+@if(session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-error">
+        {{ session('error') }}
+    </div>
+@endif
+
 <div class="page-container">
     <div class="header-section">
         <a href="{{ route('training.schools.create') }}" class="btn btn-primary">

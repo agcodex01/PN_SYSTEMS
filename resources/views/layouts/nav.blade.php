@@ -270,13 +270,13 @@
                         </a>
                     </div>
                 </li>
-                <li>
-                    <a href="#">
+                <li class="{{ request()->routeIs('training.intervention.*') ? 'active' : '' }}">
+                    <a href="{{ route('training.intervention.index') }}">
                         <img src="{{ asset('images/is.png') }}" alt="Intervention Status"> Intervention Status
                     </a>
                 </li>
 
-            
+
 
             </ul>
         </aside>

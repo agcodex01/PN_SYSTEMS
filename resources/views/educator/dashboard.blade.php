@@ -27,43 +27,45 @@
         </div>
     </div>
 
-    <h1 style="font-weight:300; margin-bottom: 20px; color: #333;">Student by Batch Analytics</h1>
+    <h1 style="font-weight:300; margin-bottom: 20px; color: #333;">Student by Class Analytics</h1>
     <hr>
     <!-- Charts -->
     <div style="display: flex; flex-direction: column; gap: 30px;">
         <!-- Batch Chart -->
-        <div style="background: beige; width: 90%; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 1400px; margin: 0 auto;">
-            <h3 style="text-align: center; margin-bottom: 20px; color: #333;">Students by Batch</h3>
-            <div style="height: 300px;">
+        <div style="background: #fff; width: 95%; border-radius: 12px; padding: 30px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); max-width: 900px; margin: 0 auto 30px auto; display: flex; flex-direction: column; align-items: center;">
+            <h3 style="text-align: center; margin-bottom: 24px; color: #333; font-size: 1.5em; font-weight: 500;">Students by Class and Gender</h3>
+            <div style="height: 340px; width: 100%; max-width: 700px; display: flex; align-items: center; justify-content: center;">
                 <canvas id="batchChart"></canvas>
             </div>
         </div>
 
 
 
-    <h1 style="font-weight:300;  color: #333;">Sex by Batch Analytics</h1>
-    <hr style="margin-top: -20px;>
+    <h1 style="font-weight:300;  color: #333;">Sex by Class Analytics</h1>
+    <hr style="margin-top: -20px;">
     <div class="options">
-    <select id="batchFilter" style="width:110px; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
-                    <option value="all">All Batches</option>
-                    @foreach($batchCounts->keys() as $batch)
-                        <option value="{{ $batch }}">Batch {{ $batch }}</option>
-                    @endforeach
-                </select>
-    </div>
-      
-        <div style="background: beige; width: 90%; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 1400px; margin: 0 auto;">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h3 style="color: #333; margin-bottom: 10px;">Sex Distribution</h3>
-            </div>
-            <div style="height: 400px;">
-                <canvas id="genderChart" ></canvas>
-            </div>
+    <div style="background: #fff; width: 95%; border-radius: 12px; padding: 30px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); max-width: 600px; margin: 30px auto 0 auto; display: flex; flex-direction: column; align-items: center;">
+        <div style="width:100%; display:flex; flex-direction:column; align-items:center; margin-bottom: 10px;">
+            <select id="batchFilter" style="width:135px; padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; font-size:1em; color:#333; outline:none; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <option value="all">All Batches</option>
+                @foreach($batchCounts->keys() as $batch)
+                    <option value="{{ $batch }}">Batch {{ $batch }}</option>
+                @endforeach
+            </select>
         </div>
+        <h3 style="color: #333; margin-bottom: 20px; font-size: 1.5em; font-weight: 500; text-align: center;">Sex Distribution <span id='pieBatchTitle' style='font-size:0.7em; color:#888;'></span></h3>
+        <div style="height: 320px; width: 320px; display: flex; align-items: center; justify-content: center;">
+            <canvas id="genderBarChart"></canvas>
+        </div>
+        <div id="pieLegend" style="display: flex; gap: 20px; justify-content: center; margin-top: 20px;">
+            <div style="display: flex; align-items: center; gap: 6px;"><span style="display:inline-block;width:18px;height:18px;background:#22bbea;border-radius:50%;"></span> <span style="color:#333;">Male</span></div>
+            <div style="display: flex; align-items: center; gap: 6px;"><span style="display:inline-block;width:18px;height:18px;background:#ff9933;border-radius:50%;"></span> <span style="color:#333;">Female</span></div>
+        </div>
+    </div>
     </div>
 
     <!-- Recent Items Section -->
-    <h1 style="font-weight:300; margin-bottom: 20px; color: #333;">Recent Activity</h1>
+    <h1 style="font-weight:300; color: #333;">Recent Activity from training</h1>
     <hr>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 40px;">
         <!-- Recent Students -->
@@ -128,113 +130,107 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Wait for DOM to be ready
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Gender Distribution Chart
-    const genderCtx = document.getElementById('genderChart');
-    let genderChart;
-    
-    // Initial gender data for all batches
-    const genderData = {
-        all: {
-            male: {{ $maleCount }},
-            female: {{ $femaleCount }}
-        },
-        @foreach($batchCounts->keys() as $batch)
-        '{{ $batch }}': {
-            male: {{ $genderByBatch[$batch]['male'] ?? 0 }},
-            female: {{ $genderByBatch[$batch]['female'] ?? 0 }}
-        },
-        @endforeach
-    };
-
-    function updateGenderChart(batchValue) {
-        const data = genderData[batchValue];
-        
-        if (genderChart) {
-            genderChart.destroy();
-        }
-
-        genderChart = new Chart(genderCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Male', 'Female'],
-                datasets: [{
-                    data: [data.male, data.female],
-                    backgroundColor: ['#22bbea', '#ff9933']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: batchValue === 'all' ? 'All Batches' : `Batch ${batchValue}`,
-                        font: {
-                            size: 16
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Initialize chart with all batches
-    if (genderCtx) {
-        updateGenderChart('all');
-
-        // Add event listener for batch filter
-        document.getElementById('batchFilter').addEventListener('change', function(e) {
-            updateGenderChart(e.target.value);
-        });
-    }
-
-    // Students by Batch Chart
+    // --- Students by Batch Chart (grouped by gender) ---
     const batchCtx = document.getElementById('batchChart');
     if (batchCtx) {
+        const batches = {!! json_encode($batchCounts->keys()) !!};
+        const studentsByGenderByBatch = {!! json_encode($studentsByGenderByBatch) !!};
+        const maleCounts = batches.map(batch => studentsByGenderByBatch[batch]?.male ?? 0);
+        const femaleCounts = batches.map(batch => studentsByGenderByBatch[batch]?.female ?? 0);
         new Chart(batchCtx, {
             type: 'bar',
             data: {
-                labels: {!! json_encode($batchCounts->keys()) !!},
-                datasets: [{
-                    label: 'Number of Students',
-                    data: {!! json_encode($batchCounts->values()) !!},
-                    backgroundColor: '#22bbea',
-                    barThickness: 100,  // Fixed bar width
-                    maxBarThickness: 150 // Maximum bar width
-                }]
+                labels: batches,
+                datasets: [
+                    {
+                        label: 'Male',
+                        data: maleCounts,
+                        backgroundColor: '#22bbea',
+                    },
+                    {
+                        label: 'Female',
+                        data: femaleCounts,
+                        backgroundColor: '#ff9933',
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: '#f0f0f0'
-                        }
-                    }
-                },
-                layout: {
-                    padding: {
-                        left: 20,
-                        right: 20
-                    }
-                },
                 plugins: {
-                    legend: {
-                        display: false
+                    legend: { display: true },
+                    title: {
+                        display: true,
+                        font: { size: 16 }
                     }
-                }
+                },
+                scales: {
+                    x: { stacked: false, title: { display: true, text: 'Class' } },
+                    y: { beginAtZero: true, max: 70, title: { display: true, text: 'Number of Students' } }
+                },
+                layout: { padding: { left: 10, right: 10 } }
             }
         });
+    }
+
+    // --- Pie Chart for Sex Distribution (with batch filter) ---
+    const genderBarCtx = document.getElementById('genderBarChart');
+    const batchFilter = document.getElementById('batchFilter');
+    const genderByBatch = {!! json_encode($genderByBatch) !!};
+
+    function renderGenderPieChart(batchValue) {
+        let male = 0, female = 0;
+        if (batchValue === 'all') {
+            Object.values(genderByBatch).forEach(batch => {
+                male += batch.male ?? 0;
+                female += batch.female ?? 0;
+            });
+        } else {
+            male = genderByBatch[batchValue]?.male ?? 0;
+            female = genderByBatch[batchValue]?.female ?? 0;
+        }
+        if (genderBarCtx) {
+            if (window.genderPieChart) {
+                window.genderPieChart.destroy();
+            }
+            window.genderPieChart = new Chart(genderBarCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Male', 'Female'],
+                    datasets: [
+                        {
+                            data: [male, female],
+                            backgroundColor: ['#22bbea', '#ff9933']
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            // Update the title
+            const pieBatchTitle = document.getElementById('pieBatchTitle');
+            if (pieBatchTitle) {
+                pieBatchTitle.textContent = batchValue === 'all' ? '(All Batches)' : `(Batch ${batchValue})`;
+            }
+        }
+    }
+
+    if (genderBarCtx) {
+        renderGenderPieChart('all');
+        if (batchFilter) {
+            batchFilter.addEventListener('change', function(e) {
+                renderGenderPieChart(e.target.value);
+            });
+        }
     }
 });
 </script>

@@ -30,14 +30,27 @@ class InternGradesAnalytics extends Controller
             Log::info('Companies for class ' . $class->class_name . ':', ['companies' => $classCompanies[$class->class_id]->toArray()]);
         }
 
-        // Get chart data for each class
+        // Get chart data for each class - always show all data initially
         $classChartData = [];
+
+        // First, get all data (no filters) to ensure we have something to show
+        $allData = $this->getDistributionChartData(null, null);
+
         foreach ($classes as $class) {
+            // Always use all data for initial display to ensure charts show
             $classChartData[$class->class_id] = [
                 'class_name' => $class->class_name,
-                'chart_data' => $this->getDistributionChartData(null, $class->class_id)
+                'chart_data' => $allData,
+                'companies' => InternGrade::where('class_id', $class->class_id)
+                    ->whereNotNull('company_name')
+                    ->distinct()
+                    ->pluck('company_name')
+                    ->toArray()
             ];
-            Log::info('Chart data for class ' . $class->class_name . ':', ['data' => $classChartData[$class->class_id]]);
+            Log::info('Chart data for class ' . $class->class_name . ':', [
+                'hasData' => $allData['hasData'],
+                'datasetSums' => array_map(function($dataset) { return array_sum($dataset['data']); }, $allData['datasets'])
+            ]);
         }
 
         return view('educator.analytics.intern-grades-progress', compact(
@@ -76,7 +89,7 @@ class InternGradesAnalytics extends Controller
     private function getDistributionChartData($company = null, $classId = null)
     {
         $query = InternGrade::query();
-        
+
         if ($company) {
             $query->where('company_name', $company);
         }
@@ -90,6 +103,16 @@ class InternGradesAnalytics extends Controller
             $submissionNumber = request('submission_number');
             $query->where('submission_number', $submissionNumber);
         }
+
+        // Debug: Log the query and data
+        \Log::info('InternGrades Query Debug', [
+            'company' => $company,
+            'classId' => $classId,
+            'submission_number' => request('submission_number'),
+            'total_records' => InternGrade::count(),
+            'filtered_records' => (clone $query)->count(),
+            'sample_data' => (clone $query)->limit(2)->get()->toArray()
+        ]);
 
         // Define the competencies exactly as they appear in the database
         $competencies = [
@@ -130,15 +153,33 @@ class InternGradesAnalytics extends Controller
             ]
         ];
 
+        // Get all records first and process in PHP for better debugging
+        $allRecords = (clone $query)->get();
+
+        \Log::info('Processing records', [
+            'total_records' => $allRecords->count(),
+            'sample_grades' => $allRecords->take(2)->pluck('grades')->toArray()
+        ]);
+
         // For each competency, count students in each grade
         foreach ($competencies as $competencyKey => $competencyLabel) {
             // Count students for each grade (1-4) for this competency
             for ($grade = 1; $grade <= 4; $grade++) {
-                $count = (clone $query)
-                    ->whereRaw("CAST(JSON_UNQUOTE(JSON_EXTRACT(grades, '$.{$competencyKey}')) AS DECIMAL) = ?", [$grade])
-                    ->count();
-                
+                $count = 0;
+
+                foreach ($allRecords as $record) {
+                    $grades = $record->grades;
+                    if (is_array($grades) && isset($grades[$competencyKey])) {
+                        $competencyGrade = $grades[$competencyKey];
+                        if (is_numeric($competencyGrade) && (int)$competencyGrade === $grade) {
+                            $count++;
+                        }
+                    }
+                }
+
                 $datasets[$grade - 1]['data'][] = $count;
+
+                \Log::info("Grade count for {$competencyLabel} grade {$grade}: {$count}");
             }
         }
 
@@ -151,15 +192,52 @@ class InternGradesAnalytics extends Controller
             }
         }
 
+        // If no data found and we were filtering, try without filters as fallback
+        if (!$hasData && ($company || $classId || request()->has('submission_number'))) {
+            \Log::info('No data found with filters, trying without filters');
+            $fallbackQuery = InternGrade::query();
+            $fallbackRecords = $fallbackQuery->get();
+
+            if ($fallbackRecords->count() > 0) {
+                // Reset datasets
+                foreach ($datasets as &$dataset) {
+                    $dataset['data'] = [];
+                }
+
+                // Reprocess with all data
+                foreach ($competencies as $competencyKey => $competencyLabel) {
+                    for ($grade = 1; $grade <= 4; $grade++) {
+                        $count = 0;
+                        foreach ($fallbackRecords as $record) {
+                            $grades = $record->grades;
+                            if (is_array($grades) && isset($grades[$competencyKey])) {
+                                $competencyGrade = $grades[$competencyKey];
+                                if (is_numeric($competencyGrade) && (int)$competencyGrade === $grade) {
+                                    $count++;
+                                }
+                            }
+                        }
+                        $datasets[$grade - 1]['data'][] = $count;
+                    }
+                }
+
+                // Recheck hasData
+                foreach ($datasets as $dataset) {
+                    if (array_sum($dataset['data']) > 0) {
+                        $hasData = true;
+                        break;
+                    }
+                }
+            }
+        }
+
         // For debugging
-        \Log::info('Chart Data', [
+        \Log::info('Chart Data Final', [
             'company' => $company,
             'classId' => $classId,
             'submission_number' => request('submission_number'),
-            'datasets' => $datasets,
             'hasData' => $hasData,
-            'query' => $query->toSql(),
-            'bindings' => $query->getBindings()
+            'datasetSums' => array_map(function($dataset) { return array_sum($dataset['data']); }, $datasets)
         ]);
 
         return [

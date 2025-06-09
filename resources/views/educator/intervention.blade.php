@@ -1,499 +1,510 @@
 @extends('layouts.educator_layout')
 
 @section('content')
-
-<div class="page-container">
-    <div class="header-section">
-        <h1 class="header-title">📊 Intervention Status</h1>
-        <hr class="header-line">
-        <p class="header-description">View and manage subjects that need intervention based on student performance.</p>
-    </div>
-
-    <div class="card-container">
-        <div class="card-body">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="schoolSelect" class="form-label">School</label>
-                    <select id="schoolSelect" class="custom-select">
-                        <option value="">Select School</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="classSelect" class="form-label">Class</label>
-                    <select id="classSelect" class="custom-select" disabled>
-                        <option value="">Select Class</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="submissionSelect" class="form-label">Submission</label>
-                    <select id="submissionSelect" class="custom-select" disabled>
-                        <option value="">Select Submission</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card-container">
-        <div class="card-body">
-            <div id="interventionTableContainer" class="table-placeholder">
-                <div class="placeholder-content">
-                    <span class="placeholder-icon">&#128196;</span> <!-- Calendar emoji as placeholder icon -->
-                    <p class="placeholder-text">Select a school, class, and submission to view intervention data</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Load schools
-    fetch('/educator/analytics/schools')
-        .then(res => res.json())
-        .then(data => {
-            const schoolSelect = document.getElementById('schoolSelect');
-            data.forEach(school => {
-                const opt = document.createElement('option');
-                opt.value = school.id;
-                opt.textContent = school.name;
-                schoolSelect.appendChild(opt);
-            });
-        });
-
-    // School change handler
-    document.getElementById('schoolSelect').addEventListener('change', function() {
-        const schoolId = this.value;
-        const classSelect = document.getElementById('classSelect');
-        const submissionSelect = document.getElementById('submissionSelect');
-        
-        classSelect.innerHTML = '<option value="">Select Class</option>';
-        submissionSelect.innerHTML = '<option value="">Select Submission</option>';
-        classSelect.disabled = true;
-        submissionSelect.disabled = true;
-        
-        const container = document.getElementById('interventionTableContainer');
-        container.innerHTML = `
-            <div class="loading-indicator">
-                <div class="spinner"></div>
-                <span class="loading-text">Loading classes...</span>
-            </div>`;
-        
-        if (!schoolId) {
-            container.innerHTML = `
-                <div class="placeholder-content">
-                    <span class="placeholder-icon">&#128196;</span>
-                    <p class="placeholder-text">Select a school, class, and submission to view intervention data</p>
-                </div>`;
-            return;
-        }
-        
-        // Load classes for the selected school
-        fetch(`/educator/analytics/classes/${schoolId}`)
-            .then(res => res.json())
-            .then(classes => {
-                classSelect.innerHTML = '<option value="">Select Class</option>';
-                classes.forEach(cls => {
-                    const opt = document.createElement('option');
-                    opt.value = cls.id;
-                    opt.textContent = cls.name;
-                    classSelect.appendChild(opt);
-                });
-                classSelect.disabled = false;
-                
-                container.innerHTML = `
-                    <div class="placeholder-content">
-                        <span class="placeholder-icon">&#128196;</span>
-                        <p class="placeholder-text">Select a class and submission to view intervention data</p>
-                    </div>`;
-            });
-    });
-    
-    // Class change handler
-    document.getElementById('classSelect').addEventListener('change', function() {
-        const schoolId = document.getElementById('schoolSelect').value;
-        const classId = this.value;
-        const submissionSelect = document.getElementById('submissionSelect');
-        
-        submissionSelect.innerHTML = '<option value="">Select Submission</option>';
-        submissionSelect.disabled = true;
-        
-        const container = document.getElementById('interventionTableContainer');
-        container.innerHTML = `
-            <div class="loading-indicator">
-                <div class="spinner"></div>
-                <span class="loading-text">Loading submissions...</span>
-            </div>`;
-        
-        if (!classId) {
-            container.innerHTML = `
-                <div class="placeholder-content">
-                    <span class="placeholder-icon">&#128196;</span>
-                    <p class="placeholder-text">Select a class and submission to view intervention data</p>
-                </div>`;
-            return;
-        }
-        
-        // Load submissions for the selected school and class
-        fetch(`/educator/analytics/class-submissions/${schoolId}/${classId}`)
-            .then(res => res.json())
-            .then(submissions => {
-                submissionSelect.innerHTML = '<option value="">Select Submission</option>';
-                submissions.forEach(sub => {
-                    const opt = document.createElement('option');
-                    opt.value = sub.id;
-                    opt.textContent = sub.label;
-                    submissionSelect.appendChild(opt);
-                });
-                submissionSelect.disabled = false;
-                
-                container.innerHTML = `
-                    <div class="placeholder-content">
-                        <span class="placeholder-icon">&#128196;</span>
-                        <p class="placeholder-text">Select a submission to view intervention data</p>
-                    </div>`;
-            });
-    });
-    
-    // Submission change handler
-    document.getElementById('submissionSelect').addEventListener('change', function() {
-        const schoolId = document.getElementById('schoolSelect').value;
-        const classId = document.getElementById('classSelect').value;
-        const submissionId = this.value;
-        
-        const container = document.getElementById('interventionTableContainer');
-        container.innerHTML = `
-            <div class="loading-indicator">
-                <div class="spinner"></div>
-                <span class="loading-text">Loading data...</span>
-            </div>`;
-        
-        if (!submissionId) {
-            container.innerHTML = `
-                <div class="placeholder-content">
-                    <span class="placeholder-icon">&#128196;</span>
-                    <p class="placeholder-text">Select a submission to view intervention data</p>
-                </div>`;
-            return;
-        }
-        
-        // Fetch intervention data
-        fetch(`/educator/intervention-data?school_id=${schoolId}&class_id=${classId}&submission_id=${submissionId}`)
-            .then(res => res.json())
-            .then(data => {
-                if (!data.subjects || data.subjects.length === 0) {
-                    container.innerHTML = `
-                        <div class="placeholder-content error-message">
-                            <span class="placeholder-icon">&#9888;</span>
-                            <p class="placeholder-text">No data available for the selected criteria</p>
-                        </div>`;
-                    return;
-                }
-
-                let tableHtml = `
-                    <div class="table-wrapper">
-                        <table class="custom-table">
-                            <thead>
-                                <tr>
-                                    <th class="table-header">Subject Name</th>
-                                    <th class="table-header">No. of Students</th>
-                                    <th class="table-header">Status</th>
-                                    <th class="table-header">Action</th>
-                                    <th class="table-header">Date</th>
-                                    <th class="table-header">Educator Assigned</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
-
-                data.subjects.forEach(subject => {
-                    const totalStudents = subject.passed + subject.failed + subject.inc + subject.dr + subject.nc;
-                    const status = subject.remarks;
-                    const statusClass = getStatusClass(status);
-                    
-                    tableHtml += `
-                        <tr>
-                            <td class="table-cell">${subject.subject}</td>
-                            <td class="table-cell">${totalStudents}</td>
-                            <td class="table-cell">
-                                <span class="status-badge ${statusClass}">${status}</span>
-                            </td>
-                            <td class="table-cell">
-                                <button class="action-button" onclick="viewDetails('${subject.subject}')">
-                                    &#128065; View Details
-                                </button>
-                            </td>
-                            <td class="table-cell">${data.submission.academic_year}</td>
-                            <td class="table-cell">${data.educator_name || 'Not Assigned'}</td>
-                        </tr>`;
-                });
-
-                tableHtml += `
-                            </tbody>
-                        </table>
-                    </div>`;
-
-                container.innerHTML = tableHtml;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                container.innerHTML = `
-                    <div class="placeholder-content error-message">
-                        <span class="placeholder-icon">&#9888;</span>
-                        <p class="placeholder-text">An error occurred while loading the data</p>
-                    </div>`;
-            });
-    });
-});
-
-function getStatusClass(status) {
-    switch (status) {
-        case 'Need Intervention':
-            return 'status-danger';
-        case 'No Need Intervention':
-            return 'status-success';
-        case 'No Submission Recorded':
-            return 'status-secondary';
-        default:
-            return 'status-primary';
-    }
-}
-
-function viewDetails(subjectName) {
-    // Implement view details functionality
-    alert(`Viewing details for ${subjectName}`);
-}
-</script>
-
 <style>
-/* General Layout */
 .page-container {
+    max-width: 1200px;
+    margin: 0 auto;
     padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.header-section {
-    margin-bottom: 30px;
-}
-
-.header-title {
+.header-section h1 {
     font-weight: 300;
     color: #333;
     margin-bottom: 10px;
 }
 
-.header-line {
-    border: 0;
+.header-section hr {
+    border: none;
     height: 1px;
-    background: #eee;
-    margin-bottom: 20px;
+    background-color: #ddd;
+    margin-bottom: 15px;
 }
 
-.header-description {
-    color: #555;
-    margin-bottom: 0;
-}
-
-/* Card Styles */
-.card-container {
-    background-color: #fff;
+.card {
+    background: #fff;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
 }
 
 .card-body {
     padding: 20px;
 }
 
-/* Form Styles */
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
+.table {
+    margin-bottom: 0;
 }
 
-.form-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.form-label {
-    font-weight: bold;
-    margin-bottom: 8px;
-    color: #495057;
-}
-
-.custom-select {
-    width: 100%;
-    padding: 10px 15px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 1rem;
-    appearance: none; /* Remove default arrow */
-    background-color: #fff;
-    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%20viewBox%3D%220%200%20292.4%20292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2C197.3L159.9%2C69.8c-2.3-2.3-5.3-3.5-8.4-3.5s-6.1%2C1.2-8.4%2C3.5L5.4%2C197.3c-4.7%2C4.7-4.7%2C12.3%2C0%2C17l15%2C15c4.7%2C4.7%2C12.3%2C4.7%2C17%2C0l118.8-118.7l118.8%2C118.7c4.7%2C4.7%2C12.3%2C4.7%2C17%2C0l15-15C291.7%2C209.5%2C291.7%2C202%2C287%2C197.3z%22%2F%3E%3C%2Fsvg%3E'); /* Custom arrow */
-    background-repeat: no-repeat;
-    background-position: right 10px top 50%;
-    background-size: 12px auto;
-}
-
-.custom-select:focus {
-    border-color: #22BBEA;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(34, 187, 234, 0.2);
-}
-
-/* Placeholder/Loading States */
-.table-placeholder {
-    min-height: 200px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #f8f9fa;
-    border-radius: 5px;
-    color: #888;
-    text-align: center;
-    padding: 20px;
-}
-
-.placeholder-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.placeholder-icon {
-    font-size: 2.5rem; /* Large emoji */
-    opacity: 0.6;
-    margin-bottom: 10px;
-}
-
-.placeholder-text {
-    margin: 0;
-    font-size: 1.1rem;
-}
-
-.error-message .placeholder-icon {
-    color: #dc3545; /* Red for errors */
-}
-
-.loading-indicator {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-}
-
-.spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    border-left-color: #22BBEA;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin-bottom: 10px;
-}
-
-.loading-text {
-    font-size: 1rem;
-    color: #555;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Table Styles */
-.table-wrapper {
-    overflow-x: auto;
-    margin-top: 20px;
-}
-
-.custom-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0 auto;
-    font-size: 1rem;
-    min-width: 700px; /* Ensure table doesn't get too small */
-}
-
-.custom-table th,
-.custom-table td {
-    border: 1px solid #dee2e6;
-    padding: 12px 15px;
-    text-align: center;
-    vertical-align: middle;
-}
-
-.custom-table thead th {
-    background-color: #22BBEA;
-    color: white;
+.table th {
+    background-color: #22bbea;
+    border-top: none;
     font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.85rem;
-    letter-spacing: 0.5px;
+    color: #fff;
 }
 
-.custom-table tbody tr:nth-child(even) {
-    background-color: #f8f9fa;
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
 }
 
-.custom-table tbody tr:hover {
-    background-color: #e9ecef;
+.badge {
+    font-size: 0.875em;
 }
 
-/* Status Badges */
-.status-badge {
-    display: inline-block;
-    padding: 8px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Update Button Styling */
+.btn-update {
+    padding: 10px 10px;
+    font-size: 12px;
     font-weight: 600;
-    color: white;
-    text-align: center;
     min-width: 120px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
 }
 
-.status-danger {
-    background-color: #dc3545;
+.btn-update:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
 }
 
-.status-success {
-    background-color: #28a745;
+.form-select, .form-control {
+    border-radius: 6px;
+    border: 1px solid #ced4da;
 }
 
-.status-secondary {
-    background-color: #6c757d;
+.form-select:focus, .form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-.status-primary {
-    background-color: #007bff;
-}
-
-/* Action Button */
-.action-button {
-    background-color: #007bff;
-    color: white;
+.alert {
+    border-radius: 6px;
     border: none;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Filter Section Styling */
+.filter-inline-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    flex: 1;
+}
+
+.filter-group label {
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #495057;
+    font-size: 14px;
+}
+
+.filter-group select {
     padding: 8px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: background-color 0.3s ease;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 14px;
 }
 
-.action-button:hover {
-    background-color: #0056b3;
+.filter-group select:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
 }
 
-.action-button:active {
-    background-color: #004085;
+.filter-buttons {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.filter-buttons .btn {
+    margin-right: 12px;
+    margin-bottom: 8px;
+    min-width: 120px;
+    padding: 8px 16px;
+}
+
+.filter-buttons .btn:last-child {
+    margin-right: 0;
+}
+
+@media (max-width: 768px) {
+    .filter-inline-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .filter-group {
+        min-width: 100%;
+    }
 }
 </style>
-@endpush
-@endsection 
+
+<div class="page-container">
+    <div class="header-section">
+        <h1 style="font-weight: 300">🎯 Intervention Management</h1>
+        <hr>
+    </div>
+
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Filter Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-funnel me-2"></i>
+                Filter Interventions
+            </h5>
+        </div>
+        <div class="card-body">
+            <form id="filterForm" method="GET" action="{{ route('educator.intervention') }}">
+                <div class="filter-inline-container">
+                    <div class="filter-group">
+                        <label for="school_id">School</label>
+                        <select id="school_id" name="school_id">
+                            <option value="">All Schools</option>
+                            @foreach($schools as $school)
+                                <option value="{{ $school->school_id }}"
+                                    {{ request('school_id') == $school->school_id ? 'selected' : '' }}>
+                                    {{ $school->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="class_id">Class</label>
+                        <select id="class_id" name="class_id" disabled>
+                            <option value="">Select School First</option>
+                            @foreach($classes as $class)
+                                <option value="{{ $class->class_id }}"
+                                    {{ request('class_id') == $class->class_id ? 'selected' : '' }}>
+                                    {{ $class->class_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="submission_id">Submission</label>
+                        <select id="submission_id" name="submission_id" disabled>
+                            <option value="">Select Class First</option>
+                            @foreach($submissions as $submission)
+                                <option value="{{ $submission->id }}"
+                                    {{ request('submission_id') == $submission->id ? 'selected' : '' }}>
+                                    {{ $submission->display_name ?? ($submission->semester . ' - ' . $submission->term . ' (' . $submission->academic_year . ')') }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-buttons">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search me-2"></i>Apply Filters
+                    </button>
+                    <a href="{{ route('educator.intervention') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-2"></i>Clear Filters
+                    </a>
+                    <button type="button" class="btn btn-outline-primary" onclick="refreshData()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Interventions Table -->
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="bi bi-table me-2"></i>
+                Intervention Status Overview
+                <span class="badge bg-light text-dark ms-2">{{ $interventions->count() }} interventions</span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            @if($interventions->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center">No. of Students</th>
+                                <th>Subject</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-center">Date</th>
+                                <th>Educator Assigned</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($interventions as $intervention)
+                                <tr class="{{ $intervention->status === 'done' ? 'table-success' : 'table-warning' }}">
+                                    <td class="text-center">
+                                        <span class="badge bg-primary fs-6">{{ $intervention->student_count }}</span>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ $intervention->subject->name ?? 'N/A' }}</strong>
+                                            @if($intervention->school)
+                                                <br><small class="text-muted">{{ $intervention->school->name }}</small>
+                                            @endif
+                                            @if($intervention->classModel)
+                                                <br><small class="text-muted">Class: {{ $intervention->classModel->class_name }}</small>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        @if($intervention->status === 'done')
+                                            <span class="badge bg-success">Done</span>
+                                        @else
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if($intervention->intervention_date)
+                                            {{ $intervention->intervention_date->format('M d, Y') }}
+                                        @else
+                                            <span class="text-muted">Not Set</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($intervention->educatorAssigned)
+                                            <div>
+                                                <strong>{{ $intervention->educatorAssigned->user_fname }} {{ $intervention->educatorAssigned->user_lname }}</strong>
+                                                <br><small class="text-muted">{{ $intervention->educatorAssigned->user_email }}</small>
+                                            </div>
+                                        @else
+                                            <span class="text-muted">Not Assigned</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{{ route('educator.intervention.update', $intervention->id) }}"
+                                           class="btn btn-primary btn-update">
+                                            <i class="bi bi-pencil-square me-2"></i>Update
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="text-center p-5 text-muted">
+                    <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.5;"></i>
+                    <h5 class="mt-3">No Interventions Found</h5>
+                    <p class="mb-0">
+                        @if(request()->hasAny(['school_id', 'class_id', 'submission_id']))
+                            No interventions match your current filters. Try adjusting your search criteria.
+                        @else
+                            No subjects currently need intervention, or no grade data has been submitted yet.
+                        @endif
+                    </p>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    @if($interventions->count() > 0)
+        <!-- <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body text-center">
+                        <h3 class="mb-1">{{ $interventions->where('status', 'pending')->count() }}</h3>
+                        <p class="mb-0">Pending</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h3 class="mb-1">{{ $interventions->where('status', 'done')->count() }}</h3>
+                        <p class="mb-0">Completed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h3 class="mb-1">{{ $interventions->sum('student_count') }}</h3>
+                        <p class="mb-0">Total Students</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h3 class="mb-1">{{ $interventions->pluck('subject_id')->unique()->count() }}</h3>
+                        <p class="mb-0">Subjects</p>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+    @endif
+</div>
+
+<br><br>
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const schoolSelect = document.getElementById('school_id');
+    const classSelect = document.getElementById('class_id');
+    const submissionSelect = document.getElementById('submission_id');
+
+    // Initialize form state
+    initializeForm();
+
+    // School change handler
+    schoolSelect.addEventListener('change', function() {
+        const schoolId = this.value;
+
+        // Reset dependent dropdowns
+        classSelect.innerHTML = '<option value="">Loading classes...</option>';
+        classSelect.disabled = true;
+        submissionSelect.innerHTML = '<option value="">Select Class First</option>';
+        submissionSelect.disabled = true;
+
+        if (schoolId) {
+            // Fetch classes for selected school
+            fetch(`{{ route('educator.intervention.get-classes') }}?school_id=${schoolId}`)
+                .then(response => response.json())
+                .then(classes => {
+                    classSelect.innerHTML = '<option value="">All Classes</option>';
+                    classes.forEach(classItem => {
+                        const option = document.createElement('option');
+                        option.value = classItem.class_id;
+                        option.textContent = classItem.class_name;
+                        if (classItem.class_id === '{{ request("class_id") }}') {
+                            option.selected = true;
+                        }
+                        classSelect.appendChild(option);
+                    });
+                    classSelect.disabled = false;
+
+                    // Trigger class change if there's a selected class
+                    if ('{{ request("class_id") }}') {
+                        classSelect.dispatchEvent(new Event('change'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching classes:', error);
+                    classSelect.innerHTML = '<option value="">Error loading classes</option>';
+                });
+        } else {
+            classSelect.innerHTML = '<option value="">Select School First</option>';
+            classSelect.disabled = true;
+        }
+    });
+
+    // Class change handler
+    classSelect.addEventListener('change', function() {
+        const classId = this.value;
+
+        // Reset submission dropdown
+        submissionSelect.innerHTML = '<option value="">Loading submissions...</option>';
+        submissionSelect.disabled = true;
+
+        if (classId) {
+            // Fetch submissions for selected class
+            fetch(`{{ route('educator.intervention.get-submissions') }}?class_id=${classId}`)
+                .then(response => response.json())
+                .then(submissions => {
+                    submissionSelect.innerHTML = '<option value="">All Submissions</option>';
+                    submissions.forEach(submission => {
+                        const option = document.createElement('option');
+                        option.value = submission.id;
+                        option.textContent = submission.display_name;
+                        if (submission.id == '{{ request("submission_id") }}') {
+                            option.selected = true;
+                        }
+                        submissionSelect.appendChild(option);
+                    });
+                    submissionSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error fetching submissions:', error);
+                    submissionSelect.innerHTML = '<option value="">Error loading submissions</option>';
+                });
+        } else {
+            submissionSelect.innerHTML = '<option value="">Select Class First</option>';
+            submissionSelect.disabled = true;
+        }
+    });
+
+    function initializeForm() {
+        // Enable class dropdown if school is selected
+        if (schoolSelect.value) {
+            classSelect.disabled = false;
+            schoolSelect.dispatchEvent(new Event('change'));
+        }
+    }
+});
+
+// Refresh data function
+function refreshData() {
+    const currentUrl = new URL(window.location);
+    window.location.href = currentUrl.toString();
+}
+
+// Add smooth scrolling for better UX
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+
+// Add loading states for form submissions
+document.getElementById('filterForm').addEventListener('submit', function() {
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.innerHTML = '<i class="bi bi-spinner-border spinner-border-sm me-1"></i> Filtering...';
+    submitButton.disabled = true;
+});
+</script>
+@endsection

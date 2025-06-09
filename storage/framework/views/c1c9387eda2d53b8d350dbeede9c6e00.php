@@ -6,24 +6,30 @@
         <p class="text-muted">View and analyze class grades. Select a school, class, and submission to view the grade report.</p>
     </div>
     
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <div class="row g-3 ">
-                <div class="col-md-4">
-                    <label for="schoolSelect" class="form-label fw-bold">School</label>
-                    <select id="schoolSelect" class="form-select">
+    <div class="filter-card">
+        <div class="filter-card-header">
+            <h5>
+                <i class="bi bi-funnel me-2"></i>
+                Filter Class Grades
+            </h5>
+        </div>
+        <div class="filter-card-body">
+            <div class="filter-inline-container">
+                <div class="filter-group">
+                    <label for="schoolSelect">School</label>
+                    <select id="schoolSelect">
                         <option value="">Select School</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="classSelect" class="form-label fw-bold">Class</label>
-                    <select id="classSelect" class="form-select" disabled>
+                <div class="filter-group">
+                    <label for="classSelect">Class</label>
+                    <select id="classSelect" disabled>
                         <option value="">Select Class</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="submissionSelect" class="form-label fw-bold">Submission</label>
-                    <select id="submissionSelect" class="form-select" disabled>
+                <div class="filter-group">
+                    <label for="submissionSelect">Submission</label>
+                    <select id="submissionSelect" disabled>
                         <option value="">Select Submission</option>
                     </select>
                 </div>
@@ -534,6 +540,120 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+/* Page Container */
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-section h1 {
+    font-weight: 300;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.header-section hr {
+    border: none;
+    height: 1px;
+    background-color: #ddd;
+    margin-bottom: 15px;
+}
+
+/* Filter Card Styling */
+.filter-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 1.5rem;
+}
+
+.filter-card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+}
+
+.filter-card-header h5 {
+    margin: 0;
+    font-weight: 500;
+    color: #495057;
+}
+
+.filter-card-body {
+    padding: 20px;
+}
+
+/* Filter Section Styling */
+.filter-inline-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    flex: 1;
+}
+
+.filter-group label {
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #495057;
+    font-size: 14px;
+}
+
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 14px;
+}
+
+.filter-group select:focus {
+    border-color: #22bbea;
+    box-shadow: 0 0 0 0.2rem rgba(34, 187, 234, 0.25);
+    outline: none;
+}
+
+.filter-group select:disabled {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .filter-inline-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .filter-group {
+        min-width: 100%;
+    }
+}
+
+.card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+}
+
+.card-body {
+    padding: 20px;
+}
+
 .grades-table {
     width: 100%;
     border-collapse: collapse;

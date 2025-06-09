@@ -6,8 +6,13 @@ use App\Models\PNUser;
 use App\Models\School;
 use App\Models\ClassModel;
 use App\Models\StudentDetail;
+use App\Models\Intervention;
+use App\Models\Subject;
+use App\Models\GradeSubmission;
+use App\Models\GradeSubmissionSubject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class EducatorController extends Controller
 {
@@ -34,14 +39,21 @@ class EducatorController extends Controller
 
         // Get gender distribution by batch
         $genderByBatch = [];
+        $studentsByGenderByBatch = [];
         foreach ($batchCounts->keys() as $batch) {
+            $male = StudentDetail::where('batch', $batch)
+                ->where('gender', 'Male')
+                ->count();
+            $female = StudentDetail::where('batch', $batch)
+                ->where('gender', 'Female')
+                ->count();
             $genderByBatch[$batch] = [
-                'male' => StudentDetail::where('batch', $batch)
-                    ->where('gender', 'Male')
-                    ->count(),
-                'female' => StudentDetail::where('batch', $batch)
-                    ->where('gender', 'Female')
-                    ->count()
+                'male' => $male,
+                'female' => $female
+            ];
+            $studentsByGenderByBatch[$batch] = [
+                'male' => $male,
+                'female' => $female
             ];
         }
 
@@ -71,6 +83,7 @@ class EducatorController extends Controller
             'femaleCount' => $femaleCount,
             'batchCounts' => $batchCounts,
             'genderByBatch' => $genderByBatch,
+            'studentsByGenderByBatch' => $studentsByGenderByBatch,
             'recentStudents' => $recentStudents,
             'recentSchools' => $recentSchools,
             'recentClasses' => $recentClasses
@@ -184,5 +197,150 @@ public function update(Request $request, $user_id)
 
     return redirect()->route('educator.students.index')->with('success', 'Student updated successfully.');
 }
+
+    /**
+     * Display the intervention management page
+     */
+    public function intervention()
+    {
+        // Get all interventions with related data
+        $interventions = $this->getInterventionData();
+
+        return view('educator.intervention', compact('interventions'));
+    }
+
+    /**
+     * Show the intervention update form
+     */
+    public function interventionUpdate($id)
+    {
+        $intervention = Intervention::with(['subject', 'school', 'classModel', 'educatorAssigned'])
+            ->findOrFail($id);
+
+        // Get all educators for assignment dropdown
+        $educators = PNUser::where('user_role', 'Educator')
+            ->where('status', 'active')
+            ->get();
+
+        return view('educator.intervention-update', compact('intervention', 'educators'));
+    }
+
+    /**
+     * Update intervention status and assignment
+     */
+    public function interventionStore(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,done',
+            'intervention_date' => 'nullable|date',
+            'educator_assigned' => 'nullable|exists:pnph_users,user_id',
+            'remarks' => 'nullable|string|max:500'
+        ]);
+
+        $intervention = Intervention::findOrFail($id);
+
+        $intervention->update([
+            'status' => $request->status,
+            'intervention_date' => $request->intervention_date,
+            'educator_assigned' => $request->educator_assigned,
+            'remarks' => $request->remarks,
+            'updated_by' => Auth::user()->user_id
+        ]);
+
+        return redirect()->route('educator.intervention')
+            ->with('success', 'Intervention updated successfully.');
+    }
+
+    /**
+     * Get intervention data based on subjects that need intervention
+     */
+    private function getInterventionData()
+    {
+        // Get all grade submissions with subjects that need intervention
+        $gradeSubmissions = GradeSubmission::with(['school', 'classModel', 'subjects'])
+            ->where('status', 'approved')
+            ->get();
+
+        $interventionData = [];
+
+        foreach ($gradeSubmissions as $submission) {
+            $school = $submission->school;
+
+            if (!$school) continue;
+
+            // Get grades for this submission grouped by subject
+            $grades = GradeSubmissionSubject::where('grade_submission_id', $submission->id)
+                ->with(['subject', 'user'])
+                ->get()
+                ->groupBy('subject_id');
+
+            foreach ($grades as $subjectId => $subjectGrades) {
+                $subject = $subjectGrades->first()->subject;
+                if (!$subject) continue;
+
+                $passed = 0;
+                $failed = 0;
+                $inc = 0;
+                $dr = 0;
+                $nc = 0;
+                $totalStudents = 0;
+
+                foreach ($subjectGrades as $grade) {
+                    $totalStudents++;
+                    if ($grade->grade === 'INC') {
+                        $inc++;
+                    } elseif ($grade->grade === 'DR') {
+                        $dr++;
+                    } elseif ($grade->grade === 'NC') {
+                        $nc++;
+                    } elseif (is_numeric($grade->grade)) {
+                        if ($grade->grade >= $school->passing_grade_min) {
+                            $passed++;
+                        } else {
+                            $failed++;
+                        }
+                    }
+                }
+
+                // Only include subjects that need intervention
+                $needsIntervention = ($failed > 0 || $inc > 0 || $dr > 0 || $nc > 0);
+
+                if ($needsIntervention && $totalStudents > 0) {
+                    $studentsNeedingIntervention = $failed + $inc + $dr + $nc;
+
+                    // Check if intervention already exists
+                    $existingIntervention = Intervention::where([
+                        'subject_id' => $subjectId,
+                        'school_id' => $submission->school_id,
+                        'class_id' => $submission->class_id,
+                        'grade_submission_id' => $submission->id
+                    ])->first();
+
+                    if (!$existingIntervention) {
+                        // Create new intervention record
+                        $existingIntervention = Intervention::create([
+                            'subject_id' => $subjectId,
+                            'school_id' => $submission->school_id,
+                            'class_id' => $submission->class_id,
+                            'grade_submission_id' => $submission->id,
+                            'student_count' => $studentsNeedingIntervention,
+                            'status' => 'pending',
+                            'created_by' => Auth::user()->user_id
+                        ]);
+                    } else {
+                        // Update student count if it has changed
+                        $existingIntervention->update([
+                            'student_count' => $studentsNeedingIntervention,
+                            'updated_by' => Auth::user()->user_id
+                        ]);
+                    }
+
+                    $interventionData[] = $existingIntervention->load(['subject', 'school', 'classModel', 'educatorAssigned']);
+                }
+            }
+        }
+
+        return collect($interventionData)->sortBy('created_at');
+    }
 }
 

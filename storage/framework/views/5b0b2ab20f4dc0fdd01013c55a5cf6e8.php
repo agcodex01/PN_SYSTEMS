@@ -33,13 +33,13 @@
         </div>
     </div>
     <hr>
-    
+
     <?php $__currentLoopData = $classes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $class): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
     <div class="chart-section" id="chart-section-<?php echo e($class->class_id); ?>">
         <div class="chart-header">
             <h3><?php echo e($class->class_name); ?></h3>
         </div>
-        
+
         <!-- Charts for each submission number -->
         <div class="submission-charts" id="submission-charts-<?php echo e($class->class_id); ?>">
             <div class="submission-chart" id="submission-1st-<?php echo e($class->class_id); ?>" style="display: none;">
@@ -55,7 +55,7 @@
                     <p>There is no data available for the selected filters.</p>
                 </div>
             </div>
-            
+
             <div class="submission-chart" id="submission-2nd-<?php echo e($class->class_id); ?>" style="display: none;">
                 <h4>2nd Submission</h4>
                 <div class="chart-container">
@@ -69,7 +69,7 @@
                     <p>There is no data available for the selected filters.</p>
                 </div>
             </div>
-            
+
             <div class="submission-chart" id="submission-3rd-<?php echo e($class->class_id); ?>" style="display: none;">
                 <h4>3rd Submission</h4>
                 <div class="chart-container">
@@ -83,7 +83,7 @@
                     <p>There is no data available for the selected filters.</p>
                 </div>
             </div>
-            
+
             <div class="submission-chart" id="submission-4th-<?php echo e($class->class_id); ?>" style="display: none;">
                 <h4>4th Submission</h4>
                 <div class="chart-container">
@@ -345,7 +345,7 @@
 
             // Always use block display for charts
             submissionCharts.style.display = 'block';
-            
+
             // Update grid columns based on number of visible charts
             if (visibleCharts.length === 1) {
                 submissionCharts.style.gridTemplateColumns = '1fr';

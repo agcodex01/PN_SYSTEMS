@@ -27,12 +27,22 @@ class InternGradesAnalyticsController extends Controller
                 ->pluck('company_name');
         }
 
-        // Get chart data for each class
+        // Get chart data for each class - always show all data initially
         $classChartData = [];
+
+        // First, get all data (no filters) to ensure we have something to show
+        $allData = $this->getDistributionChartData(null, null);
+
         foreach ($classes as $class) {
+            // Always use all data for initial display to ensure charts show
             $classChartData[$class->class_id] = [
                 'class_name' => $class->class_name,
-                'chart_data' => $this->getDistributionChartData(null, $class->class_id)
+                'chart_data' => $allData,
+                'companies' => InternGrade::where('class_id', $class->class_id)
+                    ->whereNotNull('company_name')
+                    ->distinct()
+                    ->pluck('company_name')
+                    ->toArray()
             ];
         }
 
@@ -141,15 +151,33 @@ class InternGradesAnalyticsController extends Controller
             ]
         ];
 
+        // Get all records first and process in PHP for better debugging
+        $allRecords = (clone $query)->get();
+
+        \Log::info('Training Processing records', [
+            'total_records' => $allRecords->count(),
+            'sample_grades' => $allRecords->take(2)->pluck('grades')->toArray()
+        ]);
+
         // For each competency, count students in each grade
         foreach ($competencies as $competencyKey => $competencyLabel) {
             // Count students for each grade (1-4) for this competency
             for ($grade = 1; $grade <= 4; $grade++) {
-                $count = (clone $query)
-                    ->whereRaw("CAST(JSON_UNQUOTE(JSON_EXTRACT(grades, '$.{$competencyKey}')) AS DECIMAL) = ?", [$grade])
-                    ->count();
-                
+                $count = 0;
+
+                foreach ($allRecords as $record) {
+                    $grades = $record->grades;
+                    if (is_array($grades) && isset($grades[$competencyKey])) {
+                        $competencyGrade = $grades[$competencyKey];
+                        if (is_numeric($competencyGrade) && (int)$competencyGrade === $grade) {
+                            $count++;
+                        }
+                    }
+                }
+
                 $datasets[$grade - 1]['data'][] = $count;
+
+                \Log::info("Training Grade count for {$competencyLabel} grade {$grade}: {$count}");
             }
         }
 

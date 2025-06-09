@@ -1,6 +1,8 @@
 @extends('layouts.nav')
 
 @section('content')
+<div class="content-wrapper">
+    <div class="analytics-container">
     <div class="dashboard-header">
         <h1>Internship Grades Analytics</h1>
         <div class="filters">
@@ -35,13 +37,13 @@
         </div>
     </div>
     <hr>
-    
+
     @foreach($classes as $class)
     <div class="chart-section" id="chart-section-{{ $class->class_id }}">
         <div class="chart-header">
             <h3>{{ $class->class_name }}</h3>
         </div>
-        
+
         <!-- Charts for each submission number -->
         <div class="submission-charts" id="submission-charts-{{ $class->class_id }}">
             <div class="submission-chart" id="submission-1st-{{ $class->class_id }}" style="display: none;">
@@ -57,7 +59,7 @@
                     <p>There is no data available for the selected filters.</p>
                 </div>
             </div>
-            
+
             <div class="submission-chart" id="submission-2nd-{{ $class->class_id }}" style="display: none;">
                 <h4>2nd Submission</h4>
                 <div class="chart-container">
@@ -71,7 +73,7 @@
                     <p>There is no data available for the selected filters.</p>
                 </div>
             </div>
-            
+
             <div class="submission-chart" id="submission-3rd-{{ $class->class_id }}" style="display: none;">
                 <h4>3rd Submission</h4>
                 <div class="chart-container">
@@ -85,7 +87,7 @@
                     <p>There is no data available for the selected filters.</p>
                 </div>
             </div>
-            
+
             <div class="submission-chart" id="submission-4th-{{ $class->class_id }}" style="display: none;">
                 <h4>4th Submission</h4>
                 <div class="chart-container">
@@ -102,8 +104,174 @@
         </div>
     </div>
     @endforeach
+    </div>
+</div>
 
-@endsection
+<style>
+.content-wrapper {
+    margin-top: 70px;
+    margin-left: 270px; /* Account for sidebar width + extra space */
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.analytics-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-header {
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+.dashboard-header h1 {
+    color: #2c3e50;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}
+
+.filters {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-group label {
+    font-weight: 500;
+    color: #555;
+    white-space: nowrap;
+}
+
+.chart-section {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin-bottom: 30px;
+    box-sizing: border-box;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.chart-header h3 {
+    color: #2c3e50;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.submission-charts {
+    display: grid;
+    gap: 20px;
+    margin-top: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.submission-chart {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.submission-chart h4 {
+    color: #495057;
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.styled-select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background-color: white;
+    min-width: 200px;
+    max-width: 100%;
+}
+
+.styled-select:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+}
+
+.no-data-message {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.no-data-message svg {
+    width: 48px;
+    height: 48px;
+    color: #6c757d;
+    margin-bottom: 16px;
+}
+
+.no-data-message h3 {
+    color: #495057;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+}
+
+.no-data-message p {
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Add responsive styles */
+@media (max-width: 768px) {
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .styled-select {
+        width: 100%;
+    }
+
+    .submission-charts {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
 
 @push('scripts')
 <!-- Include Chart.js from CDN -->
@@ -260,7 +428,7 @@
 
         // Always use block display for charts
         submissionCharts.style.display = 'block';
-        
+
         // Update grid columns based on number of visible charts
         if (visibleCharts.length === 1) {
             submissionCharts.style.gridTemplateColumns = '1fr';
@@ -375,152 +543,5 @@
     });
 </script>
 
-<style>
-.dashboard-header {
-    margin-bottom: 20px;
-}
 
-.dashboard-header h1 {
-    color: #2c3e50;
-    font-size: 1.8rem;
-    margin-bottom: 20px;
-}
-
-.filters {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-
-.filter-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.filter-group label {
-    font-weight: 500;
-    color: #555;
-    white-space: nowrap;
-}
-
-.chart-section {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    margin-bottom: 30px;
-    box-sizing: border-box;
-}
-
-.chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.chart-header h3 {
-    color: #2c3e50;
-    font-size: 1.4rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-.submission-charts {
-    display: grid;
-    gap: 20px;
-    margin-top: 20px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.submission-chart {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 6px;
-    border: 1px solid #e9ecef;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.submission-chart h4 {
-    color: #495057;
-    font-size: 1.1rem;
-    margin-bottom: 15px;
-    text-align: center;
-}
-
-.chart-container {
-    position: relative;
-    height: 300px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.styled-select {
-    padding: 8px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    background-color: white;
-    min-width: 200px;
-    max-width: 100%;
-}
-
-.styled-select:disabled {
-    background-color: #f3f4f6;
-    cursor: not-allowed;
-}
-
-.no-data-message {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px;
-    text-align: center;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    margin-top: 20px;
-}
-
-.no-data-message svg {
-    width: 48px;
-    height: 48px;
-    color: #6c757d;
-    margin-bottom: 16px;
-}
-
-.no-data-message h3 {
-    color: #495057;
-    font-size: 1.2rem;
-    margin-bottom: 8px;
-}
-
-.no-data-message p {
-    color: #6c757d;
-    margin: 0;
-}
-
-/* Add responsive styles */
-@media (max-width: 768px) {
-    .chart-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .styled-select {
-        width: 100%;
-    }
-
-    .submission-charts {
-        grid-template-columns: 1fr !important;
-    }
-}
-</style>
 @endpush 

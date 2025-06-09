@@ -3,10 +3,7 @@
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/training/student-info.css') }}">
 
-
-
-<div class="page-container">
-    <div class="header-section">
+<div class="header-section">
        <h1 style="font-weight: 300;">Students Information</h1>
        <hr>
     </div>
@@ -23,8 +20,7 @@
         </div>
     @endif
 
-
-    <form method="GET" action="{{ route('training.students-info') }}" class="filter-form">
+<form method="GET" action="{{ route('training.students-info') }}" class="filter-form">
         <div class="form-group">
             <label for="batch">Filter Students</label>
             <select name="batch" id="batch" class="form-control" onchange="this.form.submit()">
@@ -39,10 +35,16 @@
             </select>
         </div>
     </form>
+    
+<div class="page-container">
+    
+
+
+    
 
 <br>
 
-<div class="table-wrapper">
+<!-- <div class="table-wrapper"> -->
         <div class="table-header">
             <div class="header-cell">USER ID</div>
             <div class="header-cell">STUDENT ID</div>

@@ -272,13 +272,13 @@
                         </a>
                     </div>
                 </li>
-                <li>
-                    <a href="#">
+                <li class="<?php echo e(request()->routeIs('training.intervention.*') ? 'active' : ''); ?>">
+                    <a href="<?php echo e(route('training.intervention.index')); ?>">
                         <img src="<?php echo e(asset('images/is.png')); ?>" alt="Intervention Status"> Intervention Status
                     </a>
                 </li>
 
-            
+
 
             </ul>
         </aside>

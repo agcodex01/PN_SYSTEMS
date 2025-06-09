@@ -53,5 +53,14 @@ class PNUser extends Authenticatable
         return $query->where('user_role', $role);
     }
 
-    
+    /**
+     * Check if the user has a given role.
+     *
+     * @param string $role
+     * @return bool
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->user_role === $role;
+    }
 }   

@@ -14,11 +14,163 @@ use Illuminate\Validation\Rule;
 
 class StudentController extends Controller
 {
+    public function profile()
+    {
+        $user = Auth::user();
+        
+        // Load student details
+        $user->load('studentDetail');
+        
+        // Get classes for the user directly from the ClassModel
+        $classes = \App\Models\ClassModel::whereHas('students', function($query) use ($user) {
+            $query->where('class_student.user_id', $user->user_id);
+        })->whereNotIn('class_name', ['C2026', 'C2027'])
+        ->get();
+        
+        // Add the classes to the user object for the view
+        $user->setRelation('classes', $classes);
+        
+        return view('student.profile', compact('user'));
+    }
+    public function grades(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Get unique terms and years for the filter dropdowns
+        $terms = $this->getSortedTerms();
+            
+        $years = DB::table('grade_submissions')
+            ->distinct()
+            ->pluck('academic_year')
+            ->filter()
+            ->sortBy(function($year) {
+                // Extract the start year from academic year format (e.g., "2023-2024" -> 2023)
+                if (preg_match('/^(\d{4})-\d{4}$/', $year, $matches)) {
+                    return (int)$matches[1];
+                }
+                return 9999; // Default for invalid formats (put them at the end)
+            })
+            ->values();
+        
+        // Build the base query for filtered results (used for table/chart)
+        $query = DB::table('grade_submission_subject')
+            ->join('subjects', 'grade_submission_subject.subject_id', '=', 'subjects.id')
+            ->join('grade_submissions', 'grade_submission_subject.grade_submission_id', '=', 'grade_submissions.id')
+            ->where('grade_submission_subject.user_id', $user->user_id);
+        
+        // Apply filters if provided
+        if ($request->filled('term')) {
+            $query->where('grade_submissions.term', $request->term);
+        }
+        
+        if ($request->filled('academic_year')) {
+            $query->where('grade_submissions.academic_year', $request->academic_year);
+        }
+        
+        // Get the filtered subjects with grades (for table/chart)
+        $subjectsWithGrades = $query
+            ->select(
+                'grade_submission_subject.*', 
+                'subjects.name as subject_name', 
+                'subjects.offer_code as subject_code',
+                'grade_submissions.term',
+                'grade_submissions.academic_year',
+                'grade_submissions.semester'
+            )
+            ->orderBy('grade_submissions.academic_year', 'desc')
+            ->orderBy('grade_submissions.term')
+            ->orderBy('subjects.name')
+            ->get();
+
+        // Get total grade status counts for the status cards (unfiltered)
+        $statusCounts = [
+            'pass' => 0,
+            'fail' => 0,
+            'inc' => 0,
+            'nc' => 0,
+            'dr' => 0
+        ];
+
+        // Get all subjects for the user (unfiltered) for status cards
+        $allSubjects = DB::table('grade_submission_subject')
+            ->join('subjects', 'grade_submission_subject.subject_id', '=', 'subjects.id')
+            ->join('grade_submissions', 'grade_submission_subject.grade_submission_id', '=', 'grade_submissions.id')
+            ->where('grade_submission_subject.user_id', $user->user_id)
+            ->select('grade_submission_subject.status')
+            ->get();
+
+        // Count subjects by status (unfiltered)
+        foreach ($allSubjects as $subject) {
+            $status = strtolower($subject->status);
+            if (array_key_exists($status, $statusCounts)) {
+                $statusCounts[$status]++;
+            }
+        }
+
+        // Get subject statuses for the chart
+        $subjectStatuses = DB::table('grade_submission_subject')
+            ->join('grade_submissions', 'grade_submission_subject.grade_submission_id', '=', 'grade_submissions.id')
+            ->where('grade_submission_subject.user_id', $user->user_id)
+            ->when($request->filled('term'), function($query) use ($request) {
+                return $query->where('grade_submissions.term', $request->term);
+            })
+            ->when($request->filled('academic_year'), function($query) use ($request) {
+                return $query->where('grade_submissions.academic_year', $request->academic_year);
+            })
+            ->pluck('grade_submission_subject.status', 'grade_submission_subject.id')
+            ->toArray();
+
+        return view('student.grades', compact(
+            'subjectsWithGrades', 
+            'statusCounts',
+            'terms',
+            'years',
+            'request',
+            'subjectStatuses'
+        ));
+    }
+
+    protected function getSortedTerms()
+    {
+        $terms = DB::table('grade_submissions')
+            ->distinct()
+            ->pluck('term')
+            ->filter()
+            ->sortBy(function($term) {
+                $order = [
+                    'prelim' => 1,
+                    'midterm' => 2,
+                    'semi-final' => 3,
+                    'final' => 4
+                ];
+                return $order[strtolower($term)] ?? 999;
+            })
+            ->values();
+            
+        return $terms;
+    }
+
     public function dashboard(Request $request)
     {
         $user = Auth::user();
         $filterKey = $request->query('filter_key');
 
+        // Get unique terms and years for the filter dropdowns
+        $terms = $this->getSortedTerms();
+        $years = DB::table('grade_submissions')
+            ->distinct()
+            ->pluck('academic_year')
+            ->filter()
+            ->sortBy(function($year) {
+                // Extract the start year from academic year format (e.g., "2023-2024" -> 2023)
+                if (preg_match('/^(\d{4})-\d{4}$/', $year, $matches)) {
+                    return (int)$matches[1];
+                }
+                return 9999; // Default for invalid formats (put them at the end)
+            })
+            ->values();
+
+        // Get all grade submissions for the user, with optional term/year filter
         $gradeSubmissionsQuery = GradeSubmission::whereHas('students', function($query) use ($user) {
             $query->where('grade_submission_subject.user_id', $user->user_id);
         })
@@ -34,11 +186,56 @@ class StudentController extends Controller
         ])
         ->orderBy('created_at', 'desc');
 
+        // Apply term/year filter if provided
+        if ($request->filled('term')) {
+            $gradeSubmissionsQuery->where('term', $request->term);
+        }
+        if ($request->filled('academic_year')) {
+            $gradeSubmissionsQuery->where('academic_year', $request->academic_year);
+        }
+
         if ($filterKey) {
             $gradeSubmissionsQuery->where(DB::raw("CONCAT(semester, ' ', term, ' ', academic_year)"), $filterKey);
         }
 
         $gradeSubmissions = $gradeSubmissionsQuery->get();
+
+        // Gather all subjects for the user
+        $allSubjects = collect();
+        foreach ($gradeSubmissions as $submission) {
+            foreach ($submission->students as $student) {
+                if ($student->pivot) {
+                    $allSubjects->push($student->pivot);
+                }
+            }
+        }
+
+        $statusCounts = [
+            'pass' => 0,
+            'fail' => 0,
+            'inc' => 0,
+            'nc' => 0,
+            'dr' => 0
+        ];
+
+        foreach ($allSubjects as $subject) {
+            $status = strtolower($subject->status ?? '');
+            $grade = $subject->grade ?? null;
+
+            if (is_numeric($grade)) {
+                if ($grade >= 3.0 && $grade <= 5.0) {
+                    $statusCounts['pass']++;
+                } elseif ($grade > 0 && $grade < 3.0) {
+                    $statusCounts['fail']++;
+                }
+            } elseif ($status === 'inc') {
+                $statusCounts['inc']++;
+            } elseif ($status === 'nc') {
+                $statusCounts['nc']++;
+            } elseif ($status === 'dr') {
+                $statusCounts['dr']++;
+            }
+        }
 
         // For filter dropdown
         $filterOptions = GradeSubmission::whereHas('students', function($query) use ($user) {
@@ -63,7 +260,14 @@ class StudentController extends Controller
             });
         });
 
-        return view('student.dashboard', compact('gradeSubmissions', 'filterOptions', 'filterKey'));
+        return view('student.dashboard', compact(
+            'gradeSubmissions', 
+            'filterOptions', 
+            'filterKey',
+            'statusCounts',
+            'terms',
+            'years'
+        ));
     }
 
     public function showSubmissionForm($submissionId)

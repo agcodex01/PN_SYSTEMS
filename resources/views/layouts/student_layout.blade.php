@@ -6,75 +6,150 @@
     <title>{{ $title ?? 'Student Dashboard' }}</title>
     <link rel="stylesheet" href="{{ asset('css/nav.css') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
     body {
-        margin: 0;  
         font-family: 'Poppins', sans-serif;
-        background-color: #f1f5f9;
-        height: 100vh;
+        background-color: #f8f9fa;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
     }
 
+    /* Header */
     .top-bar {
-        background-color: #22bbea;
-        padding: 0 20px;
+        background-color: #22bbea !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        height: 70px !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+    }
+
+    /* Ensure our logo styles take precedence */
+    .top-bar .PN-logo {
+        height: 50px !important;
+        width: auto !important;
+        max-width: 220px !important;
+        object-fit: contain !important;
+        margin: 0 !important;
+        display: block !important;
+        flex-shrink: 0 !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .logo-link {
+        display: flex !important;
+        align-items: center !important;
+        height: 100% !important;
+        padding: 10px 20px !important;
+        text-decoration: none !important;
+        margin: 0 !important;
+    }
+
+    /* Main Layout */
+    .main-wrapper {
         display: flex;
-        align-items: center;
-        height: 80px;
-        flex-shrink: 0;
+        padding-top: 70px; /* Height of top-bar */
+        min-height: 100vh;
+        width: 100%;
+        position: relative;
     }
 
-    .PN-logo {
-        height: 40px;
-    }
-
-    .container {
-        display: flex;
-        flex: 1;
-        overflow: hidden;
-    }
-
+    /* Sidebar */
     .sidebar {
         background-color: #ffffff;
-        width: 250px;
-        padding: 20px 0;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-        flex-shrink: 0;
+        width: 260px;
+        position: fixed;
+        top: 69px; /* Adjusted to connect with header */
+        left: 0;
+        bottom: 0;
+        overflow-y: auto;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        z-index: 900;
+        padding: 0;
+        margin: 0;
     }
 
+    /* Menu Styling */
     .menu {
         list-style: none;
         padding: 0;
         margin: 0;
     }
 
+    .menu li:first-child {
+        margin-top: 10px;
+    }
+    
     .menu li {
-        padding: 12px 20px;
-        display: flex;
-        flex-direction: column;
-        cursor: pointer;
-        transition: background-color 0.3s;
-        border-radius: 8px;
-        margin: 0 10px;
+        margin-bottom: 5px;
     }
 
     .menu li a {
-        color: #333333;
-        text-decoration: none;
-        width: 100%;
-        font-size: 15px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        padding: 12px 20px;
+        color: #333;
+        text-decoration: none;
+        font-size: 15px;
+        transition: all 0.2s ease;
+        border-radius: 8px;
+    }
+
+    .menu-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+        object-fit: contain;
+    }
+
+    .menu li a:hover {
+        background-color: #f1f5f9;
+        color: #22bbea;
+    }
+
+    .menu li.active a {
+        background-color: #e3f2fd;
+        color: #22bbea;
+        font-weight: 500;
+    }
+    
+    .menu li.active .menu-icon {
+        /* Remove the blue filter to keep the original image */
+        filter: none;
     }
 
     .menu li img {
         width: 24px;
         height: 24px;
+    }
+    
+    /* Sidebar Logo */
+    .sidebar-logo {
+        padding: 20px 0;
+        text-align: center;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-logo {
+        max-width: 80%;
+        height: auto;
+        max-height: 80px;
+        object-fit: contain;
     }
 
     .menu li:hover {
@@ -85,40 +160,73 @@
         background-color: #f1f5f9;
     }
 
+    /* Main Content */
     .content {
-        flex-grow: 1;
-        padding: 20px;
-        overflow-y: auto;
+        flex: 1;
+        margin-left: 260px; /* Same as sidebar width */
+        padding: 30px;
+        min-height: calc(100vh - 70px);
         background-color: #f8f9fa;
-        margin-left: 250px;
     }
 
+    /* User Info */
     .user-info {
         margin-left: auto;
-        color: #333;
+        color: #fff;
         font-weight: 500;
         display: flex;
         align-items: center;
         gap: 15px;
     }
 
+    .user-info span {
+        color: #fff;
+    }
+
+    .user-role {
+        background-color: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 13px;
+    }
+
+    /* Logout Button */
     .logout-btn {
         background: none;
         border: none;
-        color: inherit;
+        color: #fff;
         cursor: pointer;
-        padding: 5px;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        transition: all 0.2s ease;
     }
 
     .logout-btn:hover {
+        background-color: rgba(255, 255, 255, 0.2);
         color: #ff9933;
     }
     </style>
 </head>
 <body>
     <div class="top-bar">
-        <img class="PN-logo" src="{{ asset('images/PN-logo.png') }}" alt="PN Logo">
+        <a href="{{ route('student.dashboard') }}" class="logo-link">
+            <img class="PN-logo" src="{{ asset('images/PN-logo.png') }}" alt="PN Logo">
+        </a>
 
+        <!-- Debug Info -->
+        @php
+            $user = Auth::user();
+            $role = strtolower($user->user_role ?? 'none');
+        @endphp
+        <!-- Debug: User Role: {{ $role }} -->
+        <!-- Debug: Is Student: {{ $role === 'student' ? 'Yes' : 'No' }} -->
+        <!-- Debug: Route: {{ request()->path() }} -->
+        
         @auth
             @php
                 $user = Auth::user();
@@ -146,7 +254,7 @@
         @endauth
     </div>
 
-    <div class="container">
+    <div class="main-wrapper">
         <aside class="sidebar">
             @auth
                 @php $role = strtolower(Auth::user()->user_role ?? ''); @endphp
@@ -154,20 +262,20 @@
                     <ul class="menu">
                         <li class="{{ request()->routeIs('student.dashboard') ? 'active' : '' }}">
                             <a href="{{ route('student.dashboard') }}">
-                                <img src="{{ asset('images/dashboard.png') }}" alt="Dashboard">
-                                Dashboard
+                                <img src="{{ asset('images/Dashboard.png') }}" alt="Dashboard" class="menu-icon">
+                                <span>Dashboard</span>
                             </a>
                         </li>
-                        {{-- <li class="{{ request()->routeIs('student.grade-submissions*') ? 'active' : '' }}">
-                            <a href="{{ route('student.grade-submissions') }}">
-                                <img src="{{ asset('images/gs.png') }}" alt="Grade Submissions">
-                                Grade Submissions
+                        <li class="{{ request()->routeIs('student.grades') ? 'active' : '' }}">
+                            <a href="{{ route('student.grades') }}">
+                                <img src="{{ asset('images/Dashboard.png') }}" alt="Grade Status" class="menu-icon">
+                                <span>Grade Status</span>
                             </a>
-                        </li> --}}
-                        <li>
-                            <a href="#">
-                                <img src="{{ asset('images/me.png') }}" alt="Profile">
-                                Profile
+                        </li>
+                        <li class="{{ request()->routeIs('student.profile') ? 'active' : '' }}">
+                            <a href="{{ route('student.profile') }}" id="profile-link">
+                                <img src="{{ asset('images/me.png') }}" alt="Profile" class="menu-icon">
+                                <span>My Profile</span>
                             </a>
                         </li>
                     </ul>
@@ -186,6 +294,21 @@
             document.getElementById('logout-form').submit();
         }
     }
+
+    // Debug profile link click
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileLink = document.getElementById('profile-link');
+        if (profileLink) {
+            console.log('Profile link found:', profileLink.href);
+            profileLink.addEventListener('click', function(e) {
+                console.log('Profile link clicked');
+                console.log('Href:', this.href);
+                // e.preventDefault(); // Uncomment to prevent navigation for testing
+            });
+        } else {
+            console.error('Profile link not found!');
+        }
+    });
     </script>
 
     @stack('scripts')

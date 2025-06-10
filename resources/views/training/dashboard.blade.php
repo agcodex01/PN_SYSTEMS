@@ -6,8 +6,13 @@
 
 <div class="dashboard-container" style="padding: 20px;">
 
-    <h1 style="margin-bottom: 20px; color: #333; font-weight: 300;">Dashboard</h1>
-    <hr>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="{{ asset('images/Dashboard.png') }}" alt="Dashboard Icon" style="width: 32px; height: 32px;">
+            <h1 style="color: #333; font-weight: 600; margin: 0; font-size: 24px;">Dashboard</h1>
+        </div>
+    </div>
+    <hr style="margin-bottom: 20px;">
 
     <!-- Stats Grid -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px;">

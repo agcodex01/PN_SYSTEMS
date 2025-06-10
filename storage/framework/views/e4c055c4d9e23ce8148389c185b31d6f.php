@@ -38,7 +38,7 @@
                             <?php if(request('school_id')): ?>
                                 <?php $__currentLoopData = $classesBySchool[request('school_id')]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $class): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo e($class->class_id); ?>" <?php echo e(request('class_id') == $class->class_id ? 'selected' : ''); ?>>
-                                        <?php echo e($class->name); ?>
+                                        <?php echo e($class->class_name); ?>
 
                                     </option>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -78,22 +78,9 @@
                 <div class="school-content">
                     <?php $__currentLoopData = $schoolSubmissions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $gradeSubmission): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <?php
-                            // Fetch students for this submission
-                            $students = \DB::table('grade_submission_subject')
-                                ->join('pnph_users', 'grade_submission_subject.user_id', '=', 'pnph_users.user_id')
-                                ->join('student_details', 'pnph_users.user_id', '=', 'student_details.user_id')
-                                ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
-                                ->where('pnph_users.user_role', 'student')
-                                ->select('pnph_users.user_id', 'pnph_users.user_fname', 'pnph_users.user_lname', 'student_details.student_id')
-                                ->distinct()
-                                ->get()
-                                ->map(function ($student) {
-                                    return (object)[
-                                        'student_id' => $student->student_id,
-                                        'user_id' => $student->user_id,
-                                        'name' => $student->user_fname . ' ' . $student->user_lname
-                                    ];
-                                });
+                            // Use paginated students from controller
+                            $students = $gradeSubmission->students_paginated;
+                            $pagination = $gradeSubmission->students_pagination;
                             // Fetch subjects for this submission
                             $subjects = \DB::table('grade_submission_subject')
                                 ->join('subjects', 'grade_submission_subject.subject_id', '=', 'subjects.id')
@@ -271,6 +258,51 @@
                                      </tbody>
                                 </table>
                             </div>
+
+                            <!-- Student Pagination for this submission -->
+                            <?php if($pagination->has_pages): ?>
+                                <div class="submission-pagination-container">
+                                    <div class="submission-pagination-info">
+                                        <small class="text-muted">
+                                            Showing <?php echo e($pagination->from); ?> to <?php echo e($pagination->to); ?> of <?php echo e($pagination->total); ?> students
+                                        </small>
+                                    </div>
+                                    <div class="submission-pagination-links">
+                                        <?php if($pagination->on_first_page): ?>
+                                            <span class="pagination-btn disabled">
+                                                <i class="fas fa-chevron-left"></i> Previous
+                                            </span>
+                                        <?php else: ?>
+                                            <?php
+                                                $prevPage = $pagination->current_page - 1;
+                                                $currentUrl = request()->fullUrlWithQuery(['submission_' . $gradeSubmission->id . '_page' => $prevPage]);
+                                            ?>
+                                            <a href="<?php echo e($currentUrl); ?>" class="pagination-btn">
+                                                <i class="fas fa-chevron-left"></i> Previous
+                                            </a>
+                                        <?php endif; ?>
+
+                                        <span class="page-info-small">
+                                            Page <?php echo e($pagination->current_page); ?> of <?php echo e($pagination->last_page); ?>
+
+                                        </span>
+
+                                        <?php if($pagination->has_more_pages): ?>
+                                            <?php
+                                                $nextPage = $pagination->current_page + 1;
+                                                $currentUrl = request()->fullUrlWithQuery(['submission_' . $gradeSubmission->id . '_page' => $nextPage]);
+                                            ?>
+                                            <a href="<?php echo e($currentUrl); ?>" class="pagination-btn">
+                                                Next <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="pagination-btn disabled">
+                                                Next <i class="fas fa-chevron-right"></i>
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
@@ -748,6 +780,84 @@
         color: var(--dark-text);
         font-size: 1.1rem;
         font-weight: 500;
+    }
+
+    /* Submission-specific pagination styles */
+    .submission-pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        margin-top: 15px;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+
+    .submission-pagination-info {
+        color: #6c757d;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .submission-pagination-links {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .pagination-btn {
+        padding: 6px 12px;
+        border-radius: 4px;
+        background: white;
+        border: 1px solid #dee2e6;
+        color: #22bbea;
+        font-size: 13px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .pagination-btn:hover:not(.disabled) {
+        background: #f8f9fa;
+        border-color: #22bbea;
+        color: #1a9bc7;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(34, 187, 234, 0.2);
+    }
+
+    .pagination-btn.disabled {
+        color: #6c757d;
+        background: #f8f9fa;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .page-info-small {
+        margin: 0 8px;
+        font-size: 13px;
+        color: #495057;
+        font-weight: 500;
+    }
+
+    @media (max-width: 768px) {
+        .submission-pagination-container {
+            flex-direction: column;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .submission-pagination-info {
+            order: 2;
+        }
+
+        .submission-pagination-links {
+            order: 1;
+            justify-content: center;
+        }
     }
 </style>
 <?php $__env->stopSection(); ?> 

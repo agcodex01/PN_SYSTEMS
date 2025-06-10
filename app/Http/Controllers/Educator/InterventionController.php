@@ -189,6 +189,12 @@ class InterventionController extends Controller
                         ]);
                     }
 
+                    // Add submission data to the intervention
+                    $existingIntervention->semester = $submission->semester;
+                    $existingIntervention->term = $submission->term;
+                    $existingIntervention->academic_year = $submission->academic_year;
+                    $existingIntervention->submission_id = $submission->id;
+
                     $interventionData[] = $existingIntervention->load(['subject', 'school', 'classModel', 'educatorAssigned']);
                 }
             }
@@ -212,7 +218,38 @@ class InterventionController extends Controller
             ]);
         }
 
-        return collect($interventionData)->sortBy('created_at');
+        // Convert to collection and sort
+        $collection = collect($interventionData)->sortByDesc('created_at');
+
+        // Apply status filter if provided
+        if ($request && $request->has('status') && $request->status) {
+            $collection = $collection->filter(function($intervention) use ($request) {
+                return $intervention->status === $request->status;
+            });
+        }
+
+        // Manual pagination for custom data
+        $perPage = 5;
+        $currentPage = request()->get('page', 1);
+        $total = $collection->count();
+        $items = $collection->forPage($currentPage, $perPage)->values();
+
+        // Create paginator instance
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $currentPage,
+            [
+                'path' => request()->url(),
+                'pageName' => 'page',
+            ]
+        );
+
+        // Append query parameters to pagination links
+        $paginator->appends(request()->query());
+
+        return $paginator;
     }
 
     /**

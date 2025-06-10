@@ -152,6 +152,83 @@
     margin-right: 0;
 }
 
+/* Pagination Styling */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.pagination-info {
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    flex-grow: 1;
+}
+
+.pagination-wrapper .pagination {
+    margin: 0;
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    padding: 0;
+}
+
+.pagination-wrapper .page-item {
+    display: inline-block;
+    margin: 0 1px;
+}
+
+.pagination-wrapper .page-link {
+    color: #22bbea;
+    border-color: #dee2e6;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    text-decoration: none;
+    display: inline-block;
+    line-height: 1.25;
+    transition: all 0.3s ease;
+}
+
+.pagination-wrapper .page-link:hover {
+    color: #1a9bc7;
+    background-color: #f8f9fa;
+    border-color: #22bbea;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(34, 187, 234, 0.2);
+}
+
+.pagination-wrapper .page-item.active .page-link {
+    background-color: #22bbea;
+    border-color: #22bbea;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(34, 187, 234, 0.3);
+}
+
+.pagination-wrapper .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+}
+
+.pagination-wrapper .page-item.disabled .page-link:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 @media (max-width: 768px) {
     .filter-inline-container {
         flex-direction: column;
@@ -160,6 +237,22 @@
 
     .filter-group {
         min-width: 100%;
+    }
+
+    .pagination-container {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .pagination-info {
+        order: 2;
+        text-align: center;
+    }
+
+    .pagination-wrapper {
+        order: 1;
+        justify-content: center;
     }
 }
 </style>
@@ -240,6 +333,15 @@
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
+
+                    <div class="filter-group">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="">All Status</option>
+                            <option value="pending" <?php echo e(request('status') == 'pending' ? 'selected' : ''); ?>>Pending</option>
+                            <option value="done" <?php echo e(request('status') == 'done' ? 'selected' : ''); ?>>Done</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="filter-buttons">
@@ -263,7 +365,7 @@
             <h5 class="mb-0">
                 <i class="bi bi-table me-2"></i>
                 Intervention Status Overview
-                <span class="badge bg-light text-dark ms-2"><?php echo e($interventions->count()); ?> interventions</span>
+                <span class="badge bg-light text-dark ms-2"><?php echo e($interventions->total()); ?> total interventions</span>
             </h5>
         </div>
         <div class="card-body p-0">
@@ -274,6 +376,7 @@
                             <tr>
                                 <th class="text-center">No. of Students</th>
                                 <th>Subject</th>
+                                <th>Submission</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center">Date</th>
                                 <th>Educator Assigned</th>
@@ -296,6 +399,21 @@
                                                 <br><small class="text-muted">Class: <?php echo e($intervention->classModel->class_name); ?></small>
                                             <?php endif; ?>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <?php if(isset($intervention->gradeSubmission)): ?>
+                                            <div>
+                                                <strong><?php echo e($intervention->gradeSubmission->semester ?? 'N/A'); ?> <?php echo e($intervention->gradeSubmission->term ?? 'N/A'); ?></strong>
+                                                <br><small class="text-muted"><?php echo e($intervention->gradeSubmission->academic_year ?? 'N/A'); ?></small>
+                                            </div>
+                                        <?php elseif(isset($intervention->semester) && isset($intervention->term)): ?>
+                                            <div>
+                                                <strong><?php echo e($intervention->semester); ?> <?php echo e($intervention->term); ?></strong>
+                                                <br><small class="text-muted"><?php echo e($intervention->academic_year ?? 'N/A'); ?></small>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-muted">N/A</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-center">
                                         <?php if($intervention->status === 'done'): ?>
@@ -338,7 +456,7 @@
                     <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.5;"></i>
                     <h5 class="mt-3">No Interventions Found</h5>
                     <p class="mb-0">
-                        <?php if(request()->hasAny(['school_id', 'class_id', 'submission_id'])): ?>
+                        <?php if(request()->hasAny(['school_id', 'class_id', 'submission_id', 'status'])): ?>
                             No interventions match your current filters. Try adjusting your search criteria.
                         <?php else: ?>
                             No subjects currently need intervention, or no grade data has been submitted yet.
@@ -348,6 +466,36 @@
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- Pagination Section -->
+    <?php if($interventions->count() > 0): ?>
+        <div class="card shadow-sm mt-3">
+            <div class="card-body">
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <small class="text-muted">
+                            Showing <?php echo e($interventions->firstItem() ?? 1); ?> to <?php echo e($interventions->lastItem() ?? $interventions->count()); ?> of <?php echo e($interventions->total()); ?> interventions
+                        </small>
+                    </div>
+                    <div class="pagination-wrapper">
+                        <?php if($interventions->hasPages()): ?>
+                            <?php echo e($interventions->links('custom-pagination')); ?>
+
+                        <?php else: ?>
+                            <!-- Show pagination even for single page -->
+                            <nav aria-label="Pagination Navigation">
+                                <ul class="pagination">
+                                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                                    <li class="page-item active"><span class="page-link">1</span></li>
+                                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                                </ul>
+                            </nav>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Summary Cards -->
     <?php if($interventions->count() > 0): ?>

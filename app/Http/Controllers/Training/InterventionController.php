@@ -7,6 +7,7 @@ use App\Models\Intervention;
 use App\Models\School;
 use App\Models\ClassModel;
 use App\Models\Subject;
+use App\Models\GradeSubmission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -44,13 +45,38 @@ class InterventionController extends Controller
                 $query->where('status', $request->status);
             }
 
-            // Get interventions ordered by most recent
-            $interventions = $query->orderBy('created_at', 'desc')->get();
+            if ($request->filled('submission_id')) {
+                $query->where('grade_submission_id', $request->submission_id);
+            }
+
+            // Get interventions ordered by most recent with pagination
+            $interventions = $query->orderBy('created_at', 'desc')->paginate(5);
+
+            // Append query parameters to pagination links
+            $interventions->appends(request()->query());
 
             // Get filter options
             $schools = School::orderBy('name')->get();
             $classes = ClassModel::orderBy('class_name')->get();
             $subjects = Subject::orderBy('name')->get();
+
+            // Get submissions for dropdown
+            $submissions = GradeSubmission::with(['school', 'classModel'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($submission) {
+                    return [
+                        'id' => $submission->id,
+                        'display_name' => ($submission->school->name ?? 'Unknown School') . ' - ' .
+                                       ($submission->classModel->class_name ?? 'Unknown Class') . ' - ' .
+                                       $submission->semester . ' ' . $submission->term . ' (' . $submission->academic_year . ')',
+                        'school_name' => $submission->school->name ?? 'Unknown School',
+                        'class_name' => $submission->classModel->class_name ?? 'Unknown Class',
+                        'semester' => $submission->semester,
+                        'term' => $submission->term,
+                        'academic_year' => $submission->academic_year
+                    ];
+                });
 
             Log::info('Training Intervention Index', [
                 'total_interventions' => $interventions->count(),
@@ -59,9 +85,10 @@ class InterventionController extends Controller
 
             return view('training.intervention.index', compact(
                 'interventions',
-                'schools', 
+                'schools',
                 'classes',
-                'subjects'
+                'subjects',
+                'submissions'
             ));
 
         } catch (\Exception $e) {
@@ -124,6 +151,47 @@ class InterventionController extends Controller
             ]);
 
             return response()->json(['error' => 'Failed to load subjects'], 500);
+        }
+    }
+
+    /**
+     * Get submissions for a specific school and class (AJAX)
+     */
+    public function getSubmissions(Request $request)
+    {
+        try {
+            $query = GradeSubmission::with(['school', 'classModel']);
+
+            if ($request->filled('school_id')) {
+                $query->where('school_id', $request->school_id);
+            }
+
+            if ($request->filled('class_id')) {
+                $query->where('class_id', $request->class_id);
+            }
+
+            $submissions = $query->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($submission) {
+                    return [
+                        'id' => $submission->id,
+                        'display_name' => $submission->semester . ' ' . $submission->term . ' (' . $submission->academic_year . ')',
+                        'semester' => $submission->semester,
+                        'term' => $submission->term,
+                        'academic_year' => $submission->academic_year
+                    ];
+                });
+
+            return response()->json($submissions);
+
+        } catch (\Exception $e) {
+            Log::error('Training Get Submissions Error', [
+                'school_id' => $request->school_id,
+                'class_id' => $request->class_id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json(['error' => 'Failed to load submissions'], 500);
         }
     }
 }

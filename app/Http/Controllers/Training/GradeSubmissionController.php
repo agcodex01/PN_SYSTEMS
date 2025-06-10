@@ -60,10 +60,74 @@ class GradeSubmissionController extends Controller
         // Get paginated submissions
         $submissions = $query->with(['students', 'proofs', 'subjects'])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
-        
+            ->paginate(5);
+
         // Group paginated submissions by school
         $submissionsBySchool = $submissions->groupBy('school_id');
+
+        // Add pagination info for students within each submission
+        $submissionsWithPagination = collect();
+        foreach ($submissionsBySchool as $schoolId => $schoolSubmissions) {
+            $paginatedSubmissions = collect();
+            foreach ($schoolSubmissions as $submission) {
+                // Get current page for this submission
+                $currentPage = $request->get('submission_' . $submission->id . '_page', 1);
+
+                // Get students for this submission with pagination
+                $studentsQuery = \DB::table('grade_submission_subject')
+                    ->join('pnph_users', 'grade_submission_subject.user_id', '=', 'pnph_users.user_id')
+                    ->join('student_details', 'pnph_users.user_id', '=', 'student_details.user_id')
+                    ->where('grade_submission_subject.grade_submission_id', '=', $submission->id)
+                    ->where('pnph_users.user_role', '=', 'student')
+                    ->select('pnph_users.user_id', 'pnph_users.user_fname', 'pnph_users.user_lname', 'student_details.student_id')
+                    ->distinct();
+
+                // Manual pagination for students
+                $perPage = 5;
+
+                // Count unique students for this submission only
+                $total = \DB::table('grade_submission_subject')
+                    ->join('pnph_users', 'grade_submission_subject.user_id', '=', 'pnph_users.user_id')
+                    ->where('grade_submission_subject.grade_submission_id', '=', $submission->id)
+                    ->where('pnph_users.user_role', '=', 'student')
+                    ->distinct('pnph_users.user_id')
+                    ->count('pnph_users.user_id');
+
+                // Debug: Log the count for this specific submission
+                \Log::info("Submission {$submission->id} student count: {$total}");
+
+                $students = $studentsQuery->skip(($currentPage - 1) * $perPage)
+                    ->take($perPage)
+                    ->get()
+                    ->map(function ($student) {
+                        return (object)[
+                            'student_id' => $student->student_id,
+                            'user_id' => $student->user_id,
+                            'name' => $student->user_fname . ' ' . $student->user_lname
+                        ];
+                    });
+
+                // Create pagination info
+                $lastPage = ceil($total / $perPage);
+                $submission->students_paginated = $students;
+                $submission->students_pagination = (object)[
+                    'current_page' => $currentPage,
+                    'last_page' => $lastPage,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'from' => ($currentPage - 1) * $perPage + 1,
+                    'to' => min($currentPage * $perPage, $total),
+                    'has_pages' => $lastPage > 1,
+                    'on_first_page' => $currentPage == 1,
+                    'has_more_pages' => $currentPage < $lastPage
+                ];
+
+                $paginatedSubmissions->push($submission);
+            }
+            $submissionsWithPagination[$schoolId] = $paginatedSubmissions;
+        }
+
+        $submissionsBySchool = $submissionsWithPagination;
 
         // Get unique filter options from all submissions
         $filterOptions = $allSubmissions->map(function($submission) {

@@ -154,6 +154,83 @@
     margin-right: 0;
 }
 
+/* Pagination Styling */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.pagination-info {
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    flex-grow: 1;
+}
+
+.pagination-wrapper .pagination {
+    margin: 0;
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    padding: 0;
+}
+
+.pagination-wrapper .page-item {
+    display: inline-block;
+    margin: 0 1px;
+}
+
+.pagination-wrapper .page-link {
+    color: #22bbea;
+    border-color: #dee2e6;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    text-decoration: none;
+    display: inline-block;
+    line-height: 1.25;
+    transition: all 0.3s ease;
+}
+
+.pagination-wrapper .page-link:hover {
+    color: #1a9bc7;
+    background-color: #f8f9fa;
+    border-color: #22bbea;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(34, 187, 234, 0.2);
+}
+
+.pagination-wrapper .page-item.active .page-link {
+    background-color: #22bbea;
+    border-color: #22bbea;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(34, 187, 234, 0.3);
+}
+
+.pagination-wrapper .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+}
+
+.pagination-wrapper .page-item.disabled .page-link:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 @media (max-width: 768px) {
     .filter-inline-container {
         flex-direction: column;
@@ -162,6 +239,22 @@
 
     .filter-group {
         min-width: 100%;
+    }
+
+    .pagination-container {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .pagination-info {
+        order: 2;
+        text-align: center;
+    }
+
+    .pagination-wrapper {
+        order: 1;
+        justify-content: center;
     }
 }
 </style>
@@ -237,6 +330,15 @@
                             @endforeach
                         </select>
                     </div>
+
+                    <div class="filter-group">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="">All Status</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="done" {{ request('status') == 'done' ? 'selected' : '' }}>Done</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="filter-buttons">
@@ -260,7 +362,7 @@
             <h5 class="mb-0">
                 <i class="bi bi-table me-2"></i>
                 Intervention Status Overview
-                <span class="badge bg-light text-dark ms-2">{{ $interventions->count() }} interventions</span>
+                <span class="badge bg-light text-dark ms-2">{{ $interventions->total() }} total interventions</span>
             </h5>
         </div>
         <div class="card-body p-0">
@@ -271,6 +373,7 @@
                             <tr>
                                 <th class="text-center">No. of Students</th>
                                 <th>Subject</th>
+                                <th>Submission</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center">Date</th>
                                 <th>Educator Assigned</th>
@@ -293,6 +396,21 @@
                                                 <br><small class="text-muted">Class: {{ $intervention->classModel->class_name }}</small>
                                             @endif
                                         </div>
+                                    </td>
+                                    <td>
+                                        @if(isset($intervention->gradeSubmission))
+                                            <div>
+                                                <strong>{{ $intervention->gradeSubmission->semester ?? 'N/A' }} {{ $intervention->gradeSubmission->term ?? 'N/A' }}</strong>
+                                                <br><small class="text-muted">{{ $intervention->gradeSubmission->academic_year ?? 'N/A' }}</small>
+                                            </div>
+                                        @elseif(isset($intervention->semester) && isset($intervention->term))
+                                            <div>
+                                                <strong>{{ $intervention->semester }} {{ $intervention->term }}</strong>
+                                                <br><small class="text-muted">{{ $intervention->academic_year ?? 'N/A' }}</small>
+                                            </div>
+                                        @else
+                                            <span class="text-muted">N/A</span>
+                                        @endif
                                     </td>
                                     <td class="text-center">
                                         @if($intervention->status === 'done')
@@ -334,7 +452,7 @@
                     <i class="bi bi-inbox" style="font-size: 3rem; opacity: 0.5;"></i>
                     <h5 class="mt-3">No Interventions Found</h5>
                     <p class="mb-0">
-                        @if(request()->hasAny(['school_id', 'class_id', 'submission_id']))
+                        @if(request()->hasAny(['school_id', 'class_id', 'submission_id', 'status']))
                             No interventions match your current filters. Try adjusting your search criteria.
                         @else
                             No subjects currently need intervention, or no grade data has been submitted yet.
@@ -344,6 +462,35 @@
             @endif
         </div>
     </div>
+
+    <!-- Pagination Section -->
+    @if($interventions->count() > 0)
+        <div class="card shadow-sm mt-3">
+            <div class="card-body">
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <small class="text-muted">
+                            Showing {{ $interventions->firstItem() ?? 1 }} to {{ $interventions->lastItem() ?? $interventions->count() }} of {{ $interventions->total() }} interventions
+                        </small>
+                    </div>
+                    <div class="pagination-wrapper">
+                        @if($interventions->hasPages())
+                            {{ $interventions->links('custom-pagination') }}
+                        @else
+                            <!-- Show pagination even for single page -->
+                            <nav aria-label="Pagination Navigation">
+                                <ul class="pagination">
+                                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                                    <li class="page-item active"><span class="page-link">1</span></li>
+                                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                                </ul>
+                            </nav>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <!-- Summary Cards -->
     @if($interventions->count() > 0)

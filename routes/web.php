@@ -177,6 +177,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/', [\App\Http\Controllers\Training\InterventionController::class, 'index'])->name('index');
             Route::get('/classes/{school_id}', [\App\Http\Controllers\Training\InterventionController::class, 'getClasses'])->name('classes');
             Route::get('/subjects', [\App\Http\Controllers\Training\InterventionController::class, 'getSubjects'])->name('subjects');
+            Route::get('/submissions', [\App\Http\Controllers\Training\InterventionController::class, 'getSubmissions'])->name('submissions');
         });
 
         //Grade submission routes

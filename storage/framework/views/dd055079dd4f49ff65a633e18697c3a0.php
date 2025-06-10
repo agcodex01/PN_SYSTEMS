@@ -137,6 +137,83 @@
     margin-right: 0;
 }
 
+/* Pagination Styling */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.pagination-info {
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    flex-grow: 1;
+}
+
+.pagination-wrapper .pagination {
+    margin: 0;
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    padding: 0;
+}
+
+.pagination-wrapper .page-item {
+    display: inline-block;
+    margin: 0 1px;
+}
+
+.pagination-wrapper .page-link {
+    color: #22bbea;
+    border-color: #dee2e6;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    text-decoration: none;
+    display: inline-block;
+    line-height: 1.25;
+    transition: all 0.3s ease;
+}
+
+.pagination-wrapper .page-link:hover {
+    color: #1a9bc7;
+    background-color: #f8f9fa;
+    border-color: #22bbea;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(34, 187, 234, 0.2);
+}
+
+.pagination-wrapper .page-item.active .page-link {
+    background-color: #22bbea;
+    border-color: #22bbea;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(34, 187, 234, 0.3);
+}
+
+.pagination-wrapper .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+}
+
+.pagination-wrapper .page-item.disabled .page-link:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 @media (max-width: 768px) {
     .filter-inline-container {
         flex-direction: column;
@@ -145,6 +222,22 @@
 
     .filter-group {
         min-width: 100%;
+    }
+
+    .pagination-container {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .pagination-info {
+        order: 2;
+        text-align: center;
+    }
+
+    .pagination-wrapper {
+        order: 1;
+        justify-content: center;
     }
 }
 </style>
@@ -213,6 +306,20 @@
                     </div>
 
                     <div class="filter-group">
+                        <label for="submission_id">Submission</label>
+                        <select id="submission_id" name="submission_id" disabled>
+                            <option value="">Select Class First</option>
+                            <?php $__currentLoopData = $submissions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $submission): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($submission['id']); ?>"
+                                    <?php echo e(request('submission_id') == $submission['id'] ? 'selected' : ''); ?>>
+                                    <?php echo e($submission['display_name']); ?>
+
+                                </option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
                         <label for="status">Status</label>
                         <select id="status" name="status">
                             <option value="">All Status</option>
@@ -243,7 +350,7 @@
             <h5 class="mb-0">
                 <i class="bi bi-table me-2"></i>
                 Intervention Status Overview
-                <span class="badge bg-light text-dark ms-2"><?php echo e($interventions->count()); ?> interventions</span>
+                <span class="badge bg-light text-dark ms-2"><?php echo e($interventions->total()); ?> total interventions</span>
                 <!-- <span class="badge bg-info text-white ms-1">View Only</span> -->
             </h5>
         </div>
@@ -255,6 +362,7 @@
                             <tr>
                                 <th class="text-center">No. of Students</th>
                                 <th>Subject</th>
+                                <th>Submission</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center">Date</th>
                                 <th>Educator Assigned</th>
@@ -276,6 +384,16 @@
                                                 <br><small class="text-muted">Class: <?php echo e($intervention->classModel->class_name); ?></small>
                                             <?php endif; ?>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <?php if($intervention->gradeSubmission): ?>
+                                            <div>
+                                                <strong><?php echo e($intervention->gradeSubmission->semester); ?> <?php echo e($intervention->gradeSubmission->term); ?></strong>
+                                                <br><small class="text-muted"><?php echo e($intervention->gradeSubmission->academic_year); ?></small>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-muted">N/A</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="text-center">
                                         <?php if($intervention->status === 'done'): ?>
@@ -313,7 +431,7 @@
                     <h5 class="mt-3">No Interventions Found</h5>
                     <p class="mb-0">
                         <?php if(request()->hasAny(['school_id', 'class_id', 'subject_id', 'status'])): ?>
-                            Ambot unsa akong ibutang diri
+                            No interventions match your current filters. Try adjusting your search criteria.
                         <?php else: ?>
                             Student haven't finalized their grades yet.
                         <?php endif; ?>
@@ -322,6 +440,36 @@
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- Pagination Section -->
+    <?php if($interventions->count() > 0): ?>
+        <div class="card shadow-sm mt-3">
+            <div class="card-body">
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <small class="text-muted">
+                            Showing <?php echo e($interventions->firstItem() ?? 1); ?> to <?php echo e($interventions->lastItem() ?? $interventions->count()); ?> of <?php echo e($interventions->total()); ?> interventions
+                        </small>
+                    </div>
+                    <div class="pagination-wrapper">
+                        <?php if($interventions->hasPages()): ?>
+                            <?php echo e($interventions->links('custom-pagination')); ?>
+
+                        <?php else: ?>
+                            <!-- Show pagination even for single page -->
+                            <nav aria-label="Pagination Navigation">
+                                <ul class="pagination">
+                                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                                    <li class="page-item active"><span class="page-link">1</span></li>
+                                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                                </ul>
+                            </nav>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- Summary Cards -->
     <?php if($interventions->count() > 0): ?>
@@ -368,6 +516,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const schoolSelect = document.getElementById('school_id');
     const classSelect = document.getElementById('class_id');
+    const submissionSelect = document.getElementById('submission_id');
 
     // Initialize form state
     initializeForm();
@@ -376,9 +525,11 @@ document.addEventListener('DOMContentLoaded', function() {
     schoolSelect.addEventListener('change', function() {
         const schoolId = this.value;
 
-        // Reset class dropdown
+        // Reset class and submission dropdowns
         classSelect.innerHTML = '<option value="">Loading classes...</option>';
         classSelect.disabled = true;
+        submissionSelect.innerHTML = '<option value="">Select Class First</option>';
+        submissionSelect.disabled = true;
 
         if (schoolId) {
             // Fetch classes for selected school
@@ -396,6 +547,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         classSelect.appendChild(option);
                     });
                     classSelect.disabled = false;
+
+                    // Trigger class change if there's a selected class
+                    if (classSelect.value) {
+                        classSelect.dispatchEvent(new Event('change'));
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching classes:', error);
@@ -404,6 +560,42 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             classSelect.innerHTML = '<option value="">Select School First</option>';
             classSelect.disabled = true;
+        }
+    });
+
+    // Class change handler
+    classSelect.addEventListener('change', function() {
+        const schoolId = schoolSelect.value;
+        const classId = this.value;
+
+        // Reset submission dropdown
+        submissionSelect.innerHTML = '<option value="">Loading submissions...</option>';
+        submissionSelect.disabled = true;
+
+        if (schoolId && classId) {
+            // Fetch submissions for selected school and class
+            fetch(`/training/intervention/submissions?school_id=${schoolId}&class_id=${classId}`)
+                .then(response => response.json())
+                .then(submissions => {
+                    submissionSelect.innerHTML = '<option value="">All Submissions</option>';
+                    submissions.forEach(submission => {
+                        const option = document.createElement('option');
+                        option.value = submission.id;
+                        option.textContent = submission.display_name;
+                        if (submission.id == '<?php echo e(request("submission_id")); ?>') {
+                            option.selected = true;
+                        }
+                        submissionSelect.appendChild(option);
+                    });
+                    submissionSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error fetching submissions:', error);
+                    submissionSelect.innerHTML = '<option value="">Error loading submissions</option>';
+                });
+        } else {
+            submissionSelect.innerHTML = '<option value="">Select Class First</option>';
+            submissionSelect.disabled = true;
         }
     });
 

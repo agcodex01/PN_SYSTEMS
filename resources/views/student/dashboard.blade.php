@@ -2,7 +2,101 @@
 
 @section('content')
 <div class="dashboard-container">
-    <h1>My Grade Submissions</h1>
+    <!-- Subject List -->
+    <div class="subject-list-container">
+        @if(isset($subjectsWithGrades) && $subjectsWithGrades->count() > 0)
+            <div class="subject-list">
+                @foreach($subjectsWithGrades as $subject)
+                    <div class="subject-card status-{{ strtolower($subject->status) }}">
+                        <div class="subject-code">{{ $subject->subject_code }}</div>
+                        <div class="subject-name">{{ $subject->subject_name }}</div>
+                        <div class="subject-grade">
+                            <span class="grade">{{ $subject->grade ?? 'N/A' }}</span>
+                            <span class="status-badge">{{ strtoupper($subject->status) }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+    
+    <h2>My Grade Submissions</h2>
+    
+    <div class="status-cards-container">
+        <div class="status-card pass">
+            <div class="status-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="status-details">
+                <h3>Pass</h3>
+                <p>{{ $statusCounts['pass'] ?? 0 }} Subjects</p>
+            </div>
+        </div>
+        
+        <div class="status-card fail">
+            <div class="status-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="status-details">
+                <h3>Fail</h3>
+                <p>{{ $statusCounts['fail'] ?? 0 }} Subjects</p>
+            </div>
+        </div>
+        
+        <div class="status-card inc">
+            <div class="status-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="status-details">
+                <h3>INC</h3>
+                <p>{{ $statusCounts['inc'] ?? 0 }} Subjects</p>
+            </div>
+        </div>
+        
+        <div class="status-card nc">
+            <div class="status-icon">
+                <i class="fas fa-minus-circle"></i>
+            </div>
+            <div class="status-details">
+                <h3>NC</h3>
+                <p>{{ $statusCounts['nc'] ?? 0 }} Subjects</p>
+            </div>
+        </div>
+        
+        <div class="status-card dr">
+            <div class="status-icon">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="status-details">
+                <h3>DR</h3>
+                <p>{{ $statusCounts['dr'] ?? 0 }} Subjects</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dropdown filter for term and year -->
+    <div class="d-flex justify-content-center align-items-center mb-4">
+        <form action="{{ route('student.dashboard') }}" method="GET" class="d-flex align-items-center gap-2">
+            <select name="term" id="term" class="form-select form-select-sm" style="width: auto;">
+                <option value="">All Terms</option>
+                @foreach($terms as $term)
+                    <option value="{{ $term }}" {{ request('term') == $term ? 'selected' : '' }}>{{ ucfirst($term) }}</option>
+                @endforeach
+            </select>
+            <select name="academic_year" id="academic_year" class="form-select form-select-sm" style="width: auto;">
+                <option value="">All Years</option>
+                @foreach($years as $year)
+                    <option value="{{ $year }}" {{ request('academic_year') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                @endforeach
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+            @if(request()->has('term') || request()->has('academic_year'))
+                <a href="{{ route('student.dashboard') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+            @endif
+        </form>
+    </div>
+    
+    <div class="submissions-section">
     
     @if(session('error'))
         <div class="alert alert-danger">
@@ -102,9 +196,323 @@
             @endforeach
         </div>
     @endif
+    </div>
 </div>
 
 <style>
+/* Dashboard Header */
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.grade-status-logo {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.grade-status-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.dashboard-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #2c3e50;
+}
+
+/* Section Header */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 25px 0 20px;
+}
+
+.section-logo {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.section-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.8rem;
+}
+
+/* Status Cards Styles */
+.status-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+    margin: 20px 0 30px;
+    padding-bottom: 10px;
+}
+
+/* Status Card Styles */
+.status-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-left: 5px solid;
+    min-width: 0; /* Prevent flex item from overflowing */
+}
+
+.status-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Subject List Styles */
+.subject-list-container {
+    margin: 30px 0;
+}
+
+.subject-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.subject-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.subject-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.subject-code {
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.subject-name {
+    font-size: 1.1em;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.subject-grade {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+}
+
+.grade {
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Status Colors */
+.status-pass, .status-PASS {
+    border-left-color: #28a745;
+}
+
+.status-fail, .status-FAIL {
+    border-left-color: #dc3545;
+}
+
+.status-inc, .status-INC {
+    border-left-color: #ffc107;
+}
+
+.status-nc, .status-NC {
+    border-left-color: #6c757d;
+}
+
+.status-dr, .status-DR {
+    border-left-color: #343a40;
+}
+
+/* Status Badge Colors */
+.status-badge {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.status-pass .status-badge, 
+.status-PASS .status-badge {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-fail .status-badge,
+.status-FAIL .status-badge {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status-inc .status-badge,
+.status-INC .status-badge {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-nc .status-badge,
+.status-NC .status-badge {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.status-dr .status-badge,
+.status-DR .status-badge {
+    background-color: #d6d8db;
+    color: #1b1e21;
+}
+
+.no-subjects {
+    text-align: center;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    color: #6c757d;
+}
+
+.status-icon {
+    font-size: 30px;
+    margin-right: 15px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.status-details h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.status-details p {
+    margin: 5px 0 0;
+    font-size: 14px;
+    color: #666;
+}
+
+/* Card Colors */
+.status-card.pass {
+    border-color: #28a745;
+}
+
+.status-card.pass .status-icon {
+    background-color: #28a745;
+}
+
+.status-card.fail {
+    border-color: #dc3545;
+}
+
+.status-card.fail .status-icon {
+    background-color: #dc3545;
+}
+
+.status-card.inc {
+    border-color: #ffc107;
+}
+
+.status-card.inc .status-icon {
+    background-color: #ffc107;
+}
+
+.status-card.nc {
+    border-color: #6c757d;
+}
+
+.status-card.nc .status-icon {
+    background-color: #6c757d;
+}
+
+.status-card.dr {
+    border-color: #6f42c1;
+}
+
+.status-card.dr .status-icon {
+    background-color: #6f42c1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .status-cards-container {
+        grid-template-columns: repeat(5, 180px);
+    }
+}
+
+@media (max-width: 992px) {
+    .status-cards-container {
+        grid-template-columns: repeat(5, 160px);
+    }
+}
+
+@media (max-width: 768px) {
+    .status-cards-container {
+        grid-template-columns: repeat(5, 140px);
+    }
+}
+
+/* For very small screens, allow horizontal scrolling */
+@media (max-width: 576px) {
+    .status-cards-container {
+        grid-template-columns: repeat(5, 130px);
+    }
+    
+    .status-card {
+        min-width: 120px;
+        padding: 15px 10px;
+    }
+    
+    .status-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+        margin-right: 10px;
+    }
+    
+    .status-details h3 {
+        font-size: 14px;
+    }
+    
+    .status-details p {
+        font-size: 12px;
+    }
+}
+
 .dashboard-container {
     padding: 20px;
     max-width: 1200px;
@@ -292,6 +700,114 @@ h1 {
 
 .btn-view-submission:hover {
     background-color: #5a6268;
+}
+
+/* Add only responsive styles at the end */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 15px;
+    }
+
+    /* Make status cards scroll horizontally on mobile */
+    .status-cards-container {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 10px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+    }
+
+    .status-cards-container::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+
+    .status-card {
+        flex: 0 0 140px;
+        margin-right: 10px;
+    }
+
+    /* Make subject list single column on mobile */
+    .subject-list {
+        grid-template-columns: 1fr;
+    }
+
+    /* Adjust filter form for mobile */
+    .d-flex.justify-content-center.align-items-center.mb-4 {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    .d-flex.justify-content-center.align-items-center.mb-4 form {
+        width: 100%;
+    }
+
+    .d-flex.justify-content-center.align-items-center.mb-4 select,
+    .d-flex.justify-content-center.align-items-center.mb-4 button,
+    .d-flex.justify-content-center.align-items-center.mb-4 a {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    /* Make submissions grid single column on mobile */
+    .submissions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Adjust card content for mobile */
+    .submission-card {
+        margin-bottom: 15px;
+    }
+
+    .card-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .info-row {
+        font-size: 0.9rem;
+    }
+
+    /* Make buttons full width on mobile */
+    .btn-submit-grades,
+    .btn-view-submission {
+        width: 100%;
+        margin-top: 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-container {
+        padding: 10px;
+    }
+
+    .status-card {
+        flex: 0 0 130px;
+    }
+
+    .subject-card {
+        padding: 12px;
+    }
+
+    .subject-code {
+        font-size: 0.9em;
+    }
+
+    .subject-name {
+        font-size: 0.95em;
+    }
+
+    .status-badge {
+        font-size: 0.75em;
+        padding: 2px 8px;
+    }
+
+    .card-actions {
+        flex-direction: column;
+    }
+
+    .card-actions a {
+        margin: 5px 0;
+    }
 }
 </style>
 @endsection

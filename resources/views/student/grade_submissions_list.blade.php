@@ -50,9 +50,16 @@
                             <td>{{ $submission->created_at ? $submission->created_at->format('M d, Y') : 'N/A' }}</td>
                             <td>
                                 @if(in_array($overallStatus, ['submitted', 'approved']))
-                                    <a href="{{ route('student.view-submission', $submission->id) }}" class="btn btn-sm btn-secondary">View Submission</a>
+                                    <a href="{{ route('student.grades', ['submission_id' => $submission->id]) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-chart-line me-1"></i> View Grade Status
+                                    </a>
+                                    <a href="{{ route('student.view-submission', $submission->id) }}" class="btn btn-sm btn-secondary">
+                                        <i class="fas fa-file-alt me-1"></i> View Submission
+                                    </a>
                                 @else
-                                    <a href="{{ route('student.submit-grades.show', $submission->id) }}" class="btn btn-sm btn-primary">Submit Grades</a>
+                                    <a href="{{ route('student.submit-grades.show', $submission->id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-upload me-1"></i> Submit Grades
+                                    </a>
                                 @endif
                             </td>
                         </tr>

@@ -127,8 +127,12 @@
                         <div class="cell">{{ $class->students->count() }}</div>
                         <div class="cell">
                             <div class="action-buttons">
-                                <a href="{{ route('training.classes.show', $class) }}" class="btn btn-view">view</a>
-                                <a href="{{ route('training.classes.edit', $class) }}" class="btn btn-edit">edit</a>
+                                <a href="{{ route('training.classes.show', $class) }}" class="btn-icon" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ route('training.classes.edit', $class) }}" class="btn-icon" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                             </div>
                         </div>
                     </div>

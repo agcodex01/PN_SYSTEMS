@@ -1,4 +1,4 @@
-import 'bootstrap';
+// import 'bootstrap'; // Commented out - not installed
 
 /**
  * We'll load the axios HTTP library which allows us to easily issue requests

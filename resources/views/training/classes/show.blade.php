@@ -69,7 +69,7 @@
                     <tbody>
                         @forelse($class->students as $student)
                             <tr>
-                                <td>{{ $student->user_id }}</td>
+                                <td>{{ $student->studentDetail->student_id ?? 'N/A' }}</td>
                                 <td>{{ $student->user_fname }} {{ $student->user_mInitial }}. {{ $student->user_lname }}</td>
                                 <td>{{ $student->studentDetail->student_number }}</td>
                                 <td>{{ $student->studentDetail->training_code }}</td>

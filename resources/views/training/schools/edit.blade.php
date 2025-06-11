@@ -209,6 +209,9 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data) {
                 if (data.success) {
+                    // Show success message immediately
+                    alert(data.message || 'School updated successfully!');
+                    // Then redirect
                     window.location.href = data.redirect || '{{ route("training.manage-students") }}';
                 } else {
                     // Display validation errors if available
@@ -866,6 +869,29 @@ function batchesOptionsHtml() {
     border-color: #4CAF50;
     outline: none;
     box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* Alert Styling */
+.alert {
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
 }
 </style>
 @endsection 

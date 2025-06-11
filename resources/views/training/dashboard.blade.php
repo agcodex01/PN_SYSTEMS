@@ -38,7 +38,7 @@
     <div style="display: flex; flex-direction: column; gap: 30px;">
         <!-- Batch Chart -->
         <div style="background: #fff; width: 95%; border-radius: 12px; padding: 30px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); max-width: 900px; margin: 0 auto 30px auto; display: flex; flex-direction: column; align-items: center;">
-            <h3 style="text-align: center; margin-bottom: 24px; color: #333; font-size: 1.5em; font-weight: 500;">Students by Batch and Gender</h3>
+            <h3 style="text-align: center; margin-bottom: 24px; color: #333; font-size: 1.5em; font-weight: 500;">Students by Class and Gender</h3>
             <div style="height: 340px; width: 100%; max-width: 700px; display: flex; align-items: center; justify-content: center;">
                 <canvas id="batchChart"></canvas>
             </div>

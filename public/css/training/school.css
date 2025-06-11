@@ -303,6 +303,64 @@ body {
     border-bottom: none;
 }
 
+/* Icon Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: #fff;
+    background-color: #4a90e2;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-icon i {
+    font-size: 14px;
+}
+
+/* View button */
+.btn-icon[title="View"] {
+    background-color: #4a90e2;
+}
+
+.btn-icon[title="View"]:hover {
+    background-color: #357abd;
+}
+
+/* Edit button */
+.btn-icon[title="Edit"] {
+    background-color: #f39c12;
+}
+
+.btn-icon[title="Edit"]:hover {
+    background-color: #d68910;
+}
+
+/* Delete button */
+.btn-icon[title="Delete"] {
+    background-color: #dc3545;
+}
+
+.btn-icon[title="Delete"]:hover {
+    background-color: #c82333;
+}
+
 .detail-row .label {
     color: #666;
     font-weight: 500;

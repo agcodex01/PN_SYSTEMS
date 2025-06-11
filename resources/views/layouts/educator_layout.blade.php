@@ -2,19 +2,47 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Dashboard' }}</title>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="{{ asset('css/nav.css') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <style>
+    :root {
+        --sidebar-width: 250px;
+        --topbar-height: 80px;
+        --content-padding: 20px;
+    }
+    
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    
     body {
-        margin: 0;  
+        margin: 0;
+        padding: 0;
         font-family: 'Poppins', sans-serif;
         background-color: #f1f5f9;
-        height: 100vh;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
+    }
+
+    .logout-btn {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+    }
+
+    .logout-btn:hover {
+        color: #ff9933;
     }
 
     .top-bar {
@@ -30,20 +58,26 @@
         height: 40px;
     }
 
-    .container {
+    .layout-container {
         display: flex;
         flex: 1;
-        overflow: hidden;
+        min-height: calc(100vh - var(--topbar-height));
+        margin-top: var(--topbar-height);
+        position: relative;
+        width: 100%;
     }
 
     .sidebar {
-        background-color: #ffffff; /* WHITE background na */
-        width: 250px;
+        background-color: #ffffff;
+        width: var(--sidebar-width);
         padding: 20px 0;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* subtle shadow for divider effect */
-        flex-shrink: 0;
+        position: fixed;
+        top: var(--topbar-height);
+        left: 0;
+        bottom: 0;
+        overflow-y: auto;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        z-index: 100;
     }
 
     .menu {
@@ -130,10 +164,10 @@
 
     .content {
         flex-grow: 1;
-        padding: 20px;
+        padding: var(--content-padding);
         overflow-y: auto;
         background-color: #f8f9fa;
-        margin-left: 250px;
+        margin-left: var(--sidebar-width);
     }
 </style>
 
@@ -150,17 +184,17 @@
 
             <div class="user-info" style="color: #333; font-weight: 500; display: flex; align-items: center; gap: 15px;">
                 Logged in as: 
-                <span style="color: #ff9933;">
+                <span style="color: white;">
                     {{ $user->user_fname }} {{ $user->user_mInitial }} {{ $user->user_lname }} {{ $user->suffix }}
                 </span> 
                 | Role: 
-                <span style="color: #ff9933;">
+                <span style="color: white;">
                     {{ ucfirst($user->user_role) }}
                 </span>
 
                 <form action="{{ route('logout') }}" method="POST" id="logout-form" style="display: inline;">
                     @csrf
-                    <button type="button" class="logout-btn" style="background: none; border: none; color: inherit; cursor: pointer;" onclick="confirmLogout()">
+                    <button type="button" class="logout-btn" onclick="confirmLogout()">
                         <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H8m12 0-4 4m4-4-4-4M9 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2"/>
                         </svg>
@@ -171,7 +205,7 @@
     </div>
 
 
-    <div class="container">
+    <div class="layout-container">
         <aside class="sidebar">
             <ul class="menu">
 
@@ -187,13 +221,30 @@
                 </li>
 
                
-                <li>
-                    <a href="#">
+                <li class="dropdown {{ request()->routeIs('educator.analytics.*') ? 'active' : '' }}" id="educatorAnalyticsDropdown">
+                    <a href="#" onclick="toggleDropdown(event)">
                         <img src="{{ asset('images/analytics.png') }}" alt="Analytics"> Analytics
                     </a>
+                    <div class="dropdown-content">
+                        <a href="{{ route('educator.analytics.class-grades') }}" class="{{ request()->routeIs('educator.analytics.class-grades') ? 'active' : '' }}">
+                            <img src="{{ asset('images/class grades.png') }}" alt="Class Grades"> Class Grades
+                        </a>
+                        <a href="{{ route('educator.analytics.subject-progress') }}" class="{{ request()->routeIs('educator.analytics.subject-progress') ? 'active' : '' }}">
+                            <img src="{{ asset('images/subject progress.png') }}" alt="Subject Progress"> Subject Progress
+                        </a>
+                        <a href="{{ route('educator.analytics.subject-intervention') }}" class="{{ request()->routeIs('educator.analytics.subject-intervention') ? 'active' : '' }}">
+                            <img src="{{ asset('images/subject intervention.png') }}" alt="Subject Intervention"> Subject Intervention
+                        </a>
+                        <a href="{{ route('educator.analytics.class-progress') }}" class="{{ request()->routeIs('educator.analytics.class-progress') ? 'active' : '' }}">
+                            <img src="{{ asset('images/analytics.png') }}" alt="Class Progress"> Class Progress
+                        </a>
+                        <a href="{{ route('educator.analytics.intern-grades-progress') }}" class="{{ request()->routeIs('educator.analytics.intern-grades-progress') ? 'active' : '' }}">
+                            <img src="{{ asset('images/internship grades.png') }}" alt="Internship Grades Progress"> Internship Grades Progress
+                        </a>
+                    </div>
                 </li>
                 <li>
-                    <a href="#">
+                    <a href="{{ route('educator.intervention') }}">
                         <img src="{{ asset('images/is.png') }}" alt="Intervention Status"> Intervention Status
                     </a>
                 </li>
@@ -217,8 +268,10 @@
 
     function toggleDropdown(event) {
         event.preventDefault();
-        const dropdown = document.getElementById('manageDropdown');
-        dropdown.classList.toggle('active');
+        const dropdown = event.target.closest('.dropdown');
+        if (dropdown) {
+            dropdown.classList.toggle('active');
+        }
     }
 
     

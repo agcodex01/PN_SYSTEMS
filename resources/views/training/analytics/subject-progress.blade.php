@@ -8,24 +8,30 @@
         <p class="text-muted">View and analyze student progress across subjects. Select a school, class, and submission to view the report.</p>
     </div>
     
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <label for="schoolSelect" class="form-label fw-bold">School</label>
-                    <select id="schoolSelect" class="form-select">
+    <div class="filter-card">
+        <div class="filter-card-header">
+            <h5>
+                <i class="bi bi-funnel me-2"></i>
+                Filter Subject Progress
+            </h5>
+        </div>
+        <div class="filter-card-body">
+            <div class="filter-inline-container">
+                <div class="filter-group">
+                    <label for="schoolSelect">School</label>
+                    <select id="schoolSelect">
                         <option value="">Select School</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="classSelect" class="form-label fw-bold">Class</label>
-                    <select id="classSelect" class="form-select" disabled>
+                <div class="filter-group">
+                    <label for="classSelect">Class</label>
+                    <select id="classSelect" disabled>
                         <option value="">Select Class</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="submissionSelect" class="form-label fw-bold">Submission</label>
-                    <select id="submissionSelect" class="form-select" disabled>
+                <div class="filter-group">
+                    <label for="submissionSelect">Submission</label>
+                    <select id="submissionSelect" disabled>
                         <option value="">Select Submission</option>
                     </select>
                 </div>
@@ -382,14 +388,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         },
                         beginAtZero: true,
                         stacked: true,
-                        max: 10, // Set maximum value to 10
+                        max: 70, // Set maximum value to 70
                         min: 0,   // Ensure it starts at 0
                         ticks: {
-                            stepSize: 1,  // Show every integer value
-                            maxTicksLimit: 11, // 0 to 10 inclusive
+                            stepSize: 5,  // Show marks every 5 students
+                            maxTicksLimit: 15, // 0 to 70 with steps of 5
                             callback: function(value) {
                                 // Only show integer values
-                                if (value % 1 === 0) {
+                                if (value % 5 === 0) {
                                     return value;
                                 }
                             }
@@ -429,78 +435,311 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-.chart-container {
-    min-height: 500px; /* Increased height to accommodate straight labels */
-    padding-bottom: 40px; /* Add some bottom padding */
+/* Base layout */
+:root {
+    --primary-color: #22bbea;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --border-color: #dee2e6;
 }
 
-/* Ensure chart has enough space for x-axis labels */
-.chartjs-size-monitor,
-.chartjs-size-monitor-shrink,
-.chartjs-size-monitor-expand {
-    position: relative;
-    overflow: visible !important;
+/* Page container */
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Style for x-axis labels */
-.chartjs-render-monitor text {
-    white-space: normal !important;
-    text-align: center;
-    line-height: 1.2;
+.header-section h1 {
+    font-weight: 300;
+    color: #333;
+    margin-bottom: 10px;
 }
 
-/* Ensure the chart is responsive */
-canvas {
-    max-width: 100%;
-    height: auto !important;
+.header-section hr {
+    border: none;
+    height: 1px;
+    background-color: #ddd;
+    margin-bottom: 15px;
 }
 
-/* Make sure the chart container doesn't overflow */
+/* Filter Card Styling */
+.filter-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 1.5rem;
+}
+
+.filter-card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+}
+
+.filter-card-header h5 {
+    margin: 0;
+    font-weight: 500;
+    color: #495057;
+}
+
+.filter-card-body {
+    padding: 20px;
+}
+
+/* Filter Section Styling */
+.filter-inline-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    flex: 1;
+}
+
+.filter-group label {
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #495057;
+    font-size: 14px;
+}
+
+.filter-group select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 14px;
+}
+
+.filter-group select:focus {
+    border-color: #22bbea;
+    box-shadow: 0 0 0 0.2rem rgba(34, 187, 234, 0.25);
+    outline: none;
+}
+
+.filter-group select:disabled {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
-    .chart-container {
-        height: 500px !important;
+    .filter-inline-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .filter-group {
+        min-width: 100%;
+    }
+}
+
+/* Card styles */
+.card {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: var(--light-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* Form controls */
+.form-select, 
+.form-control {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    width: 100%;
+    min-height: 500px;
+    margin: 0 auto;
+}
+
+/* Table styles */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 1rem 0;
+}
+
+table {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 1rem;
+    background-color: transparent;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+table th,
+table td {
+    padding: 0.75rem;
+    vertical-align: top;
+    border-top: 1px solid var(--border-color);
+    text-align: left;
+}
+
+table thead th {
+    vertical-align: bottom;
+    border-bottom: 2px solid var(--border-color);
+    background-color: var(--light-color);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+table tbody tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Status badges */
+.badge {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+}
+
+.badge-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.badge-danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.badge-warning {
+    background-color: var(--warning-color);
+    color: #212529;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .page-container {
+        padding: 1rem;
     }
     
-    /* Make sure the chart is scrollable on small screens */
-    .table-responsive {
-        overflow-x: auto;
+    .chart-container {
+        min-height: 400px;
     }
 }
 
-/* Style for the card header */
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+@media (max-width: 992px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    table {
+        font-size: 0.85rem;
+    }
+    
+    table th,
+    table td {
+        padding: 0.5rem;
+    }
 }
 
-/* Style for the status badges */
-.badge {
-    font-size: 0.8rem;
-    padding: 0.35em 0.65em;
+@media (max-width: 768px) {
+    .page-container {
+        padding: 0.75rem;
+    }
+    
+    .chart-container {
+        min-height: 350px;
+    }
+    
+    .table-container {
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+    }
+    
+    table th,
+    table td {
+        white-space: nowrap;
+    }
 }
 
-/* Custom scrollbar for the table */
-.table-responsive::-webkit-scrollbar {
-    height: 8px;
-}
-
-.table-responsive::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.table-responsive::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-.table-responsive::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-/* Make sure the page doesn't have horizontal scroll */
-body {
-    overflow-x: hidden;
+@media (max-width: 576px) {
+    .page-container {
+        padding: 0.5rem;
+    }
+    
+    .card {
+        border-radius: 0;
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+        width: calc(100% + 1rem);
+    }
+    
+    .form-row > .col, 
+    .form-row > [class*="col-"] {
+        padding-right: 0.5rem;
+        padding-left: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .chart-container {
+        min-height: 300px;
+    }
 }
 </style>
 @endsection

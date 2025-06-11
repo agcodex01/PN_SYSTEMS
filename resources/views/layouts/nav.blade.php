@@ -12,11 +12,24 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <style>
+    :root {
+        --sidebar-width: 250px;
+        --topbar-height: 80px;
+        --content-padding: 20px;
+    }
+    
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    
     body {
-        margin: 0;  
+        margin: 0;
+        padding: 0;
         font-family: 'Poppins', sans-serif;
         background-color: #f1f5f9;
-        height: 100vh;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
     }
@@ -45,20 +58,26 @@
         height: 40px;
     }
 
-    .container {
+    .layout-container {
         display: flex;
         flex: 1;
-        overflow: hidden;
+        min-height: calc(100vh - var(--topbar-height));
+        margin-top: var(--topbar-height);
+        position: relative;
+        width: 100%;
     }
 
     .sidebar {
         background-color: #ffffff;
-        width: 250px;
+        width: var(--sidebar-width);
         padding: 20px 0;
-        display: flex;
-        flex-direction: column;
+        position: fixed;
+        top: var(--topbar-height);
+        left: 0;
+        bottom: 0;
+        overflow-y: auto;
         box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-        flex-shrink: 0;
+        z-index: 100;
     }
 
     .menu {
@@ -177,10 +196,9 @@
     </div>
 
 
-    <div class="container">
+    <div class="layout-container">
         <aside class="sidebar">
             <ul class="menu">
-
                 <li class="{{ request()->routeIs('training.dashboard') ? 'active' : '' }}">
                     <a href="{{ route('training.dashboard') }}">
                         <img src="{{ asset('images/Dashboard.png') }}" alt="Dashboard"> Dashboard
@@ -242,25 +260,32 @@
                         <a href="{{ route('training.analytics.subject-intervention') }}" class="{{ request()->routeIs('training.analytics.subject-intervention') ? 'active' : '' }}">
                             <img src="{{ asset('images/subject intervention.png') }}" alt="Subject Intervention"> Subject Intervention
                         </a>
+
+                        <a href="{{ route('training.analytics.class-progress') }}" class="{{ request()->routeIs('training.analytics.class-progress') ? 'active' : '' }}">
+    <img src="{{ asset('images/analytics.png') }}" alt="Class Progress"> Class Progress
+</a>
+
                         <a href="{{ route('training.intern-grades-analytics.index') }}" class="{{ request()->routeIs('training.intern-grades-analytics.*') ? 'active' : '' }}">
                             <img src="{{ asset('images/internship grades.png') }}" alt="Internship Grades Progress"> Internship Grades Progress
                         </a>
                     </div>
                 </li>
-                <li>
-                    <a href="#">
+                <li class="{{ request()->routeIs('training.intervention.*') ? 'active' : '' }}">
+                    <a href="{{ route('training.intervention.index') }}">
                         <img src="{{ asset('images/is.png') }}" alt="Intervention Status"> Intervention Status
                     </a>
                 </li>
 
-            
+
 
             </ul>
         </aside>
 
-        <main class="content">
-            @yield('content')
-        </main>
+        <div class="main-content">
+            <main class="content">
+                @yield('content')
+            </main>
+        </div>
     </div>
 
     <script>

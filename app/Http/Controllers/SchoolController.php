@@ -241,6 +241,9 @@ class SchoolController extends Controller
                 // Handle subjects
                 $existingSubjectIds = $school->subjects()->pluck('id')->toArray();
                 $newSubjectIds = [];
+                $submittedOfferCodes = [];
+                
+                // Update or create subjects
                 foreach ($validated['subjects'] as $subjectData) {
                     $subject = $school->subjects()->updateOrCreate(
                         ['offer_code' => $subjectData['offer_code']],
@@ -251,8 +254,15 @@ class SchoolController extends Controller
                         ]
                     );
                     $newSubjectIds[] = $subject->id;
+                    $submittedOfferCodes[] = $subjectData['offer_code'];
                 }
-                \Log::info('Subjects updated');
+                
+                // Delete subjects that were not in the submitted list
+                $school->subjects()
+                    ->whereNotIn('offer_code', $submittedOfferCodes)
+                    ->delete();
+                    
+                \Log::info('Subjects updated and old subjects removed');
 
                 // Handle new classes
                 if (isset($validated['new_classes'])) {
@@ -275,16 +285,18 @@ class SchoolController extends Controller
                 DB::commit();
                 \Log::info('Update completed successfully');
 
+                $successMessage = 'School information and subjects have been updated successfully.';
+                
                 if ($request->ajax()) {
                     return response()->json([
                         'success' => true,
-                        'message' => 'School updated successfully',
+                        'message' => $successMessage,
                         'redirect' => route('training.manage-students')
                     ]);
                 }
 
                 return redirect()->route('training.manage-students')
-                    ->with('success', 'School updated successfully.');
+                    ->with('success', $successMessage);
 
             } catch (\Exception $e) {
                 DB::rollBack();

@@ -11,10 +11,6 @@ use App\Http\Controllers\ClassController;
 use App\Http\Controllers\EducatorController;
 use App\Http\Controllers\Training\GradeSubmissionController;
 use App\Http\Controllers\StudentController;
-use App\Http\Controllers\ClassGradeController;
-use App\Http\Controllers\AnalyticsController;
-use App\Http\Controllers\Training\InternGradeController;
-use App\Http\Controllers\Training\InternGradesAnalyticsController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -34,17 +30,7 @@ Route::post('/forgot-password/verify', [AuthController::class, 'verifyForgotPass
 Route::get('/reset-password', [AuthController::class, 'showResetPasswordForm'])->name('reset-password');
 Route::post('/reset-password/update', [AuthController::class, 'resetPassword'])->name('reset-password.update');
 
-  Route::prefix('admin')->name('admin.')->middleware('can:admin-access')->group(function () {
-        Route::resource('pnph_users', PNUserController::class);
-        Route::get('/dashboard', [PNUserController::class, 'dashboard'])->name('dashboard');
-    });
-    
 
-       // Main Menu Route
-       Route::get('/main-menu', function () {
-        return view('main-menu');
-    })->name('main-menu');
-    
 
 
 Route::middleware('auth')->group(function () {
@@ -58,20 +44,56 @@ Route::middleware('auth')->group(function () {
     // Logout Route
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
- 
     // Admin routes
-  
+    Route::prefix('admin')->name('admin.')->middleware('can:admin-access')->group(function () {
+        Route::resource('pnph_users', PNUserController::class);
+        Route::get('/dashboard', [PNUserController::class, 'dashboard'])->name('dashboard');
+    });
+    
     // Educator routes
     Route::prefix('educator')->name('educator.')->middleware('can:educator-access')->group(function () {
         Route::get('/dashboard', [EducatorController::class, 'dashboard'])->name('dashboard');
 
-    Route::get('/students-info', [EducatorController::class, 'index'])->name('educator.students.index');
-    Route::get('/students/{user_id}/view', [EducatorController::class, 'viewStudent'])->name('students.view');
-    Route::get('/students-info', [EducatorController::class, 'index'])->name('students.index');
-        
+        Route::get('/students-info', [EducatorController::class, 'index'])->name('educator.students.index');
+        Route::get('/students/{user_id}/view', [EducatorController::class, 'viewStudent'])->name('students.view');
+        Route::get('/students-info', [EducatorController::class, 'index'])->name('students.index');
+        Route::get('/students/{user_id}/edit', [EducatorController::class, 'edit'])->name('students.edit');
+        Route::put('/students/{user_id}', [EducatorController::class, 'update'])->name('students.update');
 
+        // Intervention routes
+        Route::get('/intervention', [\App\Http\Controllers\Educator\InterventionController::class, 'index'])->name('intervention');
+        Route::get('/intervention-data', [\App\Http\Controllers\Educator\InterventionController::class, 'getInterventionData'])->name('intervention-data');
+        Route::get('/intervention/{id}/update', [\App\Http\Controllers\Educator\InterventionController::class, 'update'])->name('intervention.update');
+        Route::put('/intervention/{id}', [\App\Http\Controllers\Educator\InterventionController::class, 'store'])->name('intervention.store');
+        Route::get('/intervention/create-test-data', [\App\Http\Controllers\Educator\InterventionController::class, 'createTestData'])->name('intervention.create-test-data');
+        Route::get('/intervention/get-classes', [\App\Http\Controllers\Educator\InterventionController::class, 'getClasses'])->name('intervention.get-classes');
+        Route::get('/intervention/get-submissions', [\App\Http\Controllers\Educator\InterventionController::class, 'getSubmissions'])->name('intervention.get-submissions');
 
-});
+        // Analytics routes
+        Route::prefix('analytics')->name('analytics.')->group(function () {
+            Route::controller(\App\Http\Controllers\Educator\AnalyticsController::class)->group(function () {
+                Route::get('/class-grades', 'showClassGrades')->name('class-grades');
+                Route::get('/subject-progress', 'showSubjectProgress')->name('subject-progress');
+                Route::get('/subject-intervention', 'showSubjectIntervention')->name('subject-intervention');
+                Route::get('/class-progress', 'showClassProgress')->name('class-progress');
+                Route::get('/intern-grades-progress', [\App\Http\Controllers\Educator\InternGradesAnalytics::class, 'index'])->name('intern-grades-progress');
+
+                // AJAX endpoints for filtering
+                Route::get('/schools', 'getSchools')->name('schools');
+                Route::get('/classes/{schoolId}', 'getClassesBySchool')->name('classes');
+                Route::get('/class-submissions/{schoolId}/{classId}', 'getClassSubmissions')->name('class-submissions');
+
+                // Data endpoints
+                Route::get('/class-grades-data', 'fetchClassGrades')->name('class-grades-data');
+                Route::get('/subject-progress-data', 'fetchSubjectProgressData')->name('subject-progress-data');
+                Route::get('/subject-intervention-data', 'fetchSubjectInterventionData')->name('subject-intervention-data');
+                Route::get('/class-progress-data', 'fetchClassProgressData')->name('class-progress-data');
+            });
+        });
+
+        // Intern grades analytics data route (outside analytics controller group)
+        Route::get('/intern-grades-progress-data', [\App\Http\Controllers\Educator\InternGradesAnalytics::class, 'getAnalyticsData'])->name('intern-grades-progress-data');
+    });
  
 
 
@@ -80,29 +102,6 @@ Route::middleware('auth')->group(function () {
     // Training routes
 
     Route::prefix('training')->name('training.')->middleware(['auth', 'can:training-access'])->group(function () {
-        // Analytics routes
-        Route::prefix('analytics')->name('analytics.')->group(function() {
-            // Class Grades Analytics
-            Route::get('/class-grades', [AnalyticsController::class, 'showClassGrades'])->name('class-grades');
-            Route::get('/class-grades-data', [AnalyticsController::class, 'fetchClassGrades'])->name('class-grades-data');
-            
-            // Subject Intervention Analytics
-            Route::get('/subject-intervention', [AnalyticsController::class, 'showSubjectIntervention'])->name('subject-intervention');
-            Route::get('/subject-intervention-data', [AnalyticsController::class, 'fetchSubjectInterventionData'])->name('subject-intervention-data');
-            
-            // Subject Progress Analytics
-            Route::get('/subject-progress', [AnalyticsController::class, 'showSubjectProgress'])->name('subject-progress');
-            Route::get('/subject-progress-data', [AnalyticsController::class, 'fetchSubjectProgressData'])->name('subject-progress-data');
-            
-            // Shared routes
-            Route::get('/schools', [AnalyticsController::class, 'getSchools'])->name('schools');
-            Route::get('/classes/{school}', [AnalyticsController::class, 'getClassesBySchool'])->name('classes');
-            Route::get('/terms/{school}', [AnalyticsController::class, 'getTermsBySchool'])->name('terms');
-            Route::get('/class-submissions/{school}/{class}', [AnalyticsController::class, 'getClassSubmissions'])->name('class-submissions');
-        });
-
-
-        
         Route::get('/dashboard', [TrainingController::class, 'dashboard'])->name('dashboard');
         Route::get('/students-info', [TrainingController::class, 'index'])->name('students-info');
     
@@ -127,11 +126,59 @@ Route::middleware('auth')->group(function () {
         // Class routes with school context
         Route::get('schools/{school}/classes/create', [ClassController::class, 'create'])->name('classes.create');
         Route::post('schools/{school}/classes', [ClassController::class, 'store'])->name('classes.store');
-        Route::delete('/classes/{class}', [ClassController::class, 'destroy'])->name('classes.destroy');
         Route::get('students/by-batch', [ClassController::class, 'getStudentsList'])->name('students.by-batch');
         Route::get('api/schools/{school}/classes', [ClassController::class, 'getClassesBySchool'])->name('api.classes.by-school');
+        Route::get('api/schools/{school}/interns', [\App\Http\Controllers\Training\InternGradeController::class, 'getInternsBySchoolAndClass'])->name('api.interns.by-school');
         Route::resource('classes', ClassController::class)->except(['create', 'store']);
 
+
+        // Intern grades routes
+        Route::prefix('intern-grades')->name('intern-grades.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Training\InternGradeController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\Training\InternGradeController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\Training\InternGradeController::class, 'store'])->name('store');
+            Route::get('/{internGrade}/edit', [\App\Http\Controllers\Training\InternGradeController::class, 'edit'])->name('edit');
+            Route::put('/{internGrade}', [\App\Http\Controllers\Training\InternGradeController::class, 'update'])->name('update');
+            Route::delete('/{internGrade}', [\App\Http\Controllers\Training\InternGradeController::class, 'destroy'])->name('destroy');
+
+            // AJAX routes for dynamic data loading
+            Route::get('/students/{school_id}', [\App\Http\Controllers\Training\InternGradeController::class, 'getInternsBySchoolAndClass'])->name('students');
+        });
+
+        // Analytics routes
+        Route::prefix('analytics')->name('analytics.')->group(function () {
+            Route::controller(\App\Http\Controllers\Training\AnalyticsController::class)->group(function () {
+                Route::get('/class-grades', 'showClassGrades')->name('class-grades');
+                Route::get('/subject-progress', 'showSubjectProgress')->name('subject-progress');
+                Route::get('/subject-intervention', 'showSubjectIntervention')->name('subject-intervention');
+                Route::get('/class-progress', 'showClassProgress')->name('class-progress');
+
+                // AJAX endpoints for filtering
+                Route::get('/schools', 'getSchools')->name('schools');
+                Route::get('/classes/{schoolId}', 'getClassesBySchool')->name('classes');
+                Route::get('/class-submissions/{schoolId}/{classId}', 'getClassSubmissions')->name('class-submissions');
+
+                // Data endpoints
+                Route::get('/class-grades-data', 'fetchClassGrades')->name('class-grades-data');
+                Route::get('/subject-progress-data', 'fetchSubjectProgressData')->name('subject-progress-data');
+                Route::get('/subject-intervention-data', 'fetchSubjectInterventionData')->name('subject-intervention-data');
+                Route::get('/class-progress-data', 'fetchClassProgressData')->name('class-progress-data');
+            });
+        });
+
+        // Intern grades analytics routes
+        Route::prefix('intern-grades-analytics')->name('intern-grades-analytics.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Training\InternGradesAnalyticsController::class, 'index'])->name('index');
+            Route::get('/data', [\App\Http\Controllers\Training\InternGradesAnalyticsController::class, 'getAnalyticsData'])->name('data');
+        });
+
+        // Intervention routes (view-only for training)
+        Route::prefix('intervention')->name('intervention.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Training\InterventionController::class, 'index'])->name('index');
+            Route::get('/classes/{school_id}', [\App\Http\Controllers\Training\InterventionController::class, 'getClasses'])->name('classes');
+            Route::get('/subjects', [\App\Http\Controllers\Training\InterventionController::class, 'getSubjects'])->name('subjects');
+            Route::get('/submissions', [\App\Http\Controllers\Training\InterventionController::class, 'getSubmissions'])->name('submissions');
+        });
 
         //Grade submission routes
         Route::controller(GradeSubmissionController::class)->group(function () {
@@ -153,30 +200,6 @@ Route::middleware('auth')->group(function () {
             // Temporary route to fix subject associations for a submission
             Route::get('/grade-submissions/{gradeSubmission}/fix-subjects', 'fixSubmissionSubjects')->name('grade-submissions.fix-subjects');
         });
-
-        // Intern Grade Routes
-        Route::prefix('intern-grades')->name('intern-grades.')->group(function () {
-            Route::get('/', [InternGradeController::class, 'index'])->name('index');
-            Route::get('/create', [InternGradeController::class, 'create'])->name('create');
-            Route::post('/store', [InternGradeController::class, 'store'])->name('store');
-            Route::get('/{internGrade}/edit', [InternGradeController::class, 'edit'])->name('edit');
-            Route::put('/{internGrade}', [InternGradeController::class, 'update'])->name('update');
-            Route::delete('/{internGrade}', [InternGradeController::class, 'destroy'])->name('destroy');
-            
-            // API routes for dynamic dropdowns (Keeping the original one commented out for now)
-            // Route::get('/api/classes/{school}', [InternGradeController::class, 'getClassesBySchool'])->name('api.classes'); 
-            Route::get('/api/interns/{school}', [InternGradeController::class, 'getInternsBySchoolAndClass'])->name('api.interns'); // Keeping the original one for now
-        });
-
-        // API route for fetching interns by school (moved outside intern-grades group)
-        Route::get('/api/schools/{school}/interns', [InternGradeController::class, 'getInternsBySchoolAndClass'])->name('api.schools.interns');
-
-        // Intern Grades Analytics Routes
-        Route::get('/intern-grades-analytics', [InternGradesAnalyticsController::class, 'index'])
-            ->name('intern-grades-analytics.index');
-        Route::get('/api/intern-grades-analytics', [InternGradesAnalyticsController::class, 'getAnalyticsData'])
-            ->name('intern-grades-analytics.data');
-
     }); // <-- ✅ properly closed here
     
     
@@ -192,7 +215,5 @@ Route::middleware('auth')->group(function () {
         Route::get('/grade-submissions', [StudentController::class, 'submissionsList'])->name('student.grade-submissions');
     });
 
-  
-    
 
 });

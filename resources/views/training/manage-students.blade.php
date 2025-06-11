@@ -6,6 +6,19 @@
 
 <h1 style="font-weight: 300;">Schools</h1>
 <hr>
+
+@if(session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-error">
+        {{ session('error') }}
+    </div>
+@endif
+
 <div class="page-container">
     <div class="header-section">
         <a href="{{ route('training.schools.create') }}" class="btn btn-primary">
@@ -31,17 +44,17 @@
                     <div class="cell">{{ $school->course }}</div>
                     <div class="cell">
                         <div class="action-buttons">
-                            <a href="{{ route('training.schools.show', $school) }}" class="btn btn-view">
-                                view
+                            <a href="{{ route('training.schools.show', $school) }}" class="btn-icon" title="View">
+                                <i class="fas fa-eye"></i>
                             </a>
-                            <a href="{{ route('training.schools.edit', $school) }}" class="btn btn-edit">
-                                edit
+                            <a href="{{ route('training.schools.edit', $school) }}" class="btn-icon" title="Edit">
+                                <i class="fas fa-edit"></i>
                             </a>
-                            <form action="{{ route('training.schools.destroy', $school) }}" method="POST" style="display: inline;">
+                            <form action="{{ route('training.schools.destroy', $school) }}" method="POST" class="delete-form" onsubmit="return confirm('Are you sure you want to delete this school?');">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure?')">
-                                    delete
+                                <button type="submit" class="btn-icon" title="Delete">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </form>
                         </div>

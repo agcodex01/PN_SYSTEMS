@@ -19,61 +19,9 @@
             </div>
         @endif
     </div>
-    
-    <h2>My Grade Submissions</h2>
-    
-    <div class="status-cards-container">
-        <div class="status-card pass">
-            <div class="status-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="status-details">
-                <h3>Pass</h3>
-                <p>{{ $statusCounts['pass'] ?? 0 }} Subjects</p>
-            </div>
-        </div>
-        
-        <div class="status-card fail">
-            <div class="status-icon">
-                <i class="fas fa-times-circle"></i>
-            </div>
-            <div class="status-details">
-                <h3>Fail</h3>
-                <p>{{ $statusCounts['fail'] ?? 0 }} Subjects</p>
-            </div>
-        </div>
-        
-        <div class="status-card inc">
-            <div class="status-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="status-details">
-                <h3>INC</h3>
-                <p>{{ $statusCounts['inc'] ?? 0 }} Subjects</p>
-            </div>
-        </div>
-        
-        <div class="status-card nc">
-            <div class="status-icon">
-                <i class="fas fa-minus-circle"></i>
-            </div>
-            <div class="status-details">
-                <h3>NC</h3>
-                <p>{{ $statusCounts['nc'] ?? 0 }} Subjects</p>
-            </div>
-        </div>
-        
-        <div class="status-card dr">
-            <div class="status-icon">
-                <i class="fas fa-ban"></i>
-            </div>
-            <div class="status-details">
-                <h3>DR</h3>
-                <p>{{ $statusCounts['dr'] ?? 0 }} Subjects</p>
-            </div>
-        </div>
-    </div>
-    
+
+    <h2>Dashboard</h2>
+
     <!-- Filter Section -->
     <div class="filter-card">
         <div class="filter-card-header">
@@ -86,20 +34,11 @@
             <form action="{{ route('student.dashboard') }}" method="GET" class="filter-form">
                 <div class="filter-inline-container">
                     <div class="filter-group">
-                        <label for="term">Term</label>
-                        <select name="term" id="term" class="filter-select">
-                            <option value="">All Terms</option>
-                            @foreach($terms as $term)
-                                <option value="{{ $term }}" {{ request('term') == $term ? 'selected' : '' }}>{{ ucfirst($term) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="academic_year">Academic Year</label>
-                        <select name="academic_year" id="academic_year" class="filter-select">
-                            <option value="">All Years</option>
-                            @foreach($years as $year)
-                                <option value="{{ $year }}" {{ request('academic_year') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                        <label for="filter_key">Submission</label>
+                        <select name="filter_key" id="filter_key" class="filter-select">
+                            <option value="">All Submissions</option>
+                            @foreach($filterOptions as $option)
+                                <option value="{{ $option }}" {{ request('filter_key') == $option ? 'selected' : '' }}>{{ $option }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -109,7 +48,7 @@
                         <i class="fas fa-search"></i>
                         Apply Filter
                     </button>
-                    @if(request()->has('term') || request()->has('academic_year'))
+                    @if(request()->has('filter_key'))
                         <a href="{{ route('student.dashboard') }}" class="btn btn-clear">
                             <i class="fas fa-times"></i>
                             Clear Filter
@@ -117,6 +56,58 @@
                     @endif
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="status-cards-container">
+        <div class="status-card pass">
+            <div class="status-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="status-details">
+                <h3>Pass</h3>
+                <p>{{ $statusCounts['pass'] ?? 0 }} Subjects</p>
+            </div>
+        </div>
+
+        <div class="status-card fail">
+            <div class="status-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="status-details">
+                <h3>Fail</h3>
+                <p>{{ $statusCounts['fail'] ?? 0 }} Subjects</p>
+            </div>
+        </div>
+
+        <div class="status-card inc">
+            <div class="status-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="status-details">
+                <h3>INC</h3>
+                <p>{{ $statusCounts['inc'] ?? 0 }} Subjects</p>
+            </div>
+        </div>
+
+        <div class="status-card nc">
+            <div class="status-icon">
+                <i class="fas fa-minus-circle"></i>
+            </div>
+            <div class="status-details">
+                <h3>NC</h3>
+                <p>{{ $statusCounts['nc'] ?? 0 }} Subjects</p>
+            </div>
+        </div>
+
+        <div class="status-card dr">
+            <div class="status-icon">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="status-details">
+                <h3>DR</h3>
+                <p>{{ $statusCounts['dr'] ?? 0 }} Subjects</p>
+            </div>
         </div>
     </div>
     
@@ -858,7 +849,7 @@ h1 {
 /* Large screens (1200px and up) */
 @media (min-width: 1200px) {
     .dashboard-container {
-        padding: 30px;
+        padding: 0;
         max-width: 1400px;
     }
 
@@ -879,7 +870,7 @@ h1 {
 /* Medium screens (992px to 1199px) */
 @media (max-width: 1199px) {
     .dashboard-container {
-        padding: 25px;
+        padding: 0;
     }
 
     .status-cards-container {
@@ -891,7 +882,7 @@ h1 {
 /* Small screens (768px to 991px) */
 @media (max-width: 991px) {
     .dashboard-container {
-        padding: 20px;
+        padding: 0;
     }
 
     .status-cards-container {
@@ -922,7 +913,7 @@ h1 {
 /* Tablet screens (768px and below) */
 @media (max-width: 768px) {
     .dashboard-container {
-        padding: 15px;
+        padding: 0;
     }
 
     /* Make status cards scroll horizontally on mobile */
@@ -1028,7 +1019,7 @@ h1 {
 /* Mobile screens (576px and below) */
 @media (max-width: 576px) {
     .dashboard-container {
-        padding: 10px;
+        padding: 0;
     }
 
     .status-card {
@@ -1096,7 +1087,7 @@ h1 {
 /* Extra small screens (480px and below) */
 @media (max-width: 480px) {
     .dashboard-container {
-        padding: 8px;
+        padding: 0;
     }
 
     h1, h2 {
@@ -1192,7 +1183,7 @@ h1 {
 /* Landscape orientation for mobile devices */
 @media (max-height: 500px) and (orientation: landscape) {
     .dashboard-container {
-        padding: 10px;
+        padding: 0;
     }
 
     .status-cards-container {

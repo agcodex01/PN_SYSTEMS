@@ -237,25 +237,54 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Process and display the data
-                // Check if we have data
-                const hasData = data.subjects && data.subjects.length > 0;
-                
+                // Check if there's any actual grade data to display (not just subjects)
+                const hasData = data.subjects && data.subjects.some(subject =>
+                    subject.passed > 0 || subject.failed > 0 || subject.inc > 0 ||
+                    subject.dr > 0 || subject.nc > 0
+                );
+
+                // Create header with school, class, and submission info
+                const headerHtml = `
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <h4 style="color: #22bbea; margin-bottom: 0.5rem;">${data.school.name}</h4>
+                                <h5 style="color: #495057; margin-bottom: 0.5rem;">${data.class_name}</h5>
+                                <div class="mt-2" style="font-size: 1rem; color: #6c757d; white-space: nowrap; text-align: center; margin-bottom: 1rem;">
+                                    ${data.submission.semester ? `Semester: ${data.submission.semester}` : ''}
+                                    ${data.submission.term ? ` | Term: ${data.submission.term}` : ''}
+                                    ${data.submission.academic_year ? ` | Academic Year: ${data.submission.academic_year}` : ''}
+                                </div>
+                                ${!hasData ? `
+                                <div class="text-center py-2">
+                                    <i class="bi bi-exclamation-circle" style="font-size: 2.5rem; color: #6c757d; margin-bottom: 0.5rem;"></i>
+                                    <h5 class="mb-1" style="color: #6c757d;">No Approved Grades Available</h5>
+                                    <p class="text-muted mb-0">There are no approved grades for the selected submission yet.</p>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+
+                // Set the container HTML with header
+                container.innerHTML = headerHtml;
+
+                // Only proceed to create chart if there's actual grade data
                 if (!hasData) {
-                    container.innerHTML = `
-                        <div class="text-center p-5 text-muted">
-                            <i class="bi bi-exclamation-circle" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                            <p class="mt-3 mb-0">No data available for the selected criteria</p>
-                        </div>`;
                     return;
                 }
                 
-                // Create chart container
-                container.innerHTML = `
-                    <div class="card-body p-0">
-                        <div class="chart-container" style="position: relative; height: 500px; width: 100%;">
-                            <canvas id="subjectProgressChart"></canvas>
+                // Add chart container to existing content
+                const chartContainer = document.createElement('div');
+                chartContainer.innerHTML = `
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <div class="chart-container" style="position: relative; height: 500px; width: 100%;">
+                                <canvas id="subjectProgressChart"></canvas>
+                            </div>
                         </div>
                     </div>`;
+                container.appendChild(chartContainer);
                 
                 // Prepare data for chart
                 const subjects = data.subjects.map(s => s.subject || 'Unknown Subject');
@@ -331,7 +360,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                     display: true,
                                     text: 'Number of Students'
                                 },
-                                beginAtZero: true
+                                beginAtZero: true,
+                                max: 70,
+                                ticks: {
+                                    stepSize: 5
+                                }
                             }
                         },
                         plugins: {

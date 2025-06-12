@@ -54,7 +54,7 @@
                 ?>
             <?php endif; ?>
 
-            <form action="<?php echo e(route('student.submit-grades.store', $gradeSubmission->id)); ?>" method="POST" enctype="multipart/form-data">
+            <form action="<?php echo e(route('student.submit-grades.store', $gradeSubmission->id)); ?>" method="POST" enctype="multipart/form-data" id="grade-submission-form">
                 <?php echo csrf_field(); ?>
 
                 <div class="grades-section">
@@ -63,8 +63,8 @@
                         <table class="grades-table">
                             <thead>
                                 <tr>
-                                    <th>Subject</th>
-                                    <th>Grade</th>
+                                    <th class="subject-column">Subject</th>
+                                    <th class="grade-column">Grade</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -72,8 +72,8 @@
                                     <tr>
                                         <td><?php echo e($subject->name); ?></td>
                                         <td>
-                                            <input type="text" 
-                                               name="grades[<?php echo e($subject->id); ?>]" 
+                                            <input type="text"
+                                               name="grades[<?php echo e($subject->id); ?>]"
                                                value="<?php echo e($subject->grade ?? ''); ?>"
                                                class="grade-input <?php echo e($errors->has('grades.' . $subject->id) ? 'is-invalid' : ''); ?>"
                                                pattern="^(5(\.0)?|[1-4](\.[0-9]{1,2})?|INC|NC|DR)$"
@@ -92,7 +92,6 @@ $message = $__bag->first($__errorArgs[0]); ?>
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>
-                                            <small class="form-text text-muted">Please match requested format: 1.0-5.0 or INC, NC, DR</small>
                                         </td>
                                     </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -109,13 +108,18 @@ unset($__errorArgs, $__bag); ?>
                     <h3>Upload Proof</h3>
                     <div class="form-group">
                         <label for="proof">Upload your proof document (PDF, DOC, DOCX, JPG, JPEG, PNG)</label>
-                        <input type="file" 
-                               name="proof" 
-                               id="proof" 
-                               class="form-control" 
-                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        <input type="file"
+                               name="proof"
+                               id="proof"
+                               class="form-control file-input-mobile"
+                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                               capture="environment"
                                required>
                         <small class="form-text text-muted">Maximum file size: 10MB</small>
+                        <div id="file-selected" class="file-feedback" style="display: none;">
+                            <span class="file-name"></span>
+                            <span class="file-size"></span>
+                        </div>
                     </div>
                 </div>
 
@@ -125,7 +129,10 @@ unset($__errorArgs, $__bag); ?>
                         <?php echo e($proof && $proof->status === 'rejected' ? 'Resubmit Grades' : 'Submit Grades'); ?>
 
                     </button>
-                    <a href="<?php echo e(route('student.dashboard')); ?>" class="btn-custom btn-secondary-custom">Cancel</a>
+                    <a href="<?php echo e(route('student.grade-submissions.list')); ?>" class="btn-custom btn-secondary-custom">
+                        <i class="fas fa-arrow-left" style="margin-right: 5px;"></i>
+                        Back to Submissions
+                    </a>
                 </div>
             </form>
         </div>
@@ -213,29 +220,65 @@ unset($__errorArgs, $__bag); ?>
     }
 
     .grades-table {
-        width: 100%;
+        width: 80%;
+        max-width: 600px;
         border-collapse: collapse;
-        margin-bottom: 20px;
+        margin: 0 auto 20px auto;
+        table-layout: fixed;
     }
 
     .grades-table th,
     .grades-table td {
-        padding: 10px;
+        padding: 12px;
         border: 1px solid #ddd;
+        vertical-align: middle;
     }
 
     .grades-table th {
-        background-color: #f8f9fa;
+        background-color: #22bbea;
+        color: white;
         font-weight: 600;
+        text-align: center;
+    }
+
+    .grades-table tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    .grades-table tbody tr:hover {
+        background-color: #f0f8ff;
+    }
+
+    /* Table column widths */
+    .subject-column {
+        width: 70%;
         text-align: left;
     }
 
+    .grade-column {
+        width: 30%;
+        text-align: center;
+        min-width: 100px;
+    }
+
     .grade-input {
-        width: 100%;
-        padding: 8px;
+        width: 70px;
+        min-width: 70px;
+        max-width: 70px;
+        padding: 8px 6px;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 1rem;
+        text-align: center;
+        font-weight: 500;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .grade-input:focus {
+        border-color: #22bbea;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(34, 187, 234, 0.2);
     }
 
     .form-text {
@@ -276,6 +319,42 @@ unset($__errorArgs, $__bag); ?>
         font-size: 1rem;
     }
 
+    /* Mobile-friendly file input */
+    .file-input-mobile {
+        padding: 12px;
+        font-size: 16px; /* Prevent zoom on iOS */
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    .file-input-mobile:focus {
+        border-color: #22bbea;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(34, 187, 234, 0.2);
+    }
+
+    .file-feedback {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #e8f5e8;
+        border: 1px solid #4caf50;
+        border-radius: 4px;
+        color: #2e7d32;
+    }
+
+    .file-name {
+        font-weight: bold;
+        display: block;
+    }
+
+    .file-size {
+        font-size: 0.9em;
+        color: #666;
+    }
+
     .form-actions {
         display: flex;
         gap: 10px;
@@ -311,6 +390,176 @@ unset($__errorArgs, $__bag); ?>
     .btn-custom.btn-secondary-custom:hover {
         background-color: #545b62 !important;
     }
+
+    /* Mobile responsive improvements */
+    @media (max-width: 768px) {
+        .submission-container {
+            padding: 0 10px;
+        }
+
+        .grades-table {
+            width: 90%;
+            font-size: 0.9rem;
+        }
+
+        .grades-table th,
+        .grades-table td {
+            padding: 10px;
+        }
+
+        .subject-column {
+            width: 65%;
+        }
+
+        .grade-column {
+            width: 35%;
+            min-width: 90px;
+        }
+
+        .grade-input {
+            width: 70px;
+            min-width: 70px;
+            max-width: 70px;
+            padding: 10px 6px;
+            font-size: 16px; /* Prevent zoom on iOS */
+        }
+
+        .file-input-mobile {
+            padding: 16px;
+            font-size: 16px;
+            min-height: 60px;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-custom {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+    }
+
+    /* Extra small screens */
+    @media (max-width: 480px) {
+        .grades-table {
+            width: 95%;
+            font-size: 0.85rem;
+        }
+
+        .grades-table th,
+        .grades-table td {
+            padding: 8px;
+        }
+
+        .subject-column {
+            width: 60%;
+        }
+
+        .grade-column {
+            width: 40%;
+            min-width: 80px;
+        }
+
+        .grade-input {
+            width: 65px;
+            min-width: 65px;
+            max-width: 65px;
+            padding: 8px 4px;
+            font-size: 16px;
+        }
+    }
 </style>
-<?php $__env->stopSection(); ?> 
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('proof');
+    const fileSelected = document.getElementById('file-selected');
+    const fileName = fileSelected.querySelector('.file-name');
+    const fileSize = fileSelected.querySelector('.file-size');
+    const form = document.getElementById('grade-submission-form');
+
+    // File input change handler
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+
+        if (file) {
+            console.log('File selected:', {
+                name: file.name,
+                size: file.size,
+                type: file.type
+            });
+
+            // Show file feedback
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileSelected.style.display = 'block';
+
+            // Validate file size (10MB = 10485760 bytes)
+            if (file.size > 10485760) {
+                alert('File size must be less than 10MB. Please choose a smaller file.');
+                fileInput.value = '';
+                fileSelected.style.display = 'none';
+                return;
+            }
+
+            // Validate file type
+            const allowedTypes = [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'image/jpeg',
+                'image/jpg',
+                'image/png'
+            ];
+
+            const allowedExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+
+            if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+                alert('Please select a valid file type: PDF, DOC, DOCX, JPG, JPEG, or PNG');
+                fileInput.value = '';
+                fileSelected.style.display = 'none';
+                return;
+            }
+
+            console.log('File validation passed');
+        } else {
+            fileSelected.style.display = 'none';
+        }
+    });
+
+    // Form submit handler
+    form.addEventListener('submit', function(e) {
+        const file = fileInput.files[0];
+
+        if (!file) {
+            e.preventDefault();
+            alert('Please select a proof file before submitting.');
+            return false;
+        }
+
+        console.log('Form submitting with file:', file.name);
+
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+        }
+    });
+
+    // Format file size for display
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    console.log('File upload JavaScript initialized');
+});
+</script>
+<?php $__env->stopSection(); ?>
 <?php echo $__env->make('layouts.student_layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laravel\PNPH-CAPSTONE\resources\views/student/submission_form.blade.php ENDPATH**/ ?>

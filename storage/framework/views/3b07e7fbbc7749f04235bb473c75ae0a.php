@@ -211,9 +211,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const schoolClassInfo = document.getElementById('schoolClassInfo');
         const submissionInfo = document.getElementById('submissionInfo');
 
-        if (data && data.class_name && data.submission_details) {
-            schoolClassInfo.textContent = `${selectedSchoolName} - ${data.class_name}`;
-            submissionInfo.textContent = `Semester: ${data.submission_details.semester} | Term: ${data.submission_details.term} | Academic Year: ${data.submission_details.academic_year}`;
+        if (data && data.class_name) {
+            // Use school name from data if available, otherwise fall back to selectedSchoolName
+            const schoolName = (data.school && data.school.name) ? data.school.name : selectedSchoolName;
+            schoolClassInfo.textContent = `${schoolName} - ${data.class_name}`;
+
+            // Handle both submission_details and submission structures
+            const submission = data.submission_details || data.submission;
+            if (submission) {
+                submissionInfo.textContent = `Semester: ${submission.semester} | Term: ${submission.term} | Academic Year: ${submission.academic_year}`;
+            }
             headerInfo.style.display = 'block';
         } else {
             headerInfo.style.display = 'none';
@@ -242,14 +249,26 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 if (data.error) {
-                    resetChartArea(`Error: ${data.error}`);
-                    updateHeaderInfo(null);
+                    // Check if we have submission info even with error
+                    if (data.submission && data.school && data.class_name) {
+                        updateHeaderInfo(data);
+                        resetChartArea(`Error: ${data.error}`);
+                    } else {
+                        resetChartArea(`Error: ${data.error}`);
+                        updateHeaderInfo(null);
+                    }
                 } else if (data.submission_status === 'not_found') {
                     resetChartArea('Submission not found.');
                     updateHeaderInfo(null);
                 } else if (data.total_students === 0) {
-                    resetChartArea('No students found for this class and submission.');
-                    updateHeaderInfo(null);
+                    // Check if we have submission info even with no students
+                    if (data.submission && data.school && data.class_name) {
+                        updateHeaderInfo(data);
+                        resetChartArea('No students found for this class and submission.');
+                    } else {
+                        resetChartArea('No students found for this class and submission.');
+                        updateHeaderInfo(null);
+                    }
                 } else {
                     updateHeaderInfo(data);
                     renderProgressChart(data);

@@ -13,16 +13,45 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #f0fbff 0%, #ffffff 50%, #f8feff 100%);
     min-height: calc(100vh - 80px);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Poppins', sans-serif;
+    position: relative;
+}
+
+.student-grades-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #22bbea 0%, #ff9933 50%, #22bbea 100%);
+    z-index: 1;
+    border-radius: 0 0 2px 2px;
 }
 
 /* Header */
 .grades-page-header {
     margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #e9ecef;
+    padding: 25px 0;
+    border-bottom: 3px solid transparent;
+    background: linear-gradient(135deg, rgba(34, 187, 234, 0.1) 0%, rgba(255, 153, 51, 0.1) 100%);
+    border-radius: 12px;
+    position: relative;
+    margin-top: 10px;
+}
+
+.grades-page-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 3px;
+    background: linear-gradient(90deg, #22bbea 0%, #ff9933 100%);
+    border-radius: 2px;
 }
 
 .grades-page-title {
@@ -42,16 +71,23 @@
 
 /* Cards */
 .grades-card {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #ffffff 0%, #f8feff 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(34, 187, 234, 0.1);
     margin-bottom: 30px;
     overflow: hidden;
-    border: 1px solid #dee2e6;
+    border: 1px solid rgba(34, 187, 234, 0.2);
+    transition: all 0.3s ease;
+}
+
+.grades-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(34, 187, 234, 0.15);
+    border-color: rgba(34, 187, 234, 0.3);
 }
 
 .grades-card-header {
-    background: #22bbea;
+    background: linear-gradient(135deg, #22bbea 0%, #1a9bc8 100%);
     color: white;
     padding: 20px 25px;
     font-weight: 600;
@@ -60,14 +96,27 @@
     align-items: center;
     gap: 12px;
     border-bottom: none;
+    position: relative;
+}
+
+.grades-card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #ff9933 0%, #22bbea 100%);
 }
 
 .grades-card-header i {
     font-size: 16px;
+    opacity: 0.9;
 }
 
 .grades-card-body {
     padding: 30px 25px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8feff 100%);
 }
 
 /* Filter Form */
@@ -103,31 +152,35 @@
 .grades-filter-select {
     width: 100%;
     padding: 12px 15px;
-    border: 2px solid #ced4da;
-    border-radius: 6px;
+    border: 2px solid rgba(34, 187, 234, 0.3);
+    border-radius: 8px;
     font-size: 15px;
-    background-color: #ffffff;
+    background: linear-gradient(135deg, #ffffff 0%, #f8feff 100%);
     color: #495057;
     transition: all 0.3s ease;
     font-family: inherit;
     line-height: 1.5;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2322bbea' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 12px center;
     background-repeat: no-repeat;
     background-size: 16px;
     padding-right: 40px;
+    box-shadow: 0 2px 4px rgba(34, 187, 234, 0.1);
 }
 
 .grades-filter-select:focus {
     border-color: #22bbea;
     outline: none;
-    box-shadow: 0 0 0 4px rgba(34, 187, 234, 0.15);
-    background-color: #fafbfc;
+    box-shadow: 0 0 0 4px rgba(34, 187, 234, 0.15), 0 4px 8px rgba(34, 187, 234, 0.1);
+    background: linear-gradient(135deg, #ffffff 0%, #f0fbff 100%);
+    transform: translateY(-1px);
 }
 
 .grades-filter-select:hover {
-    border-color: #adb5bd;
+    border-color: #22bbea;
+    box-shadow: 0 4px 8px rgba(34, 187, 234, 0.15);
+    transform: translateY(-1px);
 }
 
 .grades-filter-actions {
@@ -163,72 +216,82 @@
 }
 
 .grades-btn-primary {
-    background-color: #22bbea;
+    background: linear-gradient(135deg, #22bbea 0%, #1a9bc8 100%);
     border-color: #22bbea;
     color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.grades-btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.grades-btn-primary:hover::before {
+    left: 100%;
 }
 
 .grades-btn-primary:hover {
-    background-color: #1e9bc4;
-    border-color: #1e9bc4;
+    background: linear-gradient(135deg, #1a9bc8 0%, #22bbea 100%);
+    border-color: #1a9bc8;
     color: white;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(34, 187, 234, 0.3);
+    box-shadow: 0 6px 20px rgba(34, 187, 234, 0.4);
 }
 
 .grades-btn-secondary {
-    background-color: #6c757d;
-    border-color: #6c757d;
+    background: linear-gradient(135deg, #ff9933 0%, #e6851a 100%);
+    border-color: #ff9933;
     color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.grades-btn-secondary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.grades-btn-secondary:hover::before {
+    left: 100%;
 }
 
 .grades-btn-secondary:hover {
-    background-color: #5a6268;
-    border-color: #5a6268;
+    background: linear-gradient(135deg, #e6851a 0%, #ff9933 100%);
+    border-color: #e6851a;
     color: white;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
-}
-/* Chart Section */
-.grades-chart-section {
-    text-align: center;
-    width: 100%;
+    box-shadow: 0 6px 20px rgba(255, 153, 51, 0.4);
 }
 
-.grades-chart-title {
-    margin: 0 0 25px;
-    color: #495057;
-    font-size: 20px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-}
-
-.grades-chart-title i {
-    color: #22bbea;
-    font-size: 18px;
-}
-
-.grades-chart-container {
-    position: relative;
-    height: 450px;
-    width: 100%;
-    margin: 0;
-    background: #fafbfc;
-    border-radius: 8px;
-    padding: 20px;
-    border: 1px solid #e9ecef;
-}
 
 /* Table Styles */
 .grades-table-wrapper {
     overflow-x: auto;
-    border-radius: 8px;
-    border: 2px solid #dee2e6;
-    background: white;
+    border-radius: 12px;
+    border: 2px solid rgba(34, 187, 234, 0.2);
+    background: linear-gradient(135deg, #ffffff 0%, #f8feff 100%);
     margin-top: 20px;
+    box-shadow: 0 4px 15px rgba(34, 187, 234, 0.1);
+    transition: all 0.3s ease;
+}
+
+.grades-table-wrapper:hover {
+    border-color: rgba(34, 187, 234, 0.3);
+    box-shadow: 0 6px 20px rgba(34, 187, 234, 0.15);
 }
 
 .grades-data-table {
@@ -416,6 +479,166 @@
     font-weight: 500;
 }
 
+/* Pagination */
+.grades-pagination-container {
+    margin: 30px 0;
+    display: flex;
+    justify-content: center;
+}
+
+.grades-pagination-container .pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.grades-pagination-container .pagination li {
+    margin: 0;
+}
+
+.grades-pagination-container .pagination li a,
+.grades-pagination-container .pagination li span {
+    display: block;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: #495057;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-right: none;
+    transition: all 0.2s ease;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+}
+
+.grades-pagination-container .pagination li:last-child a,
+.grades-pagination-container .pagination li:last-child span {
+    border-right: 1px solid #dee2e6;
+}
+
+.grades-pagination-container .pagination li a:hover {
+    background: #f8f9fa;
+    color: #22bbea;
+}
+
+.grades-pagination-container .pagination li.active span {
+    background: #22bbea;
+    color: white;
+    border-color: #22bbea;
+}
+
+.grades-pagination-container .pagination li.disabled span {
+    color: #6c757d;
+    background: #f8f9fa;
+    cursor: not-allowed;
+}
+
+/* Per-table Pagination */
+.grades-table-pagination {
+    margin-top: 20px;
+    padding: 15px 0;
+    border-top: 1px solid #e9ecef;
+}
+
+.pagination-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.pagination-info {
+    color: #6c757d;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.pagination-btn-enabled {
+    background: #22bbea;
+    color: white;
+    border: 1px solid #22bbea;
+}
+
+.pagination-btn-enabled:hover {
+    background: #1a9bc8;
+    border-color: #1a9bc8;
+    color: white;
+    text-decoration: none;
+}
+
+.pagination-btn-disabled {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    cursor: not-allowed;
+}
+
+.pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pagination-page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    text-decoration: none;
+    color: #495057;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.pagination-page:hover {
+    background: #f8f9fa;
+    color: #22bbea;
+    border-color: #22bbea;
+    text-decoration: none;
+}
+
+.pagination-page-active {
+    background: #22bbea;
+    color: white;
+    border-color: #22bbea;
+    cursor: default;
+}
+
+.pagination-page-active:hover {
+    background: #22bbea;
+    color: white;
+    border-color: #22bbea;
+}
+
 /* Responsive Design */
 @media (max-width: 992px) {
     .student-grades-container {
@@ -487,10 +710,7 @@
         font-size: 16px;
     }
 
-    .grades-chart-container {
-        height: 350px;
-        padding: 15px;
-    }
+
 
     .grades-data-table th,
     .grades-data-table td {
@@ -549,10 +769,7 @@
         font-size: 15px;
     }
 
-    .grades-chart-container {
-        height: 280px;
-        padding: 12px;
-    }
+
 
     .grades-data-table th,
     .grades-data-table td {
@@ -607,10 +824,7 @@
         font-size: 18px;
     }
 
-    .grades-chart-container {
-        height: 250px;
-        padding: 10px;
-    }
+
 
     .grades-data-table th,
     .grades-data-table td {
@@ -623,6 +837,33 @@
         padding: 5px 8px;
         min-width: 45px;
     }
+
+    /* Per-table pagination responsive */
+    .pagination-wrapper {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .pagination-btn {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+
+    .pagination-page {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+    }
+
+    .pagination-info {
+        font-size: 13px;
+    }
 }
 </style>
 
@@ -634,32 +875,31 @@
             My Grade Status
         </h1>
 
+        <?php if(request()->has('submission_id')): ?>
+            <div style="margin-top: 15px;">
+                <a href="<?php echo e(route('student.grade-submissions.list')); ?>" class="grades-btn grades-btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Grade Submissions
+                </a>
+            </div>
+        <?php endif; ?>
     </div>
 
     <!-- Filter Card -->
     <div class="grades-card">
         <div class="grades-card-header">
             <i class="fas fa-filter"></i>
-            Filter Options
+            Filter Submissions
         </div>
         <div class="grades-card-body">
             <form action="<?php echo e(route('student.grades')); ?>" method="GET" class="grades-filter-form">
                 <div class="grades-filter-row">
                     <div class="grades-filter-group">
-                        <label for="term" class="grades-filter-label">Term</label>
-                        <select name="term" id="term" class="grades-filter-select">
-                            <option value="">All Terms</option>
-                            <?php $__currentLoopData = $terms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $term): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($term); ?>" <?php echo e(request('term') == $term ? 'selected' : ''); ?>><?php echo e(ucfirst($term)); ?></option>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </select>
-                    </div>
-                    <div class="grades-filter-group">
-                        <label for="academic_year" class="grades-filter-label">Academic Year</label>
-                        <select name="academic_year" id="academic_year" class="grades-filter-select">
-                            <option value="">All Years</option>
-                            <?php $__currentLoopData = $years; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $year): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($year); ?>" <?php echo e(request('academic_year') == $year ? 'selected' : ''); ?>><?php echo e($year); ?></option>
+                        <label for="filter_key" class="grades-filter-label">Submission</label>
+                        <select name="filter_key" id="filter_key" class="grades-filter-select">
+                            <option value="">All Submissions</option>
+                            <?php $__currentLoopData = $filterOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($option); ?>" <?php echo e(request('filter_key') == $option ? 'selected' : ''); ?>><?php echo e($option); ?></option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
@@ -668,7 +908,7 @@
                             <i class="fas fa-search"></i>
                             Apply Filter
                         </button>
-                        <?php if(request()->has('term') || request()->has('academic_year')): ?>
+                        <?php if(request()->has('filter_key')): ?>
                             <a href="<?php echo e(route('student.grades')); ?>" class="grades-btn grades-btn-secondary">
                                 <i class="fas fa-times"></i>
                                 Clear Filter
@@ -680,340 +920,178 @@
         </div>
     </div>
 
-    <?php
-        // Sort subjectsWithGrades by academic_year (desc) and term (desc)
-        if (isset($subjectsWithGrades)) {
-            $subjectsWithGrades = $subjectsWithGrades->sortByDesc(function($subject) {
-                $year = $subject->academic_year ?? '';
-                $term = $subject->term ?? '';
-                return $year . '-' . $term;
-            })->values();
-        }
-    ?>
-    
-    <!-- Subjects by Status Chart -->
-    <?php if(isset($subjectsWithGrades) && $subjectsWithGrades->count() > 0): ?>
-        <?php
-            $subjectLabels = [];
-            $subjectGrades = [];
-            $subjectColors = [];
-            $subjectStatuses = [];
+    <!-- Grade Submissions by Submission -->
+    <?php if(isset($gradeSubmissions) && $gradeSubmissions->count() > 0): ?>
+        <?php $__currentLoopData = $gradeSubmissions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $submission): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <?php if($submission->subjects->count() > 0): ?>
+                <div class="grades-card">
+                    <div class="grades-card-header">
+                        <i class="fas fa-table"></i>
+                        Semester: <?php echo e($submission->semester); ?> | Term: <?php echo e(ucfirst($submission->term)); ?> | Year: <?php echo e($submission->academic_year); ?>
 
-            foreach ($subjectsWithGrades as $subject) {
-                // Only include approved grades
-                $status = strtolower($subject->status ?? $subject->pivot->status ?? '');
-                if ($status !== 'approved') continue;
-
-                $subjectName = $subject->subject_name ?? $subject->name ?? 'N/A';
-                $subjectCode = $subject->subject_code ?? $subject->code ?? '';
-                $grade = is_numeric($subject->grade ?? $subject->pivot->grade ?? null) ? floatval($subject->grade ?? $subject->pivot->grade ?? 0) : 0;
-
-                // Label: Subject Name (Code) or just Subject Name
-                $subjectLabels[] = $subjectName . ' (' . $subjectCode . ')';
-
-                // Grade
-                $subjectGrades[] = $grade;
-
-                // Status based on grade using school's grading system
-                $passingMin = $studentSchool->passing_grade_min ?? 1.0;
-                $passingMax = $studentSchool->passing_grade_max ?? 3.0;
-
-                if ($grade >= $passingMin && $grade <= $passingMax) {
-                    $subjectColors[] = 'rgba(40, 167, 69, 0.8)';
-                    $friendlyStatus = 'Passed';
-                } elseif ($grade > 0 && is_numeric($grade)) {
-                    $subjectColors[] = 'rgba(220, 53, 69, 0.8)';
-                    $friendlyStatus = 'Failed';
-                } elseif ($grade == 0) {
-                    $subjectColors[] = 'rgba(255, 193, 7, 0.8)';
-                    $friendlyStatus = 'Incomplete';
-                } else {
-                    $subjectColors[] = 'rgba(108, 117, 125, 0.8)';
-                    $friendlyStatus = 'No Credit';
-                }
-                $subjectStatuses[] = $friendlyStatus;
-            }
-        ?>
-        
-        <?php
-            // Reverse arrays so newest is last (rightmost bar)
-            $subjectLabels = array_reverse($subjectLabels);
-            $subjectGrades = array_reverse($subjectGrades);
-            $subjectColors = array_reverse($subjectColors);
-            $subjectStatuses = array_reverse($subjectStatuses);
-        ?>
-
-        <!-- Chart Card -->
-        <div class="grades-card">
-            <div class="grades-card-header">
-                <i class="fas fa-chart-bar"></i>
-                Grade Distribution Chart
-            </div>
-            <div class="grades-card-body grades-chart-section">
-                <div class="grades-chart-container">
-                    <canvas id="gradeStatusChart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-
-    <?php else: ?>
-        <!-- No Data State -->
-        <div class="grades-no-data">
-            <i class="fas fa-chart-line"></i>
-            <h4>No Grade Data Available</h4>
-            <p>You don't have any approved grades to display yet.</p>
-        </div>
-    <?php endif; ?>
-
-    <!-- Detailed Grade Report -->
-    <?php if(isset($subjectsWithGrades) && $subjectsWithGrades->count() > 0): ?>
-        <div class="grades-card">
-            <div class="grades-card-header">
-                <i class="fas fa-table"></i>
-                Detailed Grade Report
-            </div>
-            <div class="grades-card-body">
-                <div class="grades-table-wrapper">
-                    <table class="grades-data-table">
-                        <thead>
-                            <tr>
-                                <th>Subject Code</th>
-                                <th>Subject Name</th>
-                                <th>Term</th>
-                                <th>Academic Year</th>
-                                <th>Grade</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php $__currentLoopData = $subjectsWithGrades; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <?php
-                                    $grade = $subject->grade ?? ($subject->pivot->grade ?? null);
-                                    $status = strtolower($subject->status ?? ($subject->pivot->status ?? 'pending'));
-                                    $gradeDisplay = is_numeric($grade) ? number_format($grade, 2) : ($grade ?? 'N/A');
-                                    $subjectCode = $subject->subject_code ?? ($subject->code ?? '');
-                                    $subjectName = $subject->subject_name ?? ($subject->name ?? 'Unnamed Subject');
-
-                                    // Get school's grading system
-                                    $passingMin = $subject->passing_grade_min ?? ($studentSchool->passing_grade_min ?? 1.0);
-                                    $passingMax = $subject->passing_grade_max ?? ($studentSchool->passing_grade_max ?? 3.0);
-
-
-
-                                    // Determine grade class based on school's grading system
-                                    $gradeClass = 'grades-grade-poor';
-                                    if (is_numeric($grade)) {
-                                        $gradeValue = floatval($grade);
-                                        $range = $passingMax - $passingMin;
-
-                                        if ($gradeValue >= $passingMin && $gradeValue <= $passingMax) {
-                                            // Within passing range - determine excellence level
-                                            $excellentThreshold = $passingMin + ($range * 0.8); // Top 20%
-                                            $goodThreshold = $passingMin + ($range * 0.5); // Top 50%
-
-                                            if ($gradeValue >= $excellentThreshold) {
-                                                $gradeClass = 'grades-grade-excellent';
-                                            } elseif ($gradeValue >= $goodThreshold) {
-                                                $gradeClass = 'grades-grade-good';
-                                            } else {
-                                                $gradeClass = 'grades-grade-fair';
-                                            }
-                                        } else {
-                                            // Below passing grade
-                                            $gradeClass = 'grades-grade-poor';
-                                        }
-                                    }
-
-                                    // Determine status badge class
-                                    $badgeClass = 'grades-badge-' . str_replace(' ', '-', $status);
-                                ?>
-                                <?php if(!is_null($grade) && $grade !== '' && $grade !== 'N/A'): ?>
+                    </div>
+                    <div class="grades-card-body">
+                        <div class="grades-table-wrapper">
+                            <table class="grades-data-table">
+                                <thead>
                                     <tr>
-                                        <td><span class="grades-subject-code"><?php echo e($subjectCode); ?></span></td>
-                                        <td class="grades-subject-name"><?php echo e($subjectName); ?></td>
-                                        <td class="grades-term-info"><?php echo e(ucfirst($subject->term ?? 'N/A')); ?></td>
-                                        <td class="grades-year-info"><?php echo e($subject->academic_year ?? 'N/A'); ?></td>
-                                        <td>
-                                            <span class="grades-grade-display <?php echo e($gradeClass); ?>"><?php echo e($gradeDisplay); ?></span>
-                                        </td>
-                                        <td>
-                                            <span class="grades-status-badge <?php echo e($badgeClass); ?>">
-                                                <?php echo e(ucfirst($status)); ?>
-
-                                            </span>
-                                        </td>
+                                        <th>Subject Code</th>
+                                        <th>Subject Name</th>
+                                        <th>Grade</th>
+                                        <th>Status</th>
                                     </tr>
-                                <?php endif; ?>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody>
+                                    <?php $__currentLoopData = $submission->subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <?php if($subject->student_submission): ?>
+                                            <?php
+                                                $grade = $subject->student_submission->grade;
+                                                $status = strtolower($subject->student_submission->status ?? 'pending');
+                                                $gradeDisplay = is_numeric($grade) ? number_format($grade, 2) : ($grade ?? 'N/A');
+                                                $subjectCode = $subject->offer_code ?? $subject->code ?? '';
+                                                $subjectName = $subject->name ?? 'Unnamed Subject';
+
+                                                // Get school's grading system
+                                                $passingMin = $studentSchool->passing_grade_min ?? 1.0;
+                                                $passingMax = $studentSchool->passing_grade_max ?? 3.0;
+
+                                                // Determine grade class based on school's grading system
+                                                $gradeClass = 'grades-grade-poor';
+                                                if (is_numeric($grade)) {
+                                                    $gradeValue = floatval($grade);
+                                                    $range = $passingMax - $passingMin;
+
+                                                    if ($gradeValue >= $passingMin && $gradeValue <= $passingMax) {
+                                                        // Within passing range - determine excellence level
+                                                        $excellentThreshold = $passingMin + ($range * 0.8); // Top 20%
+                                                        $goodThreshold = $passingMin + ($range * 0.5); // Top 50%
+
+                                                        if ($gradeValue >= $excellentThreshold) {
+                                                            $gradeClass = 'grades-grade-excellent';
+                                                        } elseif ($gradeValue >= $goodThreshold) {
+                                                            $gradeClass = 'grades-grade-good';
+                                                        } else {
+                                                            $gradeClass = 'grades-grade-fair';
+                                                        }
+                                                    } else {
+                                                        // Below passing grade
+                                                        $gradeClass = 'grades-grade-poor';
+                                                    }
+                                                }
+
+                                                // Determine status badge class
+                                                $badgeClass = 'grades-badge-' . str_replace(' ', '-', $status);
+                                            ?>
+                                            <tr>
+                                                <td><span class="grades-subject-code"><?php echo e($subjectCode); ?></span></td>
+                                                <td class="grades-subject-name"><?php echo e($subjectName); ?></td>
+                                                <td>
+                                                    <span class="grades-grade-display <?php echo e($gradeClass); ?>"><?php echo e($gradeDisplay); ?></span>
+                                                </td>
+                                                <td>
+                                                    <span class="grades-status-badge <?php echo e($badgeClass); ?>">
+                                                        <?php echo e(ucfirst($status)); ?>
+
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Per-table Pagination -->
+                        <div class="grades-table-pagination">
+                            <?php
+                                $pagination = $submission->pagination;
+                                $currentPage = $pagination->current_page;
+                                $lastPage = $pagination->last_page;
+                                $hasPrevious = $pagination->has_previous_pages;
+                                $hasNext = $pagination->has_more_pages;
+
+                                // Build query parameters for this submission's pagination
+                                $queryParams = request()->query();
+                                $baseUrl = request()->url();
+                            ?>
+
+                            <div class="pagination-wrapper">
+                                <div class="pagination-info">
+                                    Showing <?php echo e(($currentPage - 1) * 10 + 1); ?> to <?php echo e(min($currentPage * 10, $pagination->total)); ?> of <?php echo e($pagination->total); ?> subjects
+                                </div>
+
+                                <div class="pagination-controls">
+                                    <!-- Previous Button -->
+                                    <?php if($hasPrevious): ?>
+                                        <?php
+                                            $prevParams = $queryParams;
+                                            $prevParams['submission_' . $submission->id . '_page'] = $currentPage - 1;
+                                        ?>
+                                        <a href="<?php echo e($baseUrl); ?>?<?php echo e(http_build_query($prevParams)); ?>" class="pagination-btn pagination-btn-enabled">
+                                            <i class="fas fa-chevron-left"></i>
+                                            Previous
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="pagination-btn pagination-btn-disabled">
+                                            <i class="fas fa-chevron-left"></i>
+                                            Previous
+                                        </span>
+                                    <?php endif; ?>
+
+                                    <!-- Page Numbers -->
+                                    <div class="pagination-pages">
+                                        <?php for($page = 1; $page <= $lastPage; $page++): ?>
+                                            <?php if($page == $currentPage): ?>
+                                                <span class="pagination-page pagination-page-active"><?php echo e($page); ?></span>
+                                            <?php else: ?>
+                                                <?php
+                                                    $pageParams = $queryParams;
+                                                    $pageParams['submission_' . $submission->id . '_page'] = $page;
+                                                ?>
+                                                <a href="<?php echo e($baseUrl); ?>?<?php echo e(http_build_query($pageParams)); ?>" class="pagination-page"><?php echo e($page); ?></a>
+                                            <?php endif; ?>
+                                        <?php endfor; ?>
+                                    </div>
+
+                                    <!-- Next Button -->
+                                    <?php if($hasNext): ?>
+                                        <?php
+                                            $nextParams = $queryParams;
+                                            $nextParams['submission_' . $submission->id . '_page'] = $currentPage + 1;
+                                        ?>
+                                        <a href="<?php echo e($baseUrl); ?>?<?php echo e(http_build_query($nextParams)); ?>" class="pagination-btn pagination-btn-enabled">
+                                            Next
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="pagination-btn pagination-btn-disabled">
+                                            Next
+                                            <i class="fas fa-chevron-right"></i>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+        <!-- Pagination -->
+        <div class="grades-pagination-container">
+            <?php echo e($gradeSubmissions->appends(request()->query())->links()); ?>
+
+        </div>
+    <?php else: ?>
+        <div class="grades-no-data">
+            <i class="fas fa-table"></i>
+            <h4>No Grade Data Available</h4>
+            <p>You don't have any submitted grades to display yet.</p>
         </div>
     <?php endif; ?>
 </div>
 <?php $__env->stopSection(); ?>
 
-<?php $__env->startPush('scripts'); ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Grade Status Chart
-    const ctx = document.getElementById('gradeStatusChart');
-    if (!ctx) return;
 
-    const labels = <?php echo json_encode($subjectLabels ?? [], 15, 512) ?>;
-    const data = <?php echo json_encode($subjectGrades ?? [], 15, 512) ?>;
-    const backgroundColors = <?php echo json_encode($subjectColors ?? [], 15, 512) ?>;
-    const statuses = <?php echo json_encode($chartSubjectStatuses ?? [], 15, 512) ?>;
-
-    // Get school grading system
-    const schoolGrading = <?php echo json_encode($studentSchool ?? null, 15, 512) ?>;
-    const gradeMin = schoolGrading?.passing_grade_min ?? 1.0;
-    const gradeMax = schoolGrading?.passing_grade_max ?? 3.0;
-    const passingMin = schoolGrading?.passing_grade_min ?? 1.0;
-
-    // Determine chart scale based on school's grading system
-    const chartMax = Math.max(gradeMax, 5.0); // Ensure minimum scale of 5.0
-    const stepSize = chartMax <= 5.0 ? 0.5 : 1.0;
-
-    if (!Array.isArray(labels) || labels.length === 0) {
-        ctx.closest('.grades-chart-container').innerHTML = `
-            <div class="grades-no-data">
-                <i class="fas fa-chart-bar"></i>
-                <h4>No Grade Data Available</h4>
-                <p>No approved grades to display in the chart.</p>
-            </div>`;
-        return;
-    }
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Grade',
-                data: data,
-                backgroundColor: backgroundColors,
-                borderColor: backgroundColors.map(c => c.replace('0.8', '1')),
-                borderWidth: 2,
-                borderRadius: 6,
-                borderSkipped: false,
-                barThickness: 'flex',
-                maxBarThickness: 60
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: chartMax,
-                    ticks: {
-                        stepSize: stepSize,
-                        callback: function(value) {
-                            return value.toFixed(1);
-                        },
-                        font: {
-                            size: 12,
-                            family: 'Poppins'
-                        },
-                        color: '#6c757d'
-                    },
-                    title: {
-                        display: true,
-                        text: `Grade (${gradeMin.toFixed(1)} - ${gradeMax.toFixed(1)})`,
-                        font: {
-                            weight: 'bold',
-                            size: 14,
-                            family: 'Poppins'
-                        },
-                        color: '#495057'
-                    },
-                    grid: {
-                        display: true,
-                        color: 'rgba(0, 0, 0, 0.05)',
-                        drawBorder: false
-                    }
-                },
-                x: {
-                    ticks: {
-                        maxRotation: 45,
-                        minRotation: 0,
-                        font: {
-                            size: 11,
-                            family: 'Poppins'
-                        },
-                        color: '#6c757d'
-                    },
-                    title: {
-                        display: true,
-                        text: 'Subjects',
-                        font: {
-                            weight: 'bold',
-                            size: 14,
-                            family: 'Poppins'
-                        },
-                        color: '#495057'
-                    },
-                    grid: {
-                        display: false
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                    titleFont: {
-                        size: 14,
-                        weight: 'bold',
-                        family: 'Poppins'
-                    },
-                    bodyFont: {
-                        size: 13,
-                        family: 'Poppins'
-                    },
-                    padding: 12,
-                    cornerRadius: 8,
-                    displayColors: true,
-                    borderColor: '#22bbea',
-                    borderWidth: 1,
-                    callbacks: {
-                        title: function(context) {
-                            return context[0].label;
-                        },
-                        label: function(context) {
-                            const status = statuses[context.dataIndex] || 'N/A';
-                            const grade = context.parsed.y;
-                            const isPassing = grade >= passingMin && grade <= gradeMax;
-                            const passStatus = isPassing ? 'Passing' : 'Failing';
-
-                            return [
-                                `Grade: ${grade.toFixed(2)}`,
-                                `Status: ${status}`,
-                                `Result: ${passStatus}`
-                            ];
-                        }
-                    }
-                }
-            },
-            animation: {
-                duration: 1200,
-                easing: 'easeInOutQuart'
-            }
-        }
-    });
-});
-</script>
-<?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.student_layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laravel\PNPH-CAPSTONE\resources\views/student/grades.blade.php ENDPATH**/ ?>

@@ -317,6 +317,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 rowClass = 'table-danger';
             } else if (subject.remarks === 'Pending') {
                 rowClass = 'table-warning';
+            } else if (subject.remarks === 'No Grades Submitted') {
+                rowClass = 'table-secondary';
+            } else if (subject.remarks === 'No Approved Grades') {
+                rowClass = 'table-warning';
             } else {
                 rowClass = 'table-success';
             }
@@ -351,15 +355,21 @@ document.addEventListener('DOMContentLoaded', function() {
     function getRemarksBadgeClass(remarks) {
         switch (remarks) {
             case 'No Intervention Needed':
-                return 'bg-success';
+                return 'intervention-badge-success';
+            case 'No Need Intervention':
+                return 'intervention-badge-success';
             case 'Pending':
-                return 'bg-warning';
+                return 'intervention-badge-warning';
             case 'Need Intervention':
-                return 'bg-danger';
+                return 'intervention-badge-danger';
             case 'No Submission Recorded':
-                return 'bg-primary';
+                return 'intervention-badge-info';
+            case 'No Grades Submitted':
+                return 'intervention-badge-info';
+            case 'No Approved Grades':
+                return 'intervention-badge-warning';
             default:
-                return 'bg-secondary';
+                return 'intervention-badge-secondary';
         }
     }
 });
@@ -590,6 +600,85 @@ document.addEventListener('DOMContentLoaded', function() {
 .text-center:hover .bi-graph-up {
     transform: scale(1.1);
     opacity: 0.9;
+}
+
+/* Custom Intervention Badge Styles */
+.intervention-badge-success {
+    background-color: #28a745 !important;
+    color: #ffffff !important;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+    text-align: center;
+    min-width: 120px;
+    border: none;
+}
+
+.intervention-badge-danger {
+    background-color: #dc3545 !important;
+    color: #ffffff !important;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+    text-align: center;
+    min-width: 120px;
+    border: none;
+}
+
+.intervention-badge-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+    text-align: center;
+    min-width: 120px;
+    border: none;
+}
+
+.intervention-badge-info {
+    background-color: #17a2b8 !important;
+    color: #ffffff !important;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+    text-align: center;
+    min-width: 120px;
+    border: none;
+}
+
+.intervention-badge-secondary {
+    background-color: #6c757d !important;
+    color: #ffffff !important;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+    text-align: center;
+    min-width: 120px;
+    border: none;
+}
+
+/* Mobile responsive styles for intervention badges */
+@media (max-width: 768px) {
+    .intervention-badge-success,
+    .intervention-badge-danger,
+    .intervention-badge-warning,
+    .intervention-badge-info,
+    .intervention-badge-secondary {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        min-width: 100px;
+    }
 }
 </style>
 <?php $__env->stopSection(); ?>

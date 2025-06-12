@@ -22,7 +22,7 @@
                     <label for="classFilter">Class</label>
                     <select id="classFilter" class="styled-select">
                         <option value="">All Classes</option>
-                        @foreach($classes as $class)
+                        @foreach($allClasses as $class)
                             <option value="{{ $class->class_id }}">{{ $class->class_name }}</option>
                         @endforeach
                     </select>
@@ -31,7 +31,10 @@
                     <label for="companyFilter">Company</label>
                     <select id="companyFilter" class="styled-select">
                         <option value="">All Companies</option>
-                        @foreach($classCompanies[array_key_first($classCompanies)] as $company)
+                        @php
+                            $allCompanies = collect($allClassCompanies)->flatten()->unique()->sort();
+                        @endphp
+                        @foreach($allCompanies as $company)
                             <option value="{{ $company }}">{{ $company }}</option>
                         @endforeach
                     </select>
@@ -50,20 +53,70 @@
         </div>
     </div>
 
-    @foreach($classes as $class)
+    <!-- Class Pagination -->
+    @if($classPagination->has_pages)
+        <div class="class-pagination-container">
+            <div class="class-pagination-info">
+                <small class="text-muted">
+                    Showing class {{ $classPagination->from }} to {{ $classPagination->to }} of {{ $classPagination->total }} classes
+                </small>
+            </div>
+            <div class="class-pagination-links">
+                @if($classPagination->on_first_page)
+                    <span class="pagination-btn disabled">
+                        <i class="fas fa-chevron-left"></i> Previous Class
+                    </span>
+                @else
+                    @php
+                        $prevPage = $classPagination->current_page - 1;
+                        $currentUrl = request()->fullUrlWithQuery(['class_page' => $prevPage]);
+                    @endphp
+                    <a href="{{ $currentUrl }}" class="pagination-btn">
+                        <i class="fas fa-chevron-left"></i> Previous Class
+                    </a>
+                @endif
+
+                <span class="page-info">
+                    Class {{ $classPagination->current_page }} of {{ $classPagination->last_page }}
+                </span>
+
+                @if($classPagination->has_more_pages)
+                    @php
+                        $nextPage = $classPagination->current_page + 1;
+                        $currentUrl = request()->fullUrlWithQuery(['class_page' => $nextPage]);
+                    @endphp
+                    <a href="{{ $currentUrl }}" class="pagination-btn">
+                        Next Class <i class="fas fa-chevron-right"></i>
+                    </a>
+                @else
+                    <span class="pagination-btn disabled">
+                        Next Class <i class="fas fa-chevron-right"></i>
+                    </span>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @foreach($paginatedClasses as $class)
     <div class="card shadow-sm chart-section" id="chart-section-{{ $class->class_id }}">
         <div class="card-header">
             <h5 class="mb-0">{{ $class->class_name }}</h5>
         </div>
         <div class="card-body">
-            <!-- Charts for each submission number -->
+            <!-- Charts for current submission only -->
             <div class="submission-charts" id="submission-charts-{{ $class->class_id }}">
-                <div class="submission-chart" id="submission-1st-{{ $class->class_id }}" style="display: none;">
-                    <h6>1st Submission</h6>
+                @foreach($currentSubmissions as $submissionNumber)
+                <div class="submission-chart" id="submission-{{ $submissionNumber }}-{{ $class->class_id }}">
+                    <h6>
+                        {{ $submissionNumber }} Submission
+                        @if(isset($submissionDates[$submissionNumber]) && $submissionDates[$submissionNumber])
+                            <span class="submission-date">({{ $submissionDates[$submissionNumber] }})</span>
+                        @endif
+                    </h6>
                     <div class="chart-container">
-                        <canvas id="chart-1st-{{ $class->class_id }}"></canvas>
+                        <canvas id="chart-{{ $submissionNumber }}-{{ $class->class_id }}"></canvas>
                     </div>
-                    <div class="no-data-message" id="no-data-1st-{{ $class->class_id }}" style="display: none;">
+                    <div class="no-data-message" id="no-data-{{ $submissionNumber }}-{{ $class->class_id }}" style="display: none;">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -71,52 +124,57 @@
                         <p>There is no data available for the selected filters.</p>
                     </div>
                 </div>
-
-                <div class="submission-chart" id="submission-2nd-{{ $class->class_id }}" style="display: none;">
-                    <h6>2nd Submission</h6>
-                    <div class="chart-container">
-                        <canvas id="chart-2nd-{{ $class->class_id }}"></canvas>
-                    </div>
-                    <div class="no-data-message" id="no-data-2nd-{{ $class->class_id }}" style="display: none;">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <h6>No Data Available</h6>
-                        <p>There is no data available for the selected filters.</p>
-                    </div>
-                </div>
-
-                <div class="submission-chart" id="submission-3rd-{{ $class->class_id }}" style="display: none;">
-                    <h6>3rd Submission</h6>
-                    <div class="chart-container">
-                        <canvas id="chart-3rd-{{ $class->class_id }}"></canvas>
-                    </div>
-                    <div class="no-data-message" id="no-data-3rd-{{ $class->class_id }}" style="display: none;">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <h6>No Data Available</h6>
-                        <p>There is no data available for the selected filters.</p>
-                    </div>
-                </div>
-
-                <div class="submission-chart" id="submission-4th-{{ $class->class_id }}" style="display: none;">
-                    <h6>4th Submission</h6>
-                    <div class="chart-container">
-                        <canvas id="chart-4th-{{ $class->class_id }}"></canvas>
-                    </div>
-                    <div class="no-data-message" id="no-data-4th-{{ $class->class_id }}" style="display: none;">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <h6>No Data Available</h6>
-                        <p>There is no data available for the selected filters.</p>
-                    </div>
-                </div>
+                @endforeach
             </div>
         </div>
     </div>
     @endforeach
+
+    <!-- Submission Pagination -->
+    @if($submissionPagination->has_pages)
+        <div class="submission-pagination-container">
+            <div class="submission-pagination-info">
+                <small class="text-muted">
+                    Showing submission {{ $submissionPagination->from }} to {{ $submissionPagination->to }} of {{ $submissionPagination->total }} submissions
+                </small>
+            </div>
+            <div class="submission-pagination-links">
+                @if($submissionPagination->on_first_page)
+                    <span class="pagination-btn disabled">
+                        <i class="fas fa-chevron-left"></i> Previous Submission
+                    </span>
+                @else
+                    @php
+                        $prevPage = $submissionPagination->current_page - 1;
+                        $currentUrl = request()->fullUrlWithQuery(['submission_page' => $prevPage]);
+                    @endphp
+                    <a href="{{ $currentUrl }}" class="pagination-btn">
+                        <i class="fas fa-chevron-left"></i> Previous Submission
+                    </a>
+                @endif
+
+                <span class="page-info">
+                    Submission {{ $submissionPagination->current_page }} of {{ $submissionPagination->last_page }}
+                </span>
+
+                @if($submissionPagination->has_more_pages)
+                    @php
+                        $nextPage = $submissionPagination->current_page + 1;
+                        $currentUrl = request()->fullUrlWithQuery(['submission_page' => $nextPage]);
+                    @endphp
+                    <a href="{{ $currentUrl }}" class="pagination-btn">
+                        Next Submission <i class="fas fa-chevron-right"></i>
+                    </a>
+                @else
+                    <span class="pagination-btn disabled">
+                        Next Submission <i class="fas fa-chevron-right"></i>
+                    </span>
+                @endif
+            </div>
+        </div>
+    @endif
+
+
     </div>
 </div>
 
@@ -283,6 +341,13 @@
     font-weight: 500;
 }
 
+.submission-date {
+    color: #6c757d;
+    font-size: 0.85em;
+    font-weight: 400;
+    margin-left: 8px;
+}
+
 .chart-container {
     position: relative;
     height: 300px;
@@ -375,6 +440,86 @@
         font-size: 1.5rem;
     }
 }
+
+/* Pagination Styles */
+.class-pagination-container,
+.submission-pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.class-pagination-info,
+.submission-pagination-info {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.class-pagination-links,
+.submission-pagination-links {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.pagination-btn:hover {
+    background-color: #0056b3;
+    color: white;
+    text-decoration: none;
+}
+
+.pagination-btn.disabled {
+    background-color: #6c757d;
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+.pagination-btn.disabled:hover {
+    background-color: #6c757d;
+    color: #adb5bd;
+}
+
+.page-info {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+    padding: 0 10px;
+}
+
+@media (max-width: 768px) {
+    .class-pagination-container,
+    .submission-pagination-container {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .class-pagination-links,
+    .submission-pagination-links {
+        justify-content: center;
+    }
+}
 </style>
 
     @section('scripts')
@@ -397,10 +542,12 @@
     const charts = {};
 
     // Initialize charts for each class and submission number
-    @foreach($classes as $class)
-    ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
-        const ctx = document.getElementById(`chart-${submissionNumber}-{{ $class->class_id }}`).getContext('2d');
-        charts[`${submissionNumber}-{{ $class->class_id }}`] = new Chart(ctx, {
+    @foreach($paginatedClasses as $class)
+    @foreach($currentSubmissions as $submissionNumber)
+        const ctx{{ $class->class_id }}{{ $submissionNumber }} = document.getElementById(`chart-{{ $submissionNumber }}-{{ $class->class_id }}`);
+        if (ctx{{ $class->class_id }}{{ $submissionNumber }}) {
+            const ctx = ctx{{ $class->class_id }}{{ $submissionNumber }}.getContext('2d');
+            charts[`{{ $submissionNumber }}-{{ $class->class_id }}`] = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['ICT Learning', '21st Century Skills', 'Expected Outputs'],
@@ -465,13 +612,118 @@
                     },
                     title: {
                         display: true,
-                        text: `Internship Grades Distribution by Competency - ${submissionNumber} Submission`
+                        text: `Internship Grades Distribution by Competency - {{ $submissionNumber }} Submission`
                     }
                 }
             }
-        });
-    });
+            });
+        }
     @endforeach
+    @endforeach
+
+    // Function to update company dropdown based on selected class
+    function updateCompanyDropdown(selectedClassId) {
+        const companyFilter = document.getElementById('companyFilter');
+        const submissionFilter = document.getElementById('submissionNumberFilter');
+        const classCompanies = @json($allClassCompanies);
+
+        console.log('Updating company dropdown for class:', selectedClassId);
+        console.log('Available class companies:', classCompanies);
+
+        // Clear current options except "All Companies"
+        companyFilter.innerHTML = '<option value="">All Companies</option>';
+
+        if (selectedClassId && classCompanies[selectedClassId]) {
+            const classCompaniesArray = classCompanies[selectedClassId];
+
+            console.log('Companies for selected class:', classCompaniesArray);
+
+            if (classCompaniesArray.length > 0) {
+                // Enable dropdown and add companies for the selected class
+                companyFilter.disabled = false;
+                classCompaniesArray.forEach(company => {
+                    const option = document.createElement('option');
+                    option.value = company;
+                    option.textContent = company;
+                    companyFilter.appendChild(option);
+                });
+            } else {
+                // Disable dropdown if no companies for this class
+                companyFilter.disabled = true;
+                companyFilter.innerHTML = '<option value="">No companies available</option>';
+            }
+
+            // Check if class has any submissions and enable/disable submission filter
+            checkSubmissionsForClass(selectedClassId);
+
+        } else {
+            // If no class selected, show all companies from all classes
+            const allCompanies = new Set();
+            let hasAnyCompanies = false;
+
+            Object.values(classCompanies).forEach(companies => {
+                if (companies.length > 0) {
+                    hasAnyCompanies = true;
+                    companies.forEach(company => allCompanies.add(company));
+                }
+            });
+
+            if (hasAnyCompanies) {
+                companyFilter.disabled = false;
+                Array.from(allCompanies).sort().forEach(company => {
+                    const option = document.createElement('option');
+                    option.value = company;
+                    option.textContent = company;
+                    companyFilter.appendChild(option);
+                });
+            } else {
+                companyFilter.disabled = true;
+                companyFilter.innerHTML = '<option value="">No companies available</option>';
+            }
+
+            // Enable submission filter when no specific class is selected
+            submissionFilter.disabled = false;
+        }
+    }
+
+    // Function to check if a class has submissions and enable/disable submission filter
+    function checkSubmissionsForClass(classId) {
+        const submissionFilter = document.getElementById('submissionNumberFilter');
+
+        console.log('Checking submissions for class:', classId);
+
+        if (!classId) {
+            submissionFilter.disabled = false;
+            console.log('No class ID provided, enabling submission filter');
+            return;
+        }
+
+        // Make AJAX call to check if class has submissions
+        fetch(`{{ route('educator.intern-grades-analytics.check-submissions') }}?class_id=${classId}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Submission check response:', data);
+            if (data.hasSubmissions) {
+                submissionFilter.disabled = false;
+                console.log('Class has submissions, enabling submission filter');
+            } else {
+                submissionFilter.disabled = true;
+                submissionFilter.value = ''; // Reset selection
+                console.log('Class has no submissions, disabling submission filter');
+            }
+        })
+        .catch(error => {
+            console.error('Error checking submissions:', error);
+            // Enable by default on error
+            submissionFilter.disabled = false;
+        });
+    }
 
     // Function to update a specific chart
     function updateChart(classId, company, submissionNumber) {
@@ -486,7 +738,7 @@
         params.append('submission_number', submissionNumber);
 
         // Make an AJAX call to get updated data
-        fetch(`{{ route('educator.intern-grades-progress-data') }}?${params.toString()}`, {
+        fetch(`{{ route('educator.intern-grades-analytics.data') }}?${params.toString()}`, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -555,7 +807,38 @@
         const selectedClassId = this.value;
         const company = document.getElementById('companyFilter').value;
 
-        // Get all chart sections
+        // Update company dropdown based on selected class
+        updateCompanyDropdown(selectedClassId);
+
+        // If a specific class is selected, navigate to that class's page
+        if (selectedClassId) {
+            // Find which page contains this class
+            const allClasses = @json($allClasses->pluck('class_id'));
+            const classIndex = allClasses.indexOf(selectedClassId);
+
+            if (classIndex !== -1) {
+                const targetPage = classIndex + 1; // Pages are 1-indexed
+                const currentUrl = new URL(window.location);
+                currentUrl.searchParams.set('class_page', targetPage);
+
+                // Preserve current filter values
+                const companyValue = document.getElementById('companyFilter').value;
+                const submissionValue = document.getElementById('submissionNumberFilter').value;
+
+                if (companyValue) {
+                    currentUrl.searchParams.set('company', companyValue);
+                }
+                if (submissionValue) {
+                    currentUrl.searchParams.set('submission', submissionValue);
+                }
+
+                console.log('Navigating to page', targetPage, 'for class', selectedClassId);
+                window.location.href = currentUrl.toString();
+                return;
+            }
+        }
+
+        // If "All Classes" is selected, show all sections on current page
         const sections = document.querySelectorAll('.chart-section');
 
         // Show/hide sections based on selection
@@ -565,8 +848,9 @@
 
             if (!selectedClassId || sectionClassId === selectedClassId) {
                 section.style.display = 'block';
-                // Update all submission charts for this class
-                ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
+                // Update current submission charts for this class
+                const currentSubmissions = @json($currentSubmissions);
+                currentSubmissions.forEach(submissionNumber => {
                     updateChart(sectionClassId, company, submissionNumber);
                 });
                 // Ensure the submission charts container is visible
@@ -586,13 +870,17 @@
             const company = this.value;
             const selectedClassId = document.getElementById('classFilter').value;
 
+            console.log('Company filter changed to:', company);
+
             // Update charts for all visible classes
             document.querySelectorAll('.chart-section').forEach(section => {
                 const sectionId = section.getAttribute('id');
                 const sectionClassId = sectionId.replace('chart-section-', '');
 
                 if (!selectedClassId || sectionClassId === selectedClassId) {
-                    ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
+                    const currentSubmissions = @json($currentSubmissions);
+                    currentSubmissions.forEach(submissionNumber => {
+                        console.log('Updating chart for company filter - Class:', sectionClassId, 'Company:', company, 'Submission:', submissionNumber);
                         updateChart(sectionClassId, company, submissionNumber);
                     });
                     updateSubmissionChartsLayout(sectionClassId);
@@ -605,6 +893,9 @@
             const selectedSubmission = this.value;
             const selectedClassId = document.getElementById('classFilter').value;
             const company = document.getElementById('companyFilter').value;
+            const currentSubmissions = @json($currentSubmissions);
+
+            console.log('Submission filter changed to:', selectedSubmission);
 
             // Show/hide submission charts based on selection
             document.querySelectorAll('.submission-chart').forEach(chart => {
@@ -612,8 +903,11 @@
                 const [_, submissionNumber, classId] = chartId.split('-');
 
                 if (!selectedSubmission || submissionNumber === selectedSubmission) {
-                    if (selectedClassId && classId === selectedClassId) {
+                    if (!selectedClassId || classId === selectedClassId) {
+                        chart.style.display = 'block';
                         updateChart(classId, company, submissionNumber);
+                    } else {
+                        chart.style.display = 'none';
                     }
                 } else {
                     chart.style.display = 'none';
@@ -635,20 +929,93 @@
             });
         });
 
-    // Initial load - update all charts and layouts
+    // Set the class filter to the current class being displayed (for pagination)
+    const currentClassId = @json($paginatedClasses->first()->class_id ?? null);
+    if (currentClassId) {
+        const classFilter = document.getElementById('classFilter');
+        classFilter.value = currentClassId;
+
+        // Update company and submission dropdowns for the current class
+        updateCompanyDropdown(currentClassId);
+    }
+
+    // Restore filter values from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const companyParam = urlParams.get('company');
+    const submissionParam = urlParams.get('submission');
+
+    if (companyParam) {
+        const companyFilter = document.getElementById('companyFilter');
+        companyFilter.value = companyParam;
+    }
+
+    if (submissionParam) {
+        const submissionFilter = document.getElementById('submissionNumberFilter');
+        submissionFilter.value = submissionParam;
+    }
+
+    // Initial load - update all charts and layouts with current filter values
     document.querySelectorAll('.chart-section').forEach(section => {
         const sectionId = section.getAttribute('id');
         const sectionClassId = sectionId.replace('chart-section-', '');
         const company = document.getElementById('companyFilter').value;
-        ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
+        const selectedSubmission = document.getElementById('submissionNumberFilter').value;
+        const currentSubmissions = @json($currentSubmissions);
+
+        currentSubmissions.forEach(submissionNumber => {
             updateChart(sectionClassId, company, submissionNumber);
         });
+
+        // Apply submission filtering if a specific submission is selected
+        if (selectedSubmission) {
+            currentSubmissions.forEach(submissionNumber => {
+                const submissionChart = document.getElementById(`submission-${submissionNumber}-${sectionClassId}`);
+                if (submissionChart) {
+                    if (submissionNumber === selectedSubmission) {
+                        submissionChart.style.display = 'block';
+                    } else {
+                        submissionChart.style.display = 'none';
+                    }
+                }
+            });
+        }
+
         // Ensure the submission charts container is visible
         const submissionCharts = document.getElementById(`submission-charts-${sectionClassId}`);
         if (submissionCharts) {
             submissionCharts.style.display = 'block';
         }
         updateSubmissionChartsLayout(sectionClassId);
+    });
+
+    // Initial state check for dropdowns
+    const classCompanies = @json($allClassCompanies);
+    const companyFilter = document.getElementById('companyFilter');
+    const submissionFilter = document.getElementById('submissionNumberFilter');
+
+    // Check if there are any companies at all
+    const hasAnyCompanies = Object.values(classCompanies).some(companies => companies.length > 0);
+    if (!hasAnyCompanies) {
+        companyFilter.disabled = true;
+        companyFilter.innerHTML = '<option value="">No companies available</option>';
+    }
+
+    // Check if there are any submissions at all
+    fetch(`{{ route('educator.intern-grades-analytics.check-submissions') }}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.hasSubmissions) {
+            submissionFilter.disabled = true;
+        }
+    })
+    .catch(error => {
+        console.error('Error checking initial submissions:', error);
     });
 </script>
 

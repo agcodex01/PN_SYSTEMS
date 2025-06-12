@@ -203,6 +203,120 @@
             background-color: var(--content-bg);
             min-height: calc(100vh - var(--topbar-height));
         }
+
+        /* Success and Error Message Styles */
+        .alert {
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideInDown 0.3s ease-out;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-error,
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+
+        .alert-info {
+            color: #0c5460;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        .alert .alert-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .alert-success .alert-icon {
+            color: #28a745;
+        }
+
+        .alert-error .alert-icon,
+        .alert-danger .alert-icon {
+            color: #dc3545;
+        }
+
+        .alert-warning .alert-icon {
+            color: #ffc107;
+        }
+
+        .alert-info .alert-icon {
+            color: #17a2b8;
+        }
+
+        .alert-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .alert-close:hover {
+            opacity: 1;
+        }
+
+        .alert ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .alert li {
+            margin-bottom: 5px;
+        }
+
+        @keyframes slideInDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Auto-hide animation */
+        .alert.fade-out {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -256,6 +370,54 @@
         </aside>
 
         <main class="content">
+            <!-- Success and Error Messages -->
+            @if(session('success'))
+                <div class="alert alert-success" id="success-alert">
+                    <i class="fas fa-check-circle alert-icon"></i>
+                    <span>{{ session('success') }}</span>
+                    <button type="button" class="alert-close" onclick="closeAlert('success-alert')">&times;</button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-error" id="error-alert">
+                    <i class="fas fa-exclamation-circle alert-icon"></i>
+                    <span>{{ session('error') }}</span>
+                    <button type="button" class="alert-close" onclick="closeAlert('error-alert')">&times;</button>
+                </div>
+            @endif
+
+            @if(session('warning'))
+                <div class="alert alert-warning" id="warning-alert">
+                    <i class="fas fa-exclamation-triangle alert-icon"></i>
+                    <span>{{ session('warning') }}</span>
+                    <button type="button" class="alert-close" onclick="closeAlert('warning-alert')">&times;</button>
+                </div>
+            @endif
+
+            @if(session('info'))
+                <div class="alert alert-info" id="info-alert">
+                    <i class="fas fa-info-circle alert-icon"></i>
+                    <span>{{ session('info') }}</span>
+                    <button type="button" class="alert-close" onclick="closeAlert('info-alert')">&times;</button>
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="alert alert-danger" id="validation-errors-alert">
+                    <i class="fas fa-exclamation-circle alert-icon"></i>
+                    <div>
+                        <strong>Please fix the following errors:</strong>
+                        <ul>
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <button type="button" class="alert-close" onclick="closeAlert('validation-errors-alert')">&times;</button>
+                </div>
+            @endif
+
             @yield('content')
         </main>
     </div>
@@ -358,6 +520,106 @@
             if (confirm('Are you sure you want to logout?')) {
                 document.getElementById('logout-form').submit();
             }
+        }
+
+        // Alert management functions
+        function closeAlert(alertId) {
+            const alert = document.getElementById(alertId);
+            if (alert) {
+                alert.classList.add('fade-out');
+                setTimeout(() => {
+                    alert.remove();
+                }, 500);
+            }
+        }
+
+        // Auto-hide success messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const successAlert = document.getElementById('success-alert');
+            if (successAlert) {
+                setTimeout(() => {
+                    closeAlert('success-alert');
+                }, 5000);
+            }
+
+            const infoAlert = document.getElementById('info-alert');
+            if (infoAlert) {
+                setTimeout(() => {
+                    closeAlert('info-alert');
+                }, 5000);
+            }
+        });
+
+        // Enhanced form validation with better error handling
+        function validateAndSubmit(formId, confirmMessage) {
+            const form = document.getElementById(formId);
+            if (!form) return false;
+
+            // Clear any existing validation errors
+            clearValidationErrors();
+
+            // Validate form
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return false;
+            }
+
+            // Show confirmation if message provided
+            if (confirmMessage && !confirm(confirmMessage)) {
+                return false;
+            }
+
+            // Show loader and submit
+            showLoader();
+            form.submit();
+            return true;
+        }
+
+        function clearValidationErrors() {
+            const errorElements = document.querySelectorAll('.validation-error');
+            errorElements.forEach(element => element.remove());
+        }
+
+        // Show success message dynamically
+        function showSuccessMessage(message) {
+            const existingAlert = document.getElementById('dynamic-success-alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            const alertHtml = `
+                <div class="alert alert-success" id="dynamic-success-alert">
+                    <i class="fas fa-check-circle alert-icon"></i>
+                    <span>${message}</span>
+                    <button type="button" class="alert-close" onclick="closeAlert('dynamic-success-alert')">&times;</button>
+                </div>
+            `;
+
+            const content = document.querySelector('.content');
+            content.insertAdjacentHTML('afterbegin', alertHtml);
+
+            setTimeout(() => {
+                closeAlert('dynamic-success-alert');
+            }, 5000);
+        }
+
+        // Show error message dynamically
+        function showErrorMessage(message) {
+            const existingAlert = document.getElementById('dynamic-error-alert');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+
+            const alertHtml = `
+                <div class="alert alert-error" id="dynamic-error-alert">
+                    <i class="fas fa-exclamation-circle alert-icon"></i>
+                    <span>${message}</span>
+                    <button type="button" class="alert-close" onclick="closeAlert('dynamic-error-alert')">&times;</button>
+                </div>
+            `;
+
+            const content = document.querySelector('.content');
+            content.insertAdjacentHTML('afterbegin', alertHtml);
         }
     </script>
 </body>

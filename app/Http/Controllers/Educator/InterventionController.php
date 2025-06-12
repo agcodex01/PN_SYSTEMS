@@ -21,235 +21,298 @@ class InterventionController extends Controller
      */
     public function index(Request $request)
     {
-        // Debug: Check what data exists
-        $this->debugDataAvailability();
+        try {
+            // First, automatically create/update intervention records based on current grade data
+            $this->createInterventionsFromGradeData();
 
-        // Get filter data for dropdowns
-        $schools = \App\Models\School::all();
-        $classes = collect();
-        $submissions = collect();
+            // Get all interventions with relationships
+            $query = Intervention::with([
+                'subject',
+                'school',
+                'classModel',
+                'gradeSubmission',
+                'educatorAssigned'
+            ]);
 
-        // Get classes if school is selected
-        if ($request->has('school_id') && $request->school_id) {
-            $classes = \App\Models\ClassModel::where('school_id', $request->school_id)->get();
-        }
-
-        // Get submissions if class is selected
-        if ($request->has('class_id') && $request->class_id) {
-            $submissions = GradeSubmission::where('class_id', $request->class_id)
-                ->with(['school'])
-                ->orderBy('created_at', 'desc')
-                ->get();
-        }
-
-        // Get filtered interventions
-        $interventions = $this->getInterventionData($request);
-
-        return view('educator.intervention', compact('interventions', 'schools', 'classes', 'submissions'));
-    }
-
-    /**
-     * Debug method to check data availability
-     */
-    private function debugDataAvailability()
-    {
-        $gradeSubmissionsCount = GradeSubmission::count();
-        $gradeSubmissionSubjectsCount = GradeSubmissionSubject::count();
-        $gradesWithDataCount = GradeSubmissionSubject::whereNotNull('grade')->count();
-
-        \Log::info('Intervention Debug Info', [
-            'total_grade_submissions' => $gradeSubmissionsCount,
-            'total_grade_submission_subjects' => $gradeSubmissionSubjectsCount,
-            'grades_with_data' => $gradesWithDataCount,
-            'sample_grades' => GradeSubmissionSubject::whereNotNull('grade')->take(5)->get()->toArray()
-        ]);
-    }
-
-    /**
-     * Get intervention data for AJAX requests
-     */
-    public function getInterventionData(Request $request = null)
-    {
-        // Build query with filters
-        $query = GradeSubmission::with(['school', 'classModel', 'subjects'])
-            ->whereIn('status', ['pending', 'submitted', 'approved']);
-
-        // Apply filters if provided
-        if ($request) {
-            if ($request->has('school_id') && $request->school_id) {
+            // Apply filters if provided
+            if ($request->filled('school_id')) {
                 $query->where('school_id', $request->school_id);
             }
 
-            if ($request->has('class_id') && $request->class_id) {
+            if ($request->filled('class_id')) {
                 $query->where('class_id', $request->class_id);
             }
 
-            if ($request->has('submission_id') && $request->submission_id) {
-                $query->where('id', $request->submission_id);
+            if ($request->filled('subject_id')) {
+                $query->where('subject_id', $request->subject_id);
             }
-        }
 
-        $gradeSubmissions = $query->get();
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
 
-        $interventionData = [];
+            if ($request->filled('submission_id')) {
+                $query->where('grade_submission_id', $request->submission_id);
+            }
 
-        foreach ($gradeSubmissions as $submission) {
-            $school = $submission->school;
+            // Get interventions ordered by most recent with pagination
+            $interventions = $query->orderBy('created_at', 'desc')->paginate(5);
 
-            if (!$school) continue;
+            // Append query parameters to pagination links
+            $interventions->appends(request()->query());
 
-            // Get grades for this submission grouped by subject
-            $grades = GradeSubmissionSubject::where('grade_submission_id', $submission->id)
-                ->with(['subject', 'user'])
-                ->whereNotNull('grade') // Only include records with actual grades
+            // Get filter options
+            $schools = \App\Models\School::orderBy('name')->get();
+            $classes = \App\Models\ClassModel::orderBy('class_name')->get();
+            $subjects = \App\Models\Subject::orderBy('name')->get();
+
+            // Get submissions for dropdown
+            $submissions = GradeSubmission::with(['school', 'classModel'])
+                ->orderBy('created_at', 'desc')
                 ->get()
-                ->groupBy('subject_id');
+                ->map(function($submission) {
+                    return [
+                        'id' => $submission->id,
+                        'display_name' => $submission->semester . ' - ' . $submission->term . ' (' . $submission->academic_year . ')',
+                        'school_name' => $submission->school->name ?? 'Unknown School',
+                        'class_name' => $submission->classModel->class_name ?? 'Unknown Class',
+                        'semester' => $submission->semester,
+                        'term' => $submission->term,
+                        'academic_year' => $submission->academic_year
+                    ];
+                });
 
-            foreach ($grades as $subjectId => $subjectGrades) {
-                $subject = $subjectGrades->first()->subject;
-                if (!$subject) continue;
+            return view('educator.intervention', compact(
+                'interventions',
+                'schools',
+                'classes',
+                'subjects',
+                'submissions'
+            ));
 
-                $passed = 0;
-                $failed = 0;
-                $inc = 0;
-                $dr = 0;
-                $nc = 0;
-                $totalStudents = 0;
+        } catch (\Exception $e) {
+            Log::error('Educator Intervention Index Error', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
 
-                // Get school's passing grade - handle different grading systems
+            return view('educator.intervention', [
+                'interventions' => collect()->paginate(5),
+                'schools' => \App\Models\School::all(),
+                'classes' => collect(),
+                'subjects' => \App\Models\Subject::all(),
+                'submissions' => collect()
+            ])->withErrors(['error' => 'Failed to load intervention data']);
+        }
+    }
+
+    /**
+     * Automatically create/update intervention records based on grade data analysis
+     * Uses the same logic as Subject Intervention Analytics to include all subjects that need intervention
+     */
+    private function createInterventionsFromGradeData()
+    {
+        try {
+            // Get all grade submissions (not just approved ones)
+            $gradeSubmissions = GradeSubmission::with(['school', 'classModel', 'subjects'])
+                ->whereIn('status', ['pending', 'submitted', 'approved'])
+                ->get();
+
+            foreach ($gradeSubmissions as $submission) {
+                $school = $submission->school;
+
+                if (!$school) continue;
+
+                // Get the school's grading criteria
                 $passingGradeMin = $school->passing_grade_min ?? 1.0;
                 $passingGradeMax = $school->passing_grade_max ?? 3.0;
 
-                foreach ($subjectGrades as $grade) {
-                    $totalStudents++;
-                    $gradeValue = strtoupper(trim($grade->grade));
+                // Get all subjects for this class
+                $classSubjects = $submission->subjects;
 
-                    if ($gradeValue === 'INC') {
-                        $inc++;
-                    } elseif ($gradeValue === 'DR') {
-                        $dr++;
-                    } elseif ($gradeValue === 'NC') {
-                        $nc++;
-                    } elseif (is_numeric($gradeValue)) {
-                        $numericGrade = floatval($gradeValue);
+                foreach ($classSubjects as $subject) {
+                    $subjectId = $subject->id;
 
-                        // Handle different grading systems
-                        if ($passingGradeMin <= 5.0) {
-                            // 1.0-5.0 grading system (lower is better)
-                            if ($numericGrade <= $passingGradeMax) {
+                    // Get all grades for this subject in this submission
+                    $allGrades = GradeSubmissionSubject::where('grade_submission_id', $submission->id)
+                        ->where('subject_id', $subjectId)
+                        ->get();
+
+                    // Get only approved grades for this subject
+                    $approvedGrades = $allGrades->where('status', 'approved');
+
+                    $passed = 0;
+                    $failed = 0;
+                    $inc = 0;
+                    $dr = 0;
+                    $nc = 0;
+                    $totalStudents = 0;
+
+                    // Check if there are any submitted grades (approved or not)
+                    $hasSubmittedGrades = $allGrades->count() > 0;
+                    $hasApprovedGrades = $approvedGrades->count() > 0;
+
+                    // Count approved grades only
+                    foreach ($approvedGrades as $grade) {
+                        $totalStudents++;
+                        $gradeValue = strtoupper(trim($grade->grade));
+
+                        if ($gradeValue === 'INC') {
+                            $inc++;
+                        } elseif ($gradeValue === 'DR') {
+                            $dr++;
+                        } elseif ($gradeValue === 'NC') {
+                            $nc++;
+                        } elseif (is_numeric($gradeValue)) {
+                            $numericGrade = floatval($gradeValue);
+
+                            // Use the school's grading criteria
+                            if ($numericGrade >= $passingGradeMin && $numericGrade <= $passingGradeMax) {
                                 $passed++;
                             } else {
                                 $failed++;
                             }
                         } else {
-                            // 0-100 grading system (higher is better)
-                            if ($numericGrade >= $passingGradeMin) {
-                                $passed++;
-                            } else {
-                                $failed++;
+                            // Handle other grade formats as needing intervention
+                            $failed++;
+                        }
+                    }
+
+                    // Determine intervention need based on Subject Intervention Analytics logic
+                    // ONLY create interventions for approved grades with "Need Intervention" status
+                    $needsIntervention = false;
+                    $interventionReason = '';
+                    $studentCount = 0;
+
+                    // Only process if there are approved grades
+                    if ($hasApprovedGrades) {
+                        $totalGrades = $passed + $failed + $inc + $dr + $nc;
+
+                        if ($totalGrades > 0) {
+                            // If any student has Failed, INC, DR, or NC, mark as 'Need Intervention'
+                            if ($failed > 0 || $inc > 0 || $dr > 0 || $nc > 0) {
+                                $needsIntervention = true;
+                                $interventionReason = 'Need Intervention';
+                                $studentCount = $failed + $inc + $dr + $nc;
                             }
                         }
-                    } else {
-                        // Handle other grade formats (like letter grades)
-                        // For now, treat unknown formats as needing intervention
-                        $failed++;
                     }
-                }
+                    // If no approved grades yet, don't create intervention records
 
-                // Only include subjects that need intervention
-                $needsIntervention = ($failed > 0 || $inc > 0 || $dr > 0 || $nc > 0);
-
-                if ($needsIntervention && $totalStudents > 0) {
-                    $studentsNeedingIntervention = $failed + $inc + $dr + $nc;
-
-                    // Check if intervention already exists
-                    $existingIntervention = Intervention::where([
-                        'subject_id' => $subjectId,
-                        'school_id' => $submission->school_id,
-                        'class_id' => $submission->class_id,
-                        'grade_submission_id' => $submission->id
-                    ])->first();
-
-                    if (!$existingIntervention) {
-                        // Create new intervention record
-                        $existingIntervention = Intervention::create([
+                    if ($needsIntervention) {
+                        // Check if intervention already exists
+                        $existingIntervention = Intervention::where([
                             'subject_id' => $subjectId,
                             'school_id' => $submission->school_id,
                             'class_id' => $submission->class_id,
-                            'grade_submission_id' => $submission->id,
-                            'student_count' => $studentsNeedingIntervention,
-                            'status' => 'pending',
-                            'created_by' => Auth::user()->user_id ?? 'system'
-                        ]);
+                            'grade_submission_id' => $submission->id
+                        ])->first();
+
+                        if (!$existingIntervention) {
+                            // Create new intervention record
+                            Intervention::create([
+                                'subject_id' => $subjectId,
+                                'school_id' => $submission->school_id,
+                                'class_id' => $submission->class_id,
+                                'grade_submission_id' => $submission->id,
+                                'student_count' => $studentCount,
+                                'status' => 'pending',
+                                'remarks' => $interventionReason,
+                                'created_by' => Auth::user()->user_id ?? 'system'
+                            ]);
+                        } else {
+                            // Update student count and remarks if they have changed
+                            $existingIntervention->update([
+                                'student_count' => $studentCount,
+                                'remarks' => $interventionReason,
+                                'updated_by' => Auth::user()->user_id ?? 'system'
+                            ]);
+                        }
                     } else {
-                        // Update student count if it has changed
-                        $existingIntervention->update([
-                            'student_count' => $studentsNeedingIntervention,
-                            'updated_by' => Auth::user()->user_id ?? 'system'
-                        ]);
+                        // Remove intervention if it no longer needs intervention
+                        Intervention::where([
+                            'subject_id' => $subjectId,
+                            'school_id' => $submission->school_id,
+                            'class_id' => $submission->class_id,
+                            'grade_submission_id' => $submission->id
+                        ])->delete();
                     }
-
-                    // Add submission data to the intervention
-                    $existingIntervention->semester = $submission->semester;
-                    $existingIntervention->term = $submission->term;
-                    $existingIntervention->academic_year = $submission->academic_year;
-                    $existingIntervention->submission_id = $submission->id;
-
-                    $interventionData[] = $existingIntervention->load(['subject', 'school', 'classModel', 'educatorAssigned']);
                 }
             }
-        }
 
-        // If this is an AJAX request, return JSON
-        if (request()->ajax()) {
-            return response()->json([
-                'subjects' => collect($interventionData)->map(function($intervention) {
-                    return [
-                        'id' => $intervention->id,
-                        'needs_intervention' => $intervention->student_count,
-                        'subject' => $intervention->subject->name ?? 'N/A',
-                        'status' => ucfirst($intervention->status),
-                        'intervention_date' => $intervention->intervention_date ? $intervention->intervention_date->format('Y-m-d') : null,
-                        'instructor' => $intervention->educatorAssigned ?
-                            $intervention->educatorAssigned->user_fname . ' ' . $intervention->educatorAssigned->user_lname :
-                            'Not Assigned'
-                    ];
-                })
+        } catch (\Exception $e) {
+            Log::error('Error in createInterventionsFromGradeData: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
+            // Don't throw the error, just log it so the main page still loads
         }
+    }
 
-        // Convert to collection and sort
-        $collection = collect($interventionData)->sortByDesc('created_at');
 
-        // Apply status filter if provided
-        if ($request && $request->has('status') && $request->status) {
-            $collection = $collection->filter(function($intervention) use ($request) {
-                return $intervention->status === $request->status;
-            });
+
+    /**
+     * Get classes for a specific school (AJAX)
+     */
+    public function getClasses(Request $request)
+    {
+        try {
+            $classes = \App\Models\ClassModel::where('school_id', $request->school_id)
+                ->orderBy('class_name')
+                ->get();
+
+            return response()->json($classes);
+        } catch (\Exception $e) {
+            Log::error('Educator Get Classes Error', [
+                'school_id' => $request->school_id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json(['error' => 'Failed to load classes'], 500);
         }
+    }
 
-        // Manual pagination for custom data
-        $perPage = 5;
-        $currentPage = request()->get('page', 1);
-        $total = $collection->count();
-        $items = $collection->forPage($currentPage, $perPage)->values();
+    /**
+     * Get submissions for a specific school and class (AJAX)
+     */
+    public function getSubmissions(Request $request)
+    {
+        try {
+            $query = GradeSubmission::with(['school', 'classModel']);
 
-        // Create paginator instance
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
-            $items,
-            $total,
-            $perPage,
-            $currentPage,
-            [
-                'path' => request()->url(),
-                'pageName' => 'page',
-            ]
-        );
+            if ($request->filled('school_id')) {
+                $query->where('school_id', $request->school_id);
+            }
 
-        // Append query parameters to pagination links
-        $paginator->appends(request()->query());
+            if ($request->filled('class_id')) {
+                $query->where('class_id', $request->class_id);
+            }
 
-        return $paginator;
+            $submissions = $query->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function($submission) {
+                    return [
+                        'id' => $submission->id,
+                        'display_name' => $submission->semester . ' - ' . $submission->term . ' (' . $submission->academic_year . ')',
+                        'semester' => $submission->semester,
+                        'term' => $submission->term,
+                        'academic_year' => $submission->academic_year
+                    ];
+                });
+
+            return response()->json($submissions);
+
+        } catch (\Exception $e) {
+            Log::error('Educator Get Submissions Error', [
+                'school_id' => $request->school_id,
+                'class_id' => $request->class_id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json(['error' => 'Failed to load submissions'], 500);
+        }
     }
 
     /**
@@ -372,35 +435,5 @@ class InterventionController extends Controller
         }
     }
 
-    /**
-     * Get classes for a specific school (AJAX)
-     */
-    public function getClasses(Request $request)
-    {
-        $classes = \App\Models\ClassModel::where('school_id', $request->school_id)->get();
-        return response()->json($classes);
-    }
 
-    /**
-     * Get submissions for a specific class (AJAX)
-     */
-    public function getSubmissions(Request $request)
-    {
-        $submissions = GradeSubmission::where('class_id', $request->class_id)
-            ->with(['school'])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function($submission) {
-                return [
-                    'id' => $submission->id,
-                    'display_name' => $submission->semester . ' - ' . $submission->term . ' (' . $submission->academic_year . ')',
-                    'semester' => $submission->semester,
-                    'term' => $submission->term,
-                    'academic_year' => $submission->academic_year,
-                    'status' => $submission->status
-                ];
-            });
-
-        return response()->json($submissions);
-    }
 }

@@ -6,6 +6,11 @@ body {
     text-align:center;
 }
 
+/* Keep actions column centered */
+.cell:last-child {
+    text-align: center;
+}
+
 .page-container {
     padding: 32px 0 32px 0;
     max-width: 1200px;
@@ -109,7 +114,7 @@ body {
 }
 
 .table-row {
-    text-align: center;
+    text-align: left;
     display: grid;
     grid-template-columns: 80px 120px 120px 120px 50px 80px 80px 1fr 150px;
     border-bottom: 1px solid #f0f4f8;
@@ -135,7 +140,7 @@ body {
 }
 
 .header-cell {
-    text-align:center;
+    text-align: left;
     padding: 14px 8px;
     font-size: 15px;
     font-weight: 700;

@@ -21,6 +21,27 @@
         </div>
     <?php endif; ?>
 
+    <!-- Student Conflict Validation Messages -->
+    <?php if(session('student_conflicts')): ?>
+        <div class="alert alert-danger student-conflicts-alert">
+            <div class="alert-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Student Enrollment Conflicts</strong>
+            </div>
+            <div class="alert-body">
+                <p><?php echo e(session('error')); ?></p>
+                <ul class="conflict-list">
+                    <?php $__currentLoopData = session('student_conflicts'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $conflict): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <li><i class="fas fa-user-times"></i> <?php echo e($conflict); ?></li>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </ul>
+            </div>
+            <div class="alert-footer">
+                <small><i class="fas fa-info-circle"></i> Each student can only be enrolled in one class at a time. Please remove students from their current classes or assign them to different classes within this school.</small>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <div id="formErrors" class="alert alert-error" style="display:none"></div>
 
     <form action="<?php echo e(route('training.schools.store')); ?>" method="POST" class="form-container" id="createSchoolForm">

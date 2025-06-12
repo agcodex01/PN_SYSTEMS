@@ -47,6 +47,47 @@ class PNUser extends Authenticatable
         return $this->hasOne(StudentDetail::class, 'user_id', 'user_id');
     }
 
+    /**
+     * Check if this student is already enrolled in a class
+     *
+     * @param int|null $excludeClassId Optional class ID to exclude from the check
+     * @return array|null Returns array with class info if enrolled, null if not enrolled
+     */
+    public function getEnrolledClass($excludeClassId = null)
+    {
+        if ($this->user_role !== 'student') {
+            return null;
+        }
+
+        $query = DB::table('class_student')
+            ->join('classes', 'class_student.class_id', '=', 'classes.id')
+            ->where('class_student.user_id', $this->user_id);
+
+        if ($excludeClassId) {
+            $query->where('classes.id', '!=', $excludeClassId);
+        }
+
+        $enrollment = $query->select(
+            'classes.id',
+            'classes.class_id',
+            'classes.class_name',
+            'classes.school_id'
+        )->first();
+
+        return $enrollment ? (array) $enrollment : null;
+    }
+
+    /**
+     * Check if this student is already enrolled in any class
+     *
+     * @param int|null $excludeClassId Optional class ID to exclude from the check
+     * @return bool
+     */
+    public function isEnrolledInClass($excludeClassId = null)
+    {
+        return $this->getEnrolledClass($excludeClassId) !== null;
+    }
+
     // Add the role scope
     public function scopeRole(Builder $query, string $role): Builder
     {

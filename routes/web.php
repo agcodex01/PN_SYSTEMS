@@ -17,6 +17,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Main menu route
+Route::get('/main-menu', function () {
+    return view('main-menu');
+})->name('main-menu');
+
 // Login Routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
@@ -92,8 +97,12 @@ Route::middleware('auth')->group(function () {
             });
         });
 
-        // Intern grades analytics data route (outside analytics controller group)
-        Route::get('/intern-grades-progress-data', [\App\Http\Controllers\Educator\InternGradesAnalytics::class, 'getAnalyticsData'])->name('intern-grades-progress-data');
+        // Intern grades analytics routes
+        Route::prefix('intern-grades-analytics')->name('intern-grades-analytics.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Educator\InternGradesAnalytics::class, 'index'])->name('index');
+            Route::get('/data', [\App\Http\Controllers\Educator\InternGradesAnalytics::class, 'getAnalyticsData'])->name('data');
+            Route::get('/check-submissions', [\App\Http\Controllers\Educator\InternGradesAnalytics::class, 'checkSubmissions'])->name('check-submissions');
+        });
     });
  
 
@@ -171,6 +180,7 @@ Route::middleware('auth')->group(function () {
         Route::prefix('intern-grades-analytics')->name('intern-grades-analytics.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Training\InternGradesAnalyticsController::class, 'index'])->name('index');
             Route::get('/data', [\App\Http\Controllers\Training\InternGradesAnalyticsController::class, 'getAnalyticsData'])->name('data');
+            Route::get('/check-submissions', [\App\Http\Controllers\Training\InternGradesAnalyticsController::class, 'checkSubmissions'])->name('check-submissions');
         });
 
         // Intervention routes (view-only for training)

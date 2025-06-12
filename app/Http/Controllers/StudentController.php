@@ -35,6 +35,7 @@ class StudentController extends Controller
     public function grades(Request $request)
     {
         $user = Auth::user();
+        $filterKey = $request->query('filter_key');
 
         // Get the student's school information to determine grading system
         $studentSchool = null;
@@ -49,56 +50,108 @@ class StudentController extends Controller
             $studentSchool = $studentClass;
         }
 
+        // For filter dropdown - only include submissions where student has actually submitted grades
+        $filterOptions = GradeSubmission::whereHas('students', function($query) use ($user) {
+            $query->where('grade_submission_subject.user_id', $user->user_id)
+                  ->whereNotNull('grade_submission_subject.grade')
+                  ->where('grade_submission_subject.grade', '!=', '');
+        })
+        ->select(
+            'semester',
+            'term',
+            'academic_year',
+            DB::raw("CONCAT('Semester: ', semester, ' | Term: ', term, ' | Year: ', academic_year) AS filter_key")
+        )
+        ->distinct()
+        ->orderBy('academic_year', 'desc')
+        ->orderBy('semester', 'desc')
+        ->orderBy('term', 'desc')
+        ->pluck('filter_key')
+        ->values()
+        ->all();
 
+        // Get all grade submissions for the user
+        $gradeSubmissionsQuery = GradeSubmission::whereHas('students', function($query) use ($user) {
+            $query->where('grade_submission_subject.user_id', $user->user_id)
+                  ->whereNotNull('grade_submission_subject.grade')
+                  ->where('grade_submission_subject.grade', '!=', '');
+        })
+        ->with(['classModel'])
+        ->orderBy('academic_year', 'desc')
+        ->orderBy('semester', 'desc')
+        ->orderBy('term', 'desc');
 
-        // Get unique terms and years for the filter dropdowns
-        $terms = $this->getSortedTerms();
+        // Apply submission filter if provided
+        if ($filterKey) {
+            // Parse the filter key to extract semester, term, and academic year
+            $parts = explode(' | ', $filterKey);
+            if (count($parts) === 3) {
+                $semester = str_replace('Semester: ', '', $parts[0]);
+                $term = str_replace('Term: ', '', $parts[1]);
+                $academicYear = str_replace('Year: ', '', $parts[2]);
 
-        $years = DB::table('grade_submissions')
-            ->distinct()
-            ->pluck('academic_year')
-            ->filter()
-            ->sortBy(function($year) {
-                // Extract the start year from academic year format (e.g., "2023-2024" -> 2023)
-                if (preg_match('/^(\d{4})-\d{4}$/', $year, $matches)) {
-                    return (int)$matches[1];
-                }
-                return 9999; // Default for invalid formats (put them at the end)
-            })
-            ->values();
-
-        // Build the base query for filtered results (used for table/chart)
-        $query = DB::table('grade_submission_subject')
-            ->join('subjects', 'grade_submission_subject.subject_id', '=', 'subjects.id')
-            ->join('grade_submissions', 'grade_submission_subject.grade_submission_id', '=', 'grade_submissions.id')
-            ->leftJoin('schools', 'grade_submissions.school_id', '=', 'schools.school_id')
-            ->where('grade_submission_subject.user_id', $user->user_id);
-
-        // Apply filters if provided
-        if ($request->filled('term')) {
-            $query->where('grade_submissions.term', $request->term);
+                $gradeSubmissionsQuery->where('semester', $semester)
+                                    ->where('term', $term)
+                                    ->where('academic_year', $academicYear);
+            }
         }
 
-        if ($request->filled('academic_year')) {
-            $query->where('grade_submissions.academic_year', $request->academic_year);
-        }
+        // Paginate the submissions (10 per page)
+        $gradeSubmissions = $gradeSubmissionsQuery->paginate(10);
 
-        // Get the filtered subjects with grades (for table/chart)
-        $subjectsWithGrades = $query
-            ->select(
-                'grade_submission_subject.*',
-                'subjects.name as subject_name',
-                'subjects.offer_code as subject_code',
-                'grade_submissions.term',
-                'grade_submissions.academic_year',
-                'grade_submissions.semester',
-                'schools.passing_grade_min',
-                'schools.passing_grade_max'
-            )
-            ->orderBy('grade_submissions.academic_year', 'desc')
-            ->orderBy('grade_submissions.term')
-            ->orderBy('subjects.name')
-            ->get();
+        // Load subjects with grades for each submission (user-specific) with pagination
+        $gradeSubmissions->getCollection()->transform(function ($submission) use ($user, $request) {
+            // Get pagination parameter for this specific submission
+            $submissionPage = $request->get('submission_' . $submission->id . '_page', 1);
+
+            // Get total count for this submission
+            $totalSubjects = DB::table('grade_submission_subject')
+                ->join('subjects', 'grade_submission_subject.subject_id', '=', 'subjects.id')
+                ->where('grade_submission_subject.grade_submission_id', $submission->id)
+                ->where('grade_submission_subject.user_id', $user->user_id)
+                ->whereNotNull('grade_submission_subject.grade')
+                ->where('grade_submission_subject.grade', '!=', '')
+                ->count();
+
+            // Get paginated subjects for this submission
+            $userSubjects = DB::table('grade_submission_subject')
+                ->join('subjects', 'grade_submission_subject.subject_id', '=', 'subjects.id')
+                ->where('grade_submission_subject.grade_submission_id', $submission->id)
+                ->where('grade_submission_subject.user_id', $user->user_id)
+                ->whereNotNull('grade_submission_subject.grade')
+                ->where('grade_submission_subject.grade', '!=', '')
+                ->select(
+                    'subjects.*',
+                    'grade_submission_subject.grade',
+                    'grade_submission_subject.status',
+                    'grade_submission_subject.id as pivot_id'
+                )
+                ->offset(($submissionPage - 1) * 10)
+                ->limit(10)
+                ->get();
+
+            // Convert to collection and add student_submission data
+            $submission->subjects = $userSubjects->map(function ($subject) {
+                $subject->student_submission = (object) [
+                    'grade' => $subject->grade,
+                    'status' => $subject->status,
+                    'id' => $subject->pivot_id
+                ];
+                return $subject;
+            });
+
+            // Add pagination info to submission
+            $submission->pagination = (object) [
+                'current_page' => (int) $submissionPage,
+                'total' => $totalSubjects,
+                'per_page' => 10,
+                'last_page' => max(1, ceil($totalSubjects / 10)),
+                'has_more_pages' => $submissionPage < ceil($totalSubjects / 10),
+                'has_previous_pages' => $submissionPage > 1
+            ];
+
+            return $submission;
+        });
 
         // Get total grade status counts for the status cards (unfiltered)
         $statusCounts = [
@@ -115,6 +168,8 @@ class StudentController extends Controller
             ->join('grade_submissions', 'grade_submission_subject.grade_submission_id', '=', 'grade_submissions.id')
             ->leftJoin('schools', 'grade_submissions.school_id', '=', 'schools.school_id')
             ->where('grade_submission_subject.user_id', $user->user_id)
+            ->whereNotNull('grade_submission_subject.grade')
+            ->where('grade_submission_subject.grade', '!=', '')
             ->select(
                 'grade_submission_subject.status',
                 'grade_submission_subject.grade',
@@ -128,6 +183,11 @@ class StudentController extends Controller
             $status = strtolower($subject->status ?? '');
             $grade = $subject->grade ?? null;
 
+            // Only count approved grades
+            if ($status !== 'approved') {
+                continue;
+            }
+
             // Get school's passing grade range (fallback to default if not available)
             $passingMin = $subject->passing_grade_min ?? ($studentSchool->passing_grade_min ?? 1.0);
             $passingMax = $subject->passing_grade_max ?? ($studentSchool->passing_grade_max ?? 3.0);
@@ -140,81 +200,21 @@ class StudentController extends Controller
                 } else {
                     $statusCounts['fail']++;
                 }
-
-
-            } elseif ($status === 'inc') {
+            } elseif (strtoupper($grade) === 'INC') {
                 $statusCounts['inc']++;
-            } elseif ($status === 'nc') {
+            } elseif (strtoupper($grade) === 'NC') {
                 $statusCounts['nc']++;
-            } elseif ($status === 'dr') {
+            } elseif (strtoupper($grade) === 'DR') {
                 $statusCounts['dr']++;
             }
         }
 
-        // Get subject statuses for the chart
-        $subjectStatuses = DB::table('grade_submission_subject')
-            ->join('grade_submissions', 'grade_submission_subject.grade_submission_id', '=', 'grade_submissions.id')
-            ->where('grade_submission_subject.user_id', $user->user_id)
-            ->when($request->filled('term'), function($query) use ($request) {
-                return $query->where('grade_submissions.term', $request->term);
-            })
-            ->when($request->filled('academic_year'), function($query) use ($request) {
-                return $query->where('grade_submissions.academic_year', $request->academic_year);
-            })
-            ->pluck('grade_submission_subject.status', 'grade_submission_subject.id')
-            ->toArray();
-
-        // Prepare chart data
-        $subjectLabels = [];
-        $subjectGrades = [];
-        $subjectColors = [];
-        $chartSubjectStatuses = [];
-
-        // Get school's grading system for color coding
-        $passingMin = $studentSchool->passing_grade_min ?? 1.0;
-        $passingMax = $studentSchool->passing_grade_max ?? 3.0;
-
-        foreach ($subjectsWithGrades as $subject) {
-            if (is_numeric($subject->grade)) {
-                $subjectLabels[] = $subject->subject_code ?: substr($subject->subject_name, 0, 10);
-                $subjectGrades[] = floatval($subject->grade);
-                $chartSubjectStatuses[] = $subject->status;
-
-                // Color based on school's grading system
-                $grade = floatval($subject->grade);
-
-
-
-                if ($grade >= $passingMin && $grade <= $passingMax) {
-                    $range = $passingMax - $passingMin;
-                    $excellentThreshold = $passingMin + ($range * 0.8);
-                    $goodThreshold = $passingMin + ($range * 0.5);
-
-                    if ($grade >= $excellentThreshold) {
-                        $subjectColors[] = 'rgba(34, 197, 94, 0.8)'; // Green for excellent
-                    } elseif ($grade >= $goodThreshold) {
-                        $subjectColors[] = 'rgba(59, 130, 246, 0.8)'; // Blue for good
-                    } else {
-                        $subjectColors[] = 'rgba(251, 191, 36, 0.8)'; // Yellow for fair
-                    }
-                } else {
-                    $subjectColors[] = 'rgba(239, 68, 68, 0.8)'; // Red for failing
-                }
-            }
-        }
-
         return view('student.grades', compact(
-            'subjectsWithGrades',
+            'gradeSubmissions',
+            'filterOptions',
+            'filterKey',
             'statusCounts',
-            'terms',
-            'years',
-            'request',
-            'subjectStatuses',
-            'studentSchool',
-            'subjectLabels',
-            'subjectGrades',
-            'subjectColors',
-            'chartSubjectStatuses'
+            'studentSchool'
         ));
     }
 
@@ -243,22 +243,7 @@ class StudentController extends Controller
         $user = Auth::user();
         $filterKey = $request->query('filter_key');
 
-        // Get unique terms and years for the filter dropdowns
-        $terms = $this->getSortedTerms();
-        $years = DB::table('grade_submissions')
-            ->distinct()
-            ->pluck('academic_year')
-            ->filter()
-            ->sortBy(function($year) {
-                // Extract the start year from academic year format (e.g., "2023-2024" -> 2023)
-                if (preg_match('/^(\d{4})-\d{4}$/', $year, $matches)) {
-                    return (int)$matches[1];
-                }
-                return 9999; // Default for invalid formats (put them at the end)
-            })
-            ->values();
-
-        // Get all grade submissions for the user, with optional term/year filter
+        // Get all grade submissions for the user
         $gradeSubmissionsQuery = GradeSubmission::whereHas('students', function($query) use ($user) {
             $query->where('grade_submission_subject.user_id', $user->user_id);
         })
@@ -274,16 +259,19 @@ class StudentController extends Controller
         ])
         ->orderBy('created_at', 'desc');
 
-        // Apply term/year filter if provided
-        if ($request->filled('term')) {
-            $gradeSubmissionsQuery->where('term', $request->term);
-        }
-        if ($request->filled('academic_year')) {
-            $gradeSubmissionsQuery->where('academic_year', $request->academic_year);
-        }
-
+        // Apply submission filter if provided
         if ($filterKey) {
-            $gradeSubmissionsQuery->where(DB::raw("CONCAT(semester, ' ', term, ' ', academic_year)"), $filterKey);
+            // Parse the filter key to extract semester, term, and academic year
+            $parts = explode(' | ', $filterKey);
+            if (count($parts) === 3) {
+                $semester = str_replace('Semester: ', '', $parts[0]);
+                $term = str_replace('Term: ', '', $parts[1]);
+                $academicYear = str_replace('Year: ', '', $parts[2]);
+
+                $gradeSubmissionsQuery->where('semester', $semester)
+                                    ->where('term', $term)
+                                    ->where('academic_year', $academicYear);
+            }
         }
 
         $gradeSubmissions = $gradeSubmissionsQuery->get();
@@ -323,6 +311,11 @@ class StudentController extends Controller
             $status = strtolower($subject->status ?? '');
             $grade = $subject->grade ?? null;
 
+            // Only count grades that have been approved by training
+            if ($status !== 'approved') {
+                continue;
+            }
+
             if (is_numeric($grade)) {
                 $gradeValue = floatval($grade);
                 // Use school's grading system or fallback to default
@@ -335,23 +328,32 @@ class StudentController extends Controller
                 } else {
                     $statusCounts['fail']++;
                 }
-            } elseif ($status === 'inc') {
+            } elseif (strtoupper($grade) === 'INC') {
                 $statusCounts['inc']++;
-            } elseif ($status === 'nc') {
+            } elseif (strtoupper($grade) === 'NC') {
                 $statusCounts['nc']++;
-            } elseif ($status === 'dr') {
+            } elseif (strtoupper($grade) === 'DR') {
                 $statusCounts['dr']++;
             }
         }
 
-        // For filter dropdown
+        // For filter dropdown - only include submissions where student has actually submitted grades
         $filterOptions = GradeSubmission::whereHas('students', function($query) use ($user) {
-            $query->where('grade_submission_subject.user_id', $user->user_id);
+            $query->where('grade_submission_subject.user_id', $user->user_id)
+                  ->whereNotNull('grade_submission_subject.grade')
+                  ->where('grade_submission_subject.grade', '!=', '');
         })
-        ->select(DB::raw("CONCAT(semester, ' ', term, ' ', academic_year) AS filter_key"))
+        ->select(
+            'semester',
+            'term',
+            'academic_year',
+            DB::raw("CONCAT('Semester: ', semester, ' | Term: ', term, ' | Year: ', academic_year) AS filter_key")
+        )
         ->distinct()
+        ->orderBy('academic_year', 'desc')
+        ->orderBy('semester', 'desc')
+        ->orderBy('term', 'desc')
         ->pluck('filter_key')
-        ->sortDesc()
         ->values()
         ->all();
 
@@ -367,13 +369,37 @@ class StudentController extends Controller
             });
         });
 
+        // Get approved subjects with grades for display
+        $subjectsWithGrades = collect();
+        foreach ($allSubjects as $subject) {
+            $status = strtolower($subject->status ?? '');
+            $grade = $subject->grade ?? null;
+
+            // Only include approved grades
+            if ($status === 'approved' && $grade !== null) {
+                // Get subject details
+                $subjectDetails = DB::table('subjects')
+                    ->where('id', $subject->subject_id)
+                    ->first();
+
+                if ($subjectDetails) {
+                    $subjectWithGrade = (object) [
+                        'subject_code' => $subjectDetails->offer_code,
+                        'subject_name' => $subjectDetails->name,
+                        'grade' => $grade,
+                        'status' => $status
+                    ];
+                    $subjectsWithGrades->push($subjectWithGrade);
+                }
+            }
+        }
+
         return view('student.dashboard', compact(
-            'gradeSubmissions', 
-            'filterOptions', 
+            'gradeSubmissions',
+            'filterOptions',
             'filterKey',
             'statusCounts',
-            'terms',
-            'years'
+            'subjectsWithGrades'
         ));
     }
 
@@ -452,27 +478,42 @@ class StudentController extends Controller
             'class_id' => $gradeSubmission->class_id
         ]);
 
-        // Validate the submitted grades and proof
-        $validated = $request->validate([
-            'grades' => 'required|array',
-            'grades.*' => [
-                'required',
-                function ($attribute, $value, $fail) {
-                    // Check if it's a valid numeric grade (1.0-5.0)
-                    if (is_numeric($value)) {
-                        $value = floatval($value);
-                        if ($value < 1.0 || $value > 5.0) {
-                            $fail('The numeric grade must be between 1.0 and 5.0.');
+        // Enhanced validation with better error messages
+        try {
+            $validated = $request->validate([
+                'grades' => 'required|array',
+                'grades.*' => [
+                    'required',
+                    function ($attribute, $value, $fail) {
+                        // Check if it's a valid numeric grade (1.0-5.0)
+                        if (is_numeric($value)) {
+                            $value = floatval($value);
+                            if ($value < 1.0 || $value > 5.0) {
+                                $fail('The numeric grade must be between 1.0 and 5.0.');
+                            }
                         }
-                    }
-                    // Check if it's a valid special grade (INC, NC, DR)
-                    else if (!in_array(strtoupper($value), ['INC', 'NC', 'DR'])) {
-                        $fail('The grade must be between 1.0-5.0 or one of: INC, NC, DR.');
-                    }
-                },
-            ],
-            'proof' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240' // 10MB max
-        ]);
+                        // Check if it's a valid special grade (INC, NC, DR)
+                        else if (!in_array(strtoupper($value), ['INC', 'NC', 'DR'])) {
+                            $fail('The grade must be between 1.0-5.0 or one of: INC, NC, DR.');
+                        }
+                    },
+                ],
+                'proof' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240' // 10MB max
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed:', [
+                'errors' => $e->errors(),
+                'request_data' => $request->except(['proof']),
+                'file_info' => $request->hasFile('proof') ? [
+                    'original_name' => $request->file('proof')->getClientOriginalName(),
+                    'size' => $request->file('proof')->getSize(),
+                    'mime_type' => $request->file('proof')->getMimeType(),
+                    'extension' => $request->file('proof')->getClientOriginalExtension(),
+                ] : 'No file uploaded'
+            ]);
+
+            return back()->withErrors($e->errors())->withInput()->with('error', 'Please check your file and try again. Make sure the file is under 10MB and is a valid format (PDF, DOC, DOCX, JPG, JPEG, PNG).');
+        }
 
         \Log::info('Validated grades:', [
             'grades' => $validated['grades']
@@ -527,15 +568,39 @@ class StudentController extends Controller
 
             // Handle file upload - store in student-specific folder
             $file = $request->file('proof');
-            $fileName = time() . '_' . $file->getClientOriginalName();
-            
+
+            if (!$file || !$file->isValid()) {
+                throw new \Exception('Invalid file upload. Please try again.');
+            }
+
+            \Log::info('File upload details:', [
+                'original_name' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+                'extension' => $file->getClientOriginalExtension(),
+                'is_valid' => $file->isValid(),
+                'error' => $file->getError()
+            ]);
+
+            $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+
             // Get student details for folder name
             $student = PNUser::with('studentDetail')->findOrFail($user->user_id);
             $studentId = $student->studentDetail->student_id ?? $student->user_id; // Fallback to user_id if student_id is not available
             $folderName = $student->user_lname . '_' . $studentId;
             $folderName = preg_replace('/[^a-zA-Z0-9_]/', '_', $folderName); // Sanitize folder name
-            
+
+            // Ensure the directory exists
+            $fullPath = storage_path("app/public/proofs/{$folderName}");
+            if (!file_exists($fullPath)) {
+                mkdir($fullPath, 0755, true);
+            }
+
             $filePath = $file->storeAs("proofs/{$folderName}", $fileName, 'public');
+
+            if (!$filePath) {
+                throw new \Exception('Failed to store file. Please try again.');
+            }
 
             // Create or update the proof record
             $proof = GradeSubmissionProof::updateOrCreate(
@@ -580,8 +645,24 @@ class StudentController extends Controller
             return redirect()->route('student.dashboard')->with('error', 'Validation error: ' . $e->getMessage());
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error submitting grades: ' . $e->getMessage());
-            return redirect()->route('student.dashboard')->with('error', 'An unexpected error occurred: ' . $e->getMessage());
+            \Log::error('Error submitting grades: ' . $e->getMessage(), [
+                'user_id' => $user->user_id,
+                'submission_id' => $submissionId,
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+
+            // Provide more specific error messages
+            $errorMessage = 'An error occurred while submitting your grades.';
+
+            if (strpos($e->getMessage(), 'file') !== false || strpos($e->getMessage(), 'upload') !== false) {
+                $errorMessage = 'Failed to upload proof file. Please check your file and try again. Make sure the file is under 10MB and is a valid format.';
+            } elseif (strpos($e->getMessage(), 'validation') !== false) {
+                $errorMessage = 'Please check your grades and proof file. Make sure all fields are filled correctly.';
+            } elseif (strpos($e->getMessage(), 'database') !== false) {
+                $errorMessage = 'Database error occurred. Please try again later.';
+            }
+
+            return back()->withInput()->with('error', $errorMessage);
         }
     }
 

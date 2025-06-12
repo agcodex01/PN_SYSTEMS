@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title><?php echo e($title ?? 'Student Dashboard'); ?></title>
-    <link rel="stylesheet" href="<?php echo e(asset('css/nav.css')); ?>">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
@@ -74,17 +73,18 @@
         flex-direction: column;
         overflow-x: hidden; /* Prevent horizontal scroll */
         -webkit-text-size-adjust: 100%; /* Prevent text scaling on iOS */
-        -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+        -webkit-tap-highlight-color: rgba(34, 187, 234, 0.3); /* Better tap highlight */
+        touch-action: manipulation; /* Improve touch responsiveness */
     }
 
     /* Header */
     .top-bar {
         background-color: #22bbea !important;
-        padding: 0 20px !important;
+        padding: 0 30px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
-        height: 70px !important;
+        height: 80px !important;
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
@@ -95,33 +95,39 @@
 
     /* Mobile Menu Toggle */
     .mobile-menu-toggle {
-        display: none;
+        display: none; /* Hidden by default */
         background: none;
         border: none;
         color: white;
-        font-size: 24px;
+        font-size: 22px;
         cursor: pointer;
-        padding: 8px;
-        border-radius: 4px;
+        padding: 10px;
+        border-radius: 8px;
         transition: background-color 0.3s ease;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(255, 255, 255, 0.3);
+        min-width: 45px;
+        min-height: 45px;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 1001;
     }
 
     .mobile-menu-toggle:hover {
         background-color: rgba(255, 255, 255, 0.1);
     }
 
-    /* Top bar layout */
-    .top-bar-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
+    .mobile-menu-toggle:active {
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: scale(0.95);
     }
 
-    /* Ensure our logo styles take precedence */
+    /* Logo styles to match training layout */
     .top-bar .PN-logo {
-        height: 50px !important;
+        height: 40px !important;
         width: auto !important;
-        max-width: 220px !important;
+        max-width: 180px !important;
         object-fit: contain !important;
         margin: 0 !important;
         display: block !important;
@@ -129,19 +135,10 @@
         transition: all 0.3s ease !important;
     }
 
-    .logo-link {
-        display: flex !important;
-        align-items: center !important;
-        height: 100% !important;
-        padding: 10px 20px !important;
-        text-decoration: none !important;
-        margin: 0 !important;
-    }
-
     /* Main Layout */
     .main-wrapper {
         display: flex;
-        padding-top: 70px; /* Height of top-bar */
+        padding-top: 80px; /* Height of top-bar */
         min-height: 100vh;
         width: 100%;
         position: relative;
@@ -152,15 +149,16 @@
         background-color: #ffffff;
         width: 260px;
         position: fixed;
-        top: 70px; /* Adjusted to connect with header */
+        top: 80px; /* Adjusted to connect with header */
         left: 0;
         bottom: 0;
         overflow-y: auto;
         box-shadow: 2px 0 10px rgba(0,0,0,0.05);
-        z-index: 900;
+        z-index: 950; /* Higher than overlay */
         padding: 0;
         margin: 0;
         transition: transform 0.3s ease;
+        pointer-events: auto;
     }
 
     /* Sidebar overlay for mobile */
@@ -172,13 +170,39 @@
         right: 0;
         bottom: 0;
         background-color: rgba(0, 0, 0, 0.5);
-        z-index: 850;
+        z-index: 800 !important; /* Much lower than sidebar */
         opacity: 0;
         transition: opacity 0.3s ease;
+        pointer-events: none;
     }
 
     .sidebar-overlay.active {
         opacity: 1;
+        pointer-events: auto;
+        z-index: 800 !important; /* Much lower than sidebar */
+        background-color: rgba(0, 0, 0, 0.5) !important;
+    }
+
+    /* Ensure sidebar content is always above overlay */
+    .sidebar.active {
+        z-index: 950 !important;
+        background-color: #ffffff !important;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.3) !important;
+    }
+
+    .sidebar.active .menu {
+        z-index: 1000 !important;
+        background-color: #ffffff !important;
+    }
+
+    .sidebar.active .menu li {
+        background-color: transparent !important;
+    }
+
+    .sidebar.active .menu li a {
+        z-index: 1000 !important;
+        background-color: transparent !important;
+        color: #333 !important;
     }
 
     /* Menu Styling */
@@ -199,17 +223,24 @@
     .menu li a {
         display: flex;
         align-items: center;
-        padding: 12px 20px;
+        padding: 15px 20px;
         color: #333;
         text-decoration: none;
         font-size: 15px;
         transition: all 0.2s ease;
         border-radius: 8px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(34, 187, 234, 0.3);
+        min-height: 48px; /* Ensure minimum touch target size */
+        position: relative;
+        z-index: 1000; /* High z-index for clickability */
+        pointer-events: auto;
+        cursor: pointer;
     }
 
     .menu-icon {
-        width: 24px;
-        height: 24px;
+        width: 20px;
+        height: 20px;
         margin-right: 12px;
         object-fit: contain;
     }
@@ -223,6 +254,19 @@
         background-color: #e3f2fd;
         color: #22bbea;
         font-weight: 500;
+    }
+
+    /* Desktop menu - hidden on mobile */
+    .menu {
+        display: block;
+        list-style: none;
+        padding: 20px 0;
+        margin: 0;
+    }
+
+    /* Mobile navigation menu - hidden on desktop */
+    .mobile-nav-menu {
+        display: none;
     }
     
     .menu li.active .menu-icon {
@@ -262,11 +306,15 @@
     .content {
         flex: 1;
         margin-left: 260px; /* Same as sidebar width */
-        padding: 30px;
-        min-height: calc(100vh - 70px);
+        padding: 20px;
+        min-height: calc(100vh - 80px);
         background-color: #f8f9fa;
         width: calc(100% - 260px);
         transition: margin-left 0.3s ease, width 0.3s ease;
+        position: relative;
+        z-index: 1;
+        touch-action: manipulation;
+        pointer-events: auto;
     }
 
     /* User Info */
@@ -306,14 +354,18 @@
         border: none;
         color: #fff;
         cursor: pointer;
-        padding: 8px;
+        padding: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
+        min-width: 45px;
+        min-height: 45px;
         border-radius: 50%;
         transition: all 0.2s ease;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(255, 255, 255, 0.3);
+        position: relative;
+        z-index: 1;
     }
 
     .logout-btn:hover {
@@ -326,7 +378,7 @@
     /* Large screens (1200px and up) */
     @media (min-width: 1200px) {
         .content {
-            padding: 40px;
+            padding: 20px;
         }
     }
 
@@ -351,7 +403,7 @@
         .content {
             margin-left: 220px;
             width: calc(100% - 220px);
-            padding: 25px;
+            padding: 20px;
         }
 
         .user-info {
@@ -379,27 +431,85 @@
         }
 
         .mobile-menu-toggle {
-            display: block;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
 
+        /* COMPLETELY RESET SIDEBAR FOR MOBILE */
         .sidebar {
-            transform: translateX(-100%);
-            width: 280px;
-            top: 70px;
+            position: fixed !important;
+            top: 80px !important;
+            left: -100% !important;
+            width: 280px !important;
+            height: calc(100vh - 80px) !important;
+            background: white !important;
+            background-color: white !important;
+            z-index: 10000 !important; /* Higher than overlay */
+            transition: left 0.3s ease !important;
+            overflow-y: auto !important;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3) !important;
         }
 
         .sidebar.active {
-            transform: translateX(0);
+            left: 0 !important;
+            background: white !important;
+            background-color: white !important;
+            z-index: 10000 !important;
         }
 
+        /* OVERLAY BEHIND SIDEBAR - FIXED */
         .sidebar-overlay {
-            display: block;
+            display: block !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 280px !important; /* Start after sidebar width */
+            width: calc(100% - 280px) !important; /* Only cover remaining area */
+            height: 100% !important;
+            background-color: rgba(0, 0, 0, 0.5) !important;
+            z-index: 100 !important; /* Much lower z-index */
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transition: opacity 0.3s ease !important;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1 !important;
+            pointer-events: auto !important;
         }
 
         .content {
             margin-left: 0;
             width: 100%;
             padding: 20px 15px;
+            position: relative;
+            z-index: 1;
+            touch-action: manipulation;
+            pointer-events: auto;
+        }
+
+        /* Ensure all content elements are clickable on mobile */
+        .content * {
+            pointer-events: auto;
+            touch-action: manipulation;
+        }
+
+        /* Fix common interactive elements */
+        .content button,
+        .content .btn,
+        .content a,
+        .content input,
+        .content select,
+        .content textarea,
+        .content [onclick],
+        .content [role="button"],
+        .content .card,
+        .content .clickable {
+            pointer-events: auto !important;
+            touch-action: manipulation !important;
+            cursor: pointer !important;
+            position: relative;
+            z-index: 2;
         }
 
         .user-info {
@@ -417,9 +527,64 @@
             padding: 3px 8px;
         }
 
-        .menu li a {
-            padding: 15px 20px;
-            font-size: 16px;
+        /* RESET MENU FOR MOBILE */
+        .sidebar .menu {
+            background: white !important;
+            background-color: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .sidebar .menu li {
+            background: transparent !important;
+            background-color: transparent !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .sidebar .menu li a {
+            display: flex !important;
+            align-items: center !important;
+            padding: 18px 20px !important;
+            font-size: 16px !important;
+            min-height: 56px !important;
+            color: #333 !important;
+            background: transparent !important;
+            background-color: transparent !important;
+            text-decoration: none !important;
+            border: none !important;
+            outline: none !important;
+            touch-action: manipulation !important;
+            -webkit-tap-highlight-color: rgba(34, 187, 234, 0.3) !important;
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            position: relative !important;
+            z-index: 10000 !important;
+        }
+
+        .sidebar .menu li a:hover {
+            background-color: #f1f5f9 !important;
+            color: #22bbea !important;
+        }
+
+        .sidebar .menu li a:active {
+            background-color: #e3f2fd !important;
+            transform: scale(0.98) !important;
+        }
+
+        .sidebar .menu li.active a {
+            background-color: #e3f2fd !important;
+            color: #22bbea !important;
+        }
+
+        /* Hide desktop menu on mobile */
+        .menu {
+            display: none !important;
+        }
+
+        /* Show mobile navigation menu on mobile */
+        .mobile-nav-menu {
+            display: block !important;
         }
 
         .menu-icon {
@@ -432,31 +597,53 @@
     /* Mobile screens (576px and below) */
     @media (max-width: 576px) {
         .top-bar {
-            height: 60px !important;
-            padding: 0 10px !important;
+            height: 70px !important;
+            padding: 0 15px !important;
+        }
+
+        .mobile-menu-toggle {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
 
         .main-wrapper {
-            padding-top: 60px;
+            padding-top: 70px;
         }
 
         .sidebar {
-            top: 60px;
+            top: 70px;
             width: 100%;
             max-width: 300px;
         }
 
         .content {
             padding: 15px 10px;
+            position: relative;
+            z-index: 1;
+            touch-action: manipulation;
+            pointer-events: auto;
         }
 
-        .logo-link {
-            padding: 5px 10px !important;
+        /* Additional mobile content fixes */
+        .content button,
+        .content .btn,
+        .content a,
+        .content input,
+        .content select,
+        .content textarea {
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+            pointer-events: auto;
+            cursor: pointer;
         }
 
         .PN-logo {
-            height: 40px !important;
-            max-width: 180px !important;
+            height: 35px !important;
+            max-width: 160px !important;
         }
 
         .user-info {
@@ -482,15 +669,15 @@
     /* Extra small screens (480px and below) */
     @media (max-width: 480px) {
         .top-bar {
-            height: 55px !important;
+            height: 60px !important;
         }
 
         .main-wrapper {
-            padding-top: 55px;
+            padding-top: 60px;
         }
 
         .sidebar {
-            top: 55px;
+            top: 60px;
         }
 
         .content {
@@ -498,8 +685,8 @@
         }
 
         .PN-logo {
-            height: 35px !important;
-            max-width: 150px !important;
+            height: 30px !important;
+            max-width: 140px !important;
         }
 
         .logged-in-text,
@@ -554,9 +741,11 @@
 
         /* Ensure all buttons and links are touch-friendly */
         button, .btn, a, input[type="submit"], input[type="button"] {
-            min-height: 44px;
-            min-width: 44px;
+            min-height: 48px;
+            min-width: 48px;
             touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(34, 187, 234, 0.3);
+            position: relative;
         }
 
         /* Improve tap targets for small elements */
@@ -570,9 +759,28 @@
     @media (max-width: 768px) {
         /* Ensure all clickable elements are touch-friendly */
         button, .btn, a, input[type="submit"], input[type="button"],
-        .card, .status-card, .subject-card, .submission-card {
+        .card, .status-card, .subject-card, .submission-card,
+        .table td, .table th, .list-item, .menu-item,
+        [onclick], [role="button"], .clickable {
+            touch-action: manipulation !important;
+            -webkit-tap-highlight-color: rgba(34, 187, 234, 0.3) !important;
+            cursor: pointer !important;
+            position: relative;
+            pointer-events: auto !important;
+            z-index: 2;
+        }
+
+        /* Fix for tables and lists */
+        .table, .list, .grid {
             touch-action: manipulation;
-            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+            pointer-events: auto;
+        }
+
+        /* Fix for dashboard cards and widgets */
+        .dashboard-card, .widget, .stat-card, .info-card {
+            touch-action: manipulation;
+            pointer-events: auto;
+            cursor: pointer;
         }
 
         /* Prevent text selection on buttons and cards */
@@ -585,17 +793,264 @@
 
         /* Improve button spacing and sizing */
         .btn, button {
-            padding: 12px 16px;
-            min-height: 44px;
+            padding: 14px 20px;
+            min-height: 48px;
+            min-width: 48px;
             font-size: 16px;
             border-radius: 8px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(34, 187, 234, 0.3);
+            cursor: pointer;
+            border: none;
+            outline: none;
+            position: relative;
         }
 
         /* Improve form elements */
         input, select, textarea {
             font-size: 16px; /* Prevent zoom on iOS */
-            padding: 12px;
-            min-height: 44px;
+            padding: 14px;
+            min-height: 48px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            touch-action: manipulation;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        /* Add active states for better mobile feedback */
+        button:active, .btn:active, a:active {
+            transform: scale(0.98);
+            opacity: 0.8;
+        }
+
+        /* Improve mobile menu button visibility */
+        .mobile-menu-toggle:active {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(0.95);
+        }
+
+        /* Better logout button feedback */
+        .logout-btn:active {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: scale(0.95);
+        }
+
+        /* Menu link active states */
+        .menu li a:active {
+            background-color: #e3f2fd;
+            transform: scale(0.98);
+        }
+    }
+
+    /* Add focus styles for accessibility */
+    button:focus, .btn:focus, a:focus {
+        outline: 2px solid #22bbea;
+        outline-offset: 2px;
+    }
+
+    /* Remove focus outline on touch devices */
+    @media (hover: none) and (pointer: coarse) {
+        button:focus, .btn:focus, a:focus {
+            outline: none;
+        }
+    }
+
+    /* Force mobile menu toggle to be clickable */
+    @media (max-width: 768px) {
+        .mobile-menu-toggle {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+        }
+
+        /* Ensure all interactive elements are properly clickable */
+        button, .btn, a, input[type="submit"], input[type="button"] {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+        }
+
+        /* Prevent any overlays from blocking content when sidebar is closed */
+        .sidebar-overlay:not(.active) {
+            pointer-events: none !important;
+            display: none !important;
+        }
+
+        /* Ensure content area is always clickable when sidebar is closed */
+        .content {
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Fix for any potential blocking elements */
+        .main-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Ensure sidebar menu is always clickable on mobile */
+        .sidebar .menu {
+            pointer-events: auto;
+            z-index: 1000;
+            position: relative;
+        }
+
+        .sidebar .menu li {
+            pointer-events: auto;
+            z-index: 1000;
+            position: relative;
+        }
+
+        .sidebar .menu li a {
+            pointer-events: auto !important;
+            z-index: 1000 !important;
+            position: relative !important;
+            display: flex !important;
+            align-items: center !important;
+            touch-action: manipulation !important;
+            -webkit-tap-highlight-color: rgba(34, 187, 234, 0.3) !important;
+        }
+
+        /* Force sidebar to be above everything when active */
+        .sidebar.active {
+            z-index: 950 !important;
+            pointer-events: auto !important;
+            background-color: #ffffff !important;
+        }
+
+        .sidebar.active .menu {
+            background-color: #ffffff !important;
+            pointer-events: auto !important;
+            z-index: 1000 !important;
+        }
+
+        .sidebar.active .menu li {
+            background-color: transparent !important;
+            pointer-events: auto !important;
+            z-index: 1000 !important;
+        }
+
+        .sidebar.active .menu li a {
+            background-color: transparent !important;
+            color: #333 !important;
+            pointer-events: auto !important;
+            z-index: 1000 !important;
+        }
+
+        /* Override any conflicting styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                background-color: #ffffff !important;
+            }
+
+            .sidebar.active {
+                background-color: #ffffff !important;
+            }
+
+            .sidebar .menu {
+                background-color: #ffffff !important;
+            }
+
+            .sidebar .menu li {
+                background-color: transparent !important;
+            }
+
+            .sidebar .menu li a {
+                background-color: transparent !important;
+                color: #333 !important;
+            }
+
+            .sidebar .menu li a:hover {
+                background-color: #f1f5f9 !important;
+                color: #22bbea !important;
+            }
+
+            .sidebar .menu li.active a {
+                background-color: #e3f2fd !important;
+                color: #22bbea !important;
+            }
+        }
+
+        /* Emergency override for mobile sidebar background */
+        .sidebar.active {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+
+        .sidebar.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ffffff !important;
+            z-index: -1;
+        }
+    }
+
+    /* EMERGENCY MOBILE SIDEBAR FIX - HIGHEST PRIORITY */
+    @media (max-width: 768px) {
+        .sidebar {
+            background: white !important;
+            background-color: white !important;
+        }
+
+        .sidebar.active {
+            background: white !important;
+            background-color: white !important;
+            left: 0 !important;
+            z-index: 9999 !important;
+        }
+
+        .sidebar * {
+            background-color: transparent !important;
+        }
+
+        .mobile-nav-menu {
+            background: white !important;
+            background-color: white !important;
+        }
+
+        .mobile-nav-menu button {
+            background: white !important;
+            background-color: white !important;
+            color: #333 !important;
+        }
+
+        .mobile-nav-menu button:hover,
+        .mobile-nav-menu button:active {
+            background: #f1f5f9 !important;
+            background-color: #f1f5f9 !important;
+        }
+
+        /* NUCLEAR OPTION - FORCE WHITE SIDEBAR */
+        .sidebar.active {
+            background: white !important;
+            background-color: white !important;
+            background-image: none !important;
+        }
+
+        .sidebar.active * {
+            background-color: transparent !important;
+        }
+
+        .sidebar.active .mobile-nav-menu {
+            background: white !important;
+            background-color: white !important;
+        }
+
+        .sidebar.active .mobile-nav-menu button {
+            background: white !important;
+            background-color: white !important;
+            color: #333 !important;
+            pointer-events: auto !important;
+            cursor: pointer !important;
         }
     }
     </style>
@@ -606,14 +1061,10 @@
         <div class="loader"></div>
     </div>
     <div class="top-bar">
-        <div class="top-bar-left">
-            <button class="mobile-menu-toggle" id="mobile-menu-toggle">
-                <i class="fas fa-bars"></i>
-            </button>
-            <a href="<?php echo e(route('student.dashboard')); ?>" class="logo-link">
-                <img class="PN-logo" src="<?php echo e(asset('images/PN-logo.png')); ?>" alt="PN Logo">
-            </a>
-        </div>
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle" type="button">
+            <i class="fas fa-bars"></i>
+        </button>
+        <img class="PN-logo" src="<?php echo e(asset('images/PN-logo.png')); ?>" alt="PN Logo">
 
         <!-- Debug Info -->
         <?php
@@ -661,32 +1112,78 @@
             <?php if(auth()->guard()->check()): ?>
                 <?php $role = strtolower(Auth::user()->user_role ?? ''); ?>
                 <?php if($role === 'student'): ?>
+                    <!-- Desktop Navigation Menu -->
                     <ul class="menu">
                         <li class="<?php echo e(request()->routeIs('student.dashboard') ? 'active' : ''); ?>">
                             <a href="<?php echo e(route('student.dashboard')); ?>">
-                                <img src="<?php echo e(asset('images/Dashboard.png')); ?>" alt="Dashboard" class="menu-icon">
-                                <span>Dashboard</span>
+                                <img src="<?php echo e(asset('images/Dashboard.png')); ?>" alt="Dashboard" class="menu-icon"> Dashboard
                             </a>
                         </li>
                         <li class="<?php echo e(request()->routeIs('student.grades') ? 'active' : ''); ?>">
                             <a href="<?php echo e(route('student.grades')); ?>">
-                                <img src="<?php echo e(asset('images/Dashboard.png')); ?>" alt="Grade Status" class="menu-icon">
-                                <span>Grade Status</span>
+                                <img src="<?php echo e(asset('images/Dashboard.png')); ?>" alt="Grade Status" class="menu-icon"> Grade Status
                             </a>
                         </li>
-                        <li class="<?php echo e(request()->routeIs('student.grade-submissions.list') ? 'active' : ''); ?>">
+                        <li class="<?php echo e(request()->routeIs('student.grade-submissions.*') ? 'active' : ''); ?>">
                             <a href="<?php echo e(route('student.grade-submissions.list')); ?>">
-                                <img src="<?php echo e(asset('images/mu.png')); ?>" alt="Grade Submissions" class="menu-icon">
-                                <span>Grade Submissions</span>
+                                <img src="<?php echo e(asset('images/mu.png')); ?>" alt="Grade Submissions" class="menu-icon"> Grade Submissions
                             </a>
                         </li>
                         <li class="<?php echo e(request()->routeIs('student.profile') ? 'active' : ''); ?>">
-                            <a href="<?php echo e(route('student.profile')); ?>" id="profile-link">
-                                <img src="<?php echo e(asset('images/me.png')); ?>" alt="Profile" class="menu-icon">
-                                <span>My Profile</span>
+                            <a href="<?php echo e(route('student.profile')); ?>">
+                                <img src="<?php echo e(asset('images/me.png')); ?>" alt="Profile" class="menu-icon"> My Profile
                             </a>
                         </li>
                     </ul>
+
+                    <!-- Mobile Navigation Menu -->
+                    <div class="mobile-nav-menu" style="background: white; padding: 0; margin: 0;">
+
+                        <!-- Dashboard -->
+                        <div style="border-bottom: 1px solid #eee; margin: 0; padding: 0;" class="<?php echo e(request()->routeIs('student.dashboard') ? 'mobile-nav-active' : ''); ?>">
+                            <button onclick="closeMobileMenuAndNavigate('<?php echo e(route('student.dashboard')); ?>')"
+                                    style="width: 100%; background: <?php echo e(request()->routeIs('student.dashboard') ? '#e3f2fd' : 'white'); ?>; color: <?php echo e(request()->routeIs('student.dashboard') ? '#22bbea' : '#333'); ?>; padding: 18px 20px; border: none;
+                                           text-align: left; cursor: pointer; display: flex; align-items: center;
+                                           min-height: 56px; touch-action: manipulation; font-size: 16px; font-weight: <?php echo e(request()->routeIs('student.dashboard') ? '500' : 'normal'); ?>;">
+                                <img src="<?php echo e(asset('images/Dashboard.png')); ?>" alt="Dashboard" style="width: 24px; height: 24px; margin-right: 12px;">
+                                <span>Dashboard</span>
+                            </button>
+                        </div>
+
+                        <!-- Grade Status -->
+                        <div style="border-bottom: 1px solid #eee; margin: 0; padding: 0;" class="<?php echo e(request()->routeIs('student.grades') ? 'mobile-nav-active' : ''); ?>">
+                            <button onclick="closeMobileMenuAndNavigate('<?php echo e(route('student.grades')); ?>')"
+                                    style="width: 100%; background: <?php echo e(request()->routeIs('student.grades') ? '#e3f2fd' : 'white'); ?>; color: <?php echo e(request()->routeIs('student.grades') ? '#22bbea' : '#333'); ?>; padding: 18px 20px; border: none;
+                                           text-align: left; cursor: pointer; display: flex; align-items: center;
+                                           min-height: 56px; touch-action: manipulation; font-size: 16px; font-weight: <?php echo e(request()->routeIs('student.grades') ? '500' : 'normal'); ?>;">
+                                <img src="<?php echo e(asset('images/Dashboard.png')); ?>" alt="Grade Status" style="width: 24px; height: 24px; margin-right: 12px;">
+                                <span>Grade Status</span>
+                            </button>
+                        </div>
+
+                        <!-- Grade Submissions -->
+                        <div style="border-bottom: 1px solid #eee; margin: 0; padding: 0;" class="<?php echo e(request()->routeIs('student.grade-submissions.*') ? 'mobile-nav-active' : ''); ?>">
+                            <button onclick="closeMobileMenuAndNavigate('<?php echo e(route('student.grade-submissions.list')); ?>')"
+                                    style="width: 100%; background: <?php echo e(request()->routeIs('student.grade-submissions.*') ? '#e3f2fd' : 'white'); ?>; color: <?php echo e(request()->routeIs('student.grade-submissions.*') ? '#22bbea' : '#333'); ?>; padding: 18px 20px; border: none;
+                                           text-align: left; cursor: pointer; display: flex; align-items: center;
+                                           min-height: 56px; touch-action: manipulation; font-size: 16px; font-weight: <?php echo e(request()->routeIs('student.grade-submissions.*') ? '500' : 'normal'); ?>;">
+                                <img src="<?php echo e(asset('images/mu.png')); ?>" alt="Grade Submissions" style="width: 24px; height: 24px; margin-right: 12px;">
+                                <span>Grade Submissions</span>
+                            </button>
+                        </div>
+
+                        <!-- My Profile -->
+                        <div style="border-bottom: 1px solid #eee; margin: 0; padding: 0;" class="<?php echo e(request()->routeIs('student.profile') ? 'mobile-nav-active' : ''); ?>">
+                            <button onclick="closeMobileMenuAndNavigate('<?php echo e(route('student.profile')); ?>')"
+                                    style="width: 100%; background: <?php echo e(request()->routeIs('student.profile') ? '#e3f2fd' : 'white'); ?>; color: <?php echo e(request()->routeIs('student.profile') ? '#22bbea' : '#333'); ?>; padding: 18px 20px; border: none;
+                                           text-align: left; cursor: pointer; display: flex; align-items: center;
+                                           min-height: 56px; touch-action: manipulation; font-size: 16px; font-weight: <?php echo e(request()->routeIs('student.profile') ? '500' : 'normal'); ?>;">
+                                <img src="<?php echo e(asset('images/me.png')); ?>" alt="Profile" style="width: 24px; height: 24px; margin-right: 12px;">
+                                <span>My Profile</span>
+                            </button>
+                        </div>
+
+                    </div>
                 <?php endif; ?>
             <?php endif; ?>
         </aside>
@@ -702,6 +1199,28 @@
             document.getElementById('logout-form').submit();
         }
     }
+
+    // Mobile navigation function
+    function closeMobileMenuAndNavigate(url) {
+        // Close mobile menu
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+        if (sidebar) {
+            sidebar.classList.remove('active');
+        }
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove('active');
+        }
+        document.body.style.overflow = '';
+
+        // Navigate after short delay
+        setTimeout(() => {
+            window.location.href = url;
+        }, 100);
+    }
+
+
 
     // Hide loader when page is loaded
     window.addEventListener('load', function() {
@@ -809,33 +1328,123 @@
 
         // Toggle mobile menu
         if (mobileMenuToggle) {
-            mobileMenuToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('active');
-                sidebarOverlay.classList.toggle('active');
-                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+            console.log('Mobile menu toggle found:', mobileMenuToggle);
+
+            function toggleMenu() {
+                // Simple toggle with forced styling
+                const isActive = sidebar.classList.contains('active');
+
+                if (isActive) {
+                    // Close menu
+                    sidebar.classList.remove('active');
+                    sidebarOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                } else {
+                    // Open menu
+                    sidebar.classList.add('active');
+                    sidebarOverlay.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+
+                    // Force white background immediately with highest priority
+                    sidebar.style.setProperty('background', 'white', 'important');
+                    sidebar.style.setProperty('background-color', 'white', 'important');
+                    sidebar.style.setProperty('z-index', '10000', 'important');
+
+                    // Force mobile nav menu styling
+                    const mobileNavMenu = sidebar.querySelector('.mobile-nav-menu');
+                    if (mobileNavMenu) {
+                        mobileNavMenu.style.setProperty('background', 'white', 'important');
+                        mobileNavMenu.style.setProperty('background-color', 'white', 'important');
+
+                        // Force all buttons to be clickable
+                        const mobileNavButtons = mobileNavMenu.querySelectorAll('button');
+
+                        mobileNavButtons.forEach((button, index) => {
+                            // Check if this button's parent has the mobile-nav-active class
+                            const isActive = button.parentElement.classList.contains('mobile-nav-active');
+
+                            // Force button styling with highest priority, respecting active state
+                            const bgColor = isActive ? '#e3f2fd' : 'white';
+                            const textColor = isActive ? '#22bbea' : '#333';
+                            const fontWeight = isActive ? '500' : 'normal';
+
+                            button.style.setProperty('background', bgColor, 'important');
+                            button.style.setProperty('background-color', bgColor, 'important');
+                            button.style.setProperty('color', textColor, 'important');
+                            button.style.setProperty('font-weight', fontWeight, 'important');
+                            button.style.setProperty('pointer-events', 'auto', 'important');
+                            button.style.setProperty('z-index', '10001', 'important');
+                            button.style.setProperty('cursor', 'pointer', 'important');
+                            button.style.setProperty('touch-action', 'manipulation', 'important');
+                            button.style.setProperty('position', 'relative', 'important');
+
+                            // Add visual feedback
+                            button.addEventListener('mousedown', function() {
+                                this.style.setProperty('background-color', '#e3f2fd', 'important');
+                            });
+
+                            button.addEventListener('mouseup', function() {
+                                const isActive = this.parentElement.classList.contains('mobile-nav-active');
+                                const bgColor = isActive ? '#e3f2fd' : 'white';
+                                this.style.setProperty('background-color', bgColor, 'important');
+                            });
+
+                            button.addEventListener('touchstart', function() {
+                                this.style.setProperty('background-color', '#e3f2fd', 'important');
+                            });
+
+                            button.addEventListener('touchend', function() {
+                                setTimeout(() => {
+                                    const isActive = this.parentElement.classList.contains('mobile-nav-active');
+                                    const bgColor = isActive ? '#e3f2fd' : 'white';
+                                    this.style.setProperty('background-color', bgColor, 'important');
+                                }, 200);
+                            });
+                        });
+                    }
+                }
+
+            }
+
+            mobileMenuToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMenu();
             });
+
+            // For touch devices
+            mobileMenuToggle.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+
+            mobileMenuToggle.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMenu();
+            });
+        } else {
+            console.error('Mobile menu toggle not found!');
         }
 
         // Close menu when overlay is clicked
         if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', function() {
+            function closeMenu() {
+                console.log('Closing mobile menu');
                 sidebar.classList.remove('active');
                 sidebarOverlay.classList.remove('active');
                 document.body.style.overflow = '';
+            }
+
+            sidebarOverlay.addEventListener('click', closeMenu);
+            sidebarOverlay.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                closeMenu();
             });
         }
 
-        // Close menu when menu item is clicked (mobile)
-        const menuLinks = document.querySelectorAll('.menu li a');
-        menuLinks.forEach(link => {
-            link.addEventListener('click', function() {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('active');
-                    sidebarOverlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                }
-            });
-        });
+        // Simple mobile navigation setup
+        console.log('Mobile navigation setup complete');
 
         // Handle window resize
         window.addEventListener('resize', function() {
@@ -875,7 +1484,10 @@
                 target.closest('a') ||
                 target.closest('.btn') ||
                 target.closest('[role="button"]') ||
-                target.closest('[onclick]')) {
+                target.closest('[onclick]') ||
+                target.closest('.menu') ||
+                target.closest('.mobile-menu-toggle') ||
+                target.closest('.logout-btn')) {
                 lastTouchEnd = now;
                 return;
             }
@@ -886,6 +1498,64 @@
             }
             lastTouchEnd = now;
         }, false);
+
+        // Add debugging for touch events
+        console.log('Mobile responsiveness improvements loaded');
+        console.log('Screen width:', window.innerWidth);
+        console.log('User agent:', navigator.userAgent);
+        console.log('Mobile menu toggle element:', document.getElementById('mobile-menu-toggle'));
+        console.log('Sidebar element:', document.querySelector('.sidebar'));
+        console.log('Sidebar overlay element:', document.getElementById('sidebar-overlay'));
+
+        // Debug sidebar menu links
+        const debugMenuLinks = document.querySelectorAll('.menu li a');
+        console.log('Menu links found:', debugMenuLinks.length);
+        debugMenuLinks.forEach((link, index) => {
+            const styles = window.getComputedStyle(link);
+            console.log(`Menu link ${index}:`, {
+                href: link.href,
+                pointerEvents: styles.pointerEvents,
+                zIndex: styles.zIndex,
+                position: styles.position,
+                display: styles.display
+            });
+        });
+
+        // Test if elements are properly positioned and clickable
+        const toggle = document.getElementById('mobile-menu-toggle');
+        if (toggle) {
+            const rect = toggle.getBoundingClientRect();
+            console.log('Mobile toggle position:', {
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height,
+                visible: rect.width > 0 && rect.height > 0
+            });
+        }
+
+        // Add debugging for content clicks on mobile
+        if (window.innerWidth <= 768) {
+            document.addEventListener('click', function(e) {
+                console.log('Click detected on mobile:', {
+                    target: e.target.tagName,
+                    className: e.target.className,
+                    id: e.target.id,
+                    pointerEvents: window.getComputedStyle(e.target).pointerEvents,
+                    zIndex: window.getComputedStyle(e.target).zIndex,
+                    position: window.getComputedStyle(e.target).position
+                });
+            });
+
+            // Add touch debugging
+            document.addEventListener('touchstart', function(e) {
+                console.log('Touch detected on mobile:', {
+                    target: e.target.tagName,
+                    className: e.target.className,
+                    touches: e.touches.length
+                });
+            });
+        }
     });
     </script>
 

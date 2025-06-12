@@ -31,11 +31,23 @@
     <hr>
     <!-- Charts -->
     <div style="display: flex; flex-direction: column; gap: 30px;">
-        <!-- Batch Chart -->
+        <!-- Batch Chart with Pagination -->
         <div style="background: #fff; width: 95%; border-radius: 12px; padding: 30px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); max-width: 900px; margin: 0 auto 30px auto; display: flex; flex-direction: column; align-items: center;">
-            <h3 style="text-align: center; margin-bottom: 24px; color: #333; font-size: 1.5em; font-weight: 500;">Students by Class and Gender</h3>
+            <h3 style="text-align: center; margin: 0 0 24px 0; color: #333; font-size: 1.5em; font-weight: 500; width: 100%;">Students by Class and Sex</h3>
             <div style="height: 340px; width: 100%; max-width: 700px; display: flex; align-items: center; justify-content: center;">
                 <canvas id="batchChart"></canvas>
+            </div>
+            <div style="margin-top: 15px; text-align: center; color: #666; font-size: 12px;">
+                <span id="batchRangeInfo">Showing classes 1-5</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 15px;">
+                <button id="prevBatchPage" onclick="changeBatchPage(-1)" style="background: #22bbea; color: white; border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 4px;" disabled>
+                    <i class="fas fa-chevron-left"></i> Prev
+                </button>
+                <span id="batchPageInfo" style="font-size: 12px; color: #666; margin: 0 10px;">Page 1 of 1</span>
+                <button id="nextBatchPage" onclick="changeBatchPage(1)" style="background: #22bbea; color: white; border: none; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
             </div>
         </div>
 
@@ -131,45 +143,158 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Students by Batch Chart (grouped by gender) ---
+    // --- Students by Batch Chart with Pagination ---
     const batchCtx = document.getElementById('batchChart');
     if (batchCtx) {
-        const batches = {!! json_encode($batchCounts->keys()) !!};
+        const allBatches = {!! json_encode($batchCounts->keys()) !!};
         const studentsByGenderByBatch = {!! json_encode($studentsByGenderByBatch) !!};
-        const maleCounts = batches.map(batch => studentsByGenderByBatch[batch]?.male ?? 0);
-        const femaleCounts = batches.map(batch => studentsByGenderByBatch[batch]?.female ?? 0);
-        new Chart(batchCtx, {
-            type: 'bar',
-            data: {
-                labels: batches,
-                datasets: [
-                    {
-                        label: 'Male',
-                        data: maleCounts,
-                        backgroundColor: '#22bbea',
+
+        // Pagination variables
+        let currentBatchPage = 1;
+        const batchesPerPage = 5;
+        const totalBatchPages = Math.ceil(allBatches.length / batchesPerPage);
+        let batchChart = null;
+
+        // Function to get paginated data
+        function getPaginatedBatchData(page) {
+            const startIndex = (page - 1) * batchesPerPage;
+            const endIndex = startIndex + batchesPerPage;
+            const paginatedBatches = allBatches.slice(startIndex, endIndex);
+
+            const maleCounts = paginatedBatches.map(batch => studentsByGenderByBatch[batch]?.male ?? 0);
+            const femaleCounts = paginatedBatches.map(batch => studentsByGenderByBatch[batch]?.female ?? 0);
+
+            return {
+                labels: paginatedBatches,
+                maleCounts: maleCounts,
+                femaleCounts: femaleCounts,
+                startIndex: startIndex,
+                endIndex: Math.min(endIndex, allBatches.length)
+            };
+        }
+
+        // Function to update chart
+        function updateBatchChart(page) {
+            const data = getPaginatedBatchData(page);
+
+            if (batchChart) {
+                batchChart.destroy();
+            }
+
+            batchChart = new Chart(batchCtx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [
+                        {
+                            label: 'Male',
+                            data: data.maleCounts,
+                            backgroundColor: '#22bbea',
+                        },
+                        {
+                            label: 'Female',
+                            data: data.femaleCounts,
+                            backgroundColor: '#ff9933',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true },
+                        title: {
+                            display: true,
+                            font: { size: 16 }
+                        }
                     },
-                    {
-                        label: 'Female',
-                        data: femaleCounts,
-                        backgroundColor: '#ff9933',
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: true },
-                    title: {
-                        display: true,
-                        font: { size: 16 }
-                    }
-                },
-                scales: {
-                    x: { stacked: false, title: { display: true, text: 'Class' } },
-                    y: { beginAtZero: true, max: 70, title: { display: true, text: 'Number of Students' } }
-                },
-                layout: { padding: { left: 10, right: 10 } }
+                    scales: {
+                        x: { stacked: false, title: { display: true, text: 'Class' } },
+                        y: { beginAtZero: true, max: 70, title: { display: true, text: 'Number of Students' } }
+                    },
+                    layout: { padding: { left: 10, right: 10 } }
+                }
+            });
+
+            // Update pagination info
+            document.getElementById('batchPageInfo').textContent = `Page ${page} of ${totalBatchPages}`;
+            document.getElementById('batchRangeInfo').textContent = `Showing classes ${data.startIndex + 1}-${data.endIndex} of ${allBatches.length}`;
+
+            // Update button states
+            document.getElementById('prevBatchPage').disabled = page === 1;
+            document.getElementById('nextBatchPage').disabled = page === totalBatchPages;
+
+            // Update button styles
+            const prevBtn = document.getElementById('prevBatchPage');
+            const nextBtn = document.getElementById('nextBatchPage');
+
+            if (page === 1) {
+                prevBtn.style.background = '#ccc';
+                prevBtn.style.cursor = 'not-allowed';
+            } else {
+                prevBtn.style.background = '#22bbea';
+                prevBtn.style.cursor = 'pointer';
+            }
+
+            if (page === totalBatchPages) {
+                nextBtn.style.background = '#ccc';
+                nextBtn.style.cursor = 'not-allowed';
+            } else {
+                nextBtn.style.background = '#22bbea';
+                nextBtn.style.cursor = 'pointer';
+            }
+        }
+
+        // Global function for pagination buttons
+        window.changeBatchPage = function(direction) {
+            const newPage = currentBatchPage + direction;
+            if (newPage >= 1 && newPage <= totalBatchPages) {
+                currentBatchPage = newPage;
+                updateBatchChart(currentBatchPage);
+            }
+        };
+
+        // Initialize chart
+        updateBatchChart(currentBatchPage);
+
+        // Add hover effects to pagination buttons
+        const prevBtn = document.getElementById('prevBatchPage');
+        const nextBtn = document.getElementById('nextBatchPage');
+
+        [prevBtn, nextBtn].forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                if (!this.disabled) {
+                    this.style.background = '#1e9bd1';
+                    this.style.transform = 'translateY(-1px)';
+                    this.style.boxShadow = '0 2px 8px rgba(34, 187, 234, 0.3)';
+                }
+            });
+
+            btn.addEventListener('mouseleave', function() {
+                if (!this.disabled) {
+                    this.style.background = '#22bbea';
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                }
+            });
+
+            btn.addEventListener('mousedown', function() {
+                if (!this.disabled) {
+                    this.style.transform = 'translateY(0)';
+                }
+            });
+        });
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.target.closest('.chart-container') || document.activeElement === document.body) {
+                if (e.key === 'ArrowLeft' && currentBatchPage > 1) {
+                    e.preventDefault();
+                    changeBatchPage(-1);
+                } else if (e.key === 'ArrowRight' && currentBatchPage < totalBatchPages) {
+                    e.preventDefault();
+                    changeBatchPage(1);
+                }
             }
         });
     }

@@ -5,17 +5,60 @@
     <div class="monitor-card">
         <div class="card-header-custom">
             <h2>Grade Submission Monitor</h2>
-            {{--
-            @if($gradeSubmission)
-                <p class="submission-id-small">Submission ID: {{ $gradeSubmission->id }}</p>
+            @if(isset($schoolPagination) && $schoolPagination->has_pages)
+                <p class="school-pagination-info">
+                    Showing school {{ $schoolPagination->from }} of {{ $schoolPagination->total }} schools
+                </p>
             @endif
-            --}}
         </div>
 
         <div class="card-body-custom">
-            @if(isset($message))
+            <!-- Enhanced Success and Error Messages -->
+            @if(session('success'))
+                <div class="alert-custom alert-success-custom">
+                    <div class="alert-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <strong>Success!</strong>
+                        <p>{{ session('success') }}</p>
+                    </div>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert-custom alert-error-custom">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <strong>Error!</strong>
+                        <p>{{ session('error') }}</p>
+                    </div>
+                </div>
+            @endif
+
+            @if(session('warning'))
                 <div class="alert-custom alert-warning-custom">
-                    {{ $message }}
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <strong>Warning!</strong>
+                        <p>{{ session('warning') }}</p>
+                    </div>
+                </div>
+            @endif
+
+            @if(isset($message))
+                <div class="alert-custom alert-info-custom">
+                    <div class="alert-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <strong>Information</strong>
+                        <p>{{ $message }}</p>
+                    </div>
                 </div>
             @endif
 
@@ -23,49 +66,58 @@
             <div class="filter-section">
                  <h3>Filter Submissions</h3>
                  <form action="{{ route('training.grade-submissions.index') }}" method="GET" class="filter-form-custom">
-                    <div class="form-group-custom filter-group">
-                        <label for="school_id" class="visually-hidden">School</label>
-                        <select name="school_id" id="school_id" class="form-control-custom" onchange="this.form.submit()">
-                            <option value="">All Schools</option>
-                            @foreach($schools as $school)
-                                <option value="{{ $school->school_id }}" {{ request('school_id') == $school->school_id ? 'selected' : '' }}>
-                                    {{ $school->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    
-                    <div class="form-group-custom filter-group">
-                        <label for="class_id" class="visually-hidden">Class</label>
-                        <select name="class_id" id="class_id" class="form-control-custom" onchange="this.form.submit()">
-                            <option value="">All Classes</option>
-                            @if(request('school_id'))
-                                @foreach($classesBySchool[request('school_id')] as $class)
-                                    <option value="{{ $class->class_id }}" {{ request('class_id') == $class->class_id ? 'selected' : '' }}>
-                                        {{ $class->class_name }}
+                    <div class="filter-dropdowns-container">
+                        <div class="form-group-custom filter-group">
+                            <label for="school_id" class="visually-hidden">School</label>
+                            <select name="school_id" id="school_id" class="form-control-custom" onchange="updateClassDropdown()">
+                                <option value="">All Schools</option>
+                                @foreach($allSchools as $school)
+                                    <option value="{{ $school->school_id }}" {{ request('school_id') == $school->school_id ? 'selected' : '' }}>
+                                        {{ $school->name }}
                                     </option>
                                 @endforeach
-                            @endif
-                        </select>
+                            </select>
+                        </div>
+
+                        <div class="form-group-custom filter-group">
+                            <label for="class_id" class="visually-hidden">Class</label>
+                            <select name="class_id" id="class_id" class="form-control-custom" onchange="clearSubmissionFilterAndSubmit()">
+                                <option value="">All Classes</option>
+                                @if(request('school_id') && isset($allClassesBySchool[request('school_id')]))
+                                    @foreach($allClassesBySchool[request('school_id')] as $class)
+                                        <option value="{{ $class->class_id }}" {{ request('class_id') == $class->class_id ? 'selected' : '' }}>
+                                            {{ $class->class_name }}
+                                        </option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+
+                        <div class="form-group-custom filter-group">
+                            <label for="filter_key" class="visually-hidden">Semester Term Academic Year</label>
+                            <select name="filter_key" id="filter_key" class="form-control-custom">
+                                <option value="">All Submissions</option>
+                                @foreach ($filterOptions as $option)
+                                    <option value="{{ $option['value'] }}" {{ request('filter_key') == $option['value'] ? 'selected' : '' }}>
+                                        {{ $option['display'] }}
+                                        @if(!request('school_id') && !request('class_id'))
+                                            - {{ $option['school_name'] }} ({{ $option['class_name'] }})
+                                        @elseif(!request('class_id'))
+                                            - {{ $option['class_name'] }}
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="filter-buttons">
+                            <button type="submit" class="btn-custom btn-primary-custom">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                            <button type="button" onclick="location.href='{{ route('training.grade-submissions.index') }}'" class="btn-custom btn-secondary-custom">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                        </div>
                     </div>
-                    
-                     <div class="form-group-custom filter-group">
-                         <label for="filter_key" class="visually-hidden">Semester Term Academic Year</label>
-                         <select name="filter_key" id="filter_key" class="form-control-custom">
-                             <option value="">All Submissions</option>
-                             @foreach ($filterOptions as $option)
-                                 <option value="{{ $option }}" {{ request('filter_key') == $option ? 'selected' : '' }}>{{ $option }}</option>
-                             @endforeach
-                         </select>
-                     </div>
-                     <div class="filter-buttons">
-                         <button type="submit" class="btn-custom btn-primary-custom">
-                             <i class="fas fa-filter"></i> Filter
-                         </button>
-                         <button type="button" onclick="location.href='{{ route('training.grade-submissions.index') }}'" class="btn-custom btn-secondary-custom">
-                             <i class="fas fa-undo"></i> Reset
-                         </button>
-                     </div>
                  </form>
             </div>
         </div>
@@ -117,7 +169,13 @@
                         @endphp
                         <div class="submission-section">
                             <div class="submission-header">
-                                <h4>{{ $gradeSubmission->semester }} {{ $gradeSubmission->term }} {{ $gradeSubmission->academic_year }}</h4>
+                                <div class="submission-title">
+                                    <h4>{{ $gradeSubmission->semester }} {{ $gradeSubmission->term }} {{ $gradeSubmission->academic_year }}</h4>
+                                    <div class="class-label">
+                                        <i class="fas fa-users"></i>
+                                        <span>Class: {{ $gradeSubmission->classModel->class_name ?? 'N/A' }}</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="table-responsive-custom">
                                 <table class="grade-monitor-table">
@@ -309,33 +367,52 @@
         @endif
     @endforeach
 
-    @if(isset($submissions) && $submissions->hasPages())
-    <div class="pagination-container">
-        <div class="pagination-info">
-            Showing {{ $submissions->firstItem() }} to {{ $submissions->lastItem() }} of {{ $submissions->total() }} entries
+    <!-- School Pagination -->
+    @if(isset($schoolPagination) && $schoolPagination->has_pages)
+    <div class="school-pagination-container">
+        <div class="school-pagination-info">
+            <span class="pagination-text">
+                <i class="fas fa-school"></i>
+                Showing school {{ $schoolPagination->from }} of {{ $schoolPagination->total }} schools
+            </span>
         </div>
-        <div class="pagination-buttons">
-            @if ($submissions->onFirstPage())
+        <div class="school-pagination-buttons">
+            @if ($schoolPagination->on_first_page)
                 <span class="pagination-button disabled">
-                    <i class="fas fa-chevron-left"></i> Previous
+                    <i class="fas fa-chevron-left"></i> Previous School
                 </span>
             @else
-                <a href="{{ $submissions->previousPageUrl() }}" class="pagination-button">
-                    <i class="fas fa-chevron-left"></i> Previous
+                @php
+                    $prevPage = $schoolPagination->current_page - 1;
+                    $currentUrl = request()->fullUrlWithQuery(['school_page' => $prevPage]);
+                @endphp
+                <a href="{{ $currentUrl }}" class="pagination-button">
+                    <i class="fas fa-chevron-left"></i> Previous School
                 </a>
             @endif
 
             <div class="page-info">
-                Page {{ $submissions->currentPage() }} of {{ $submissions->lastPage() }}
+                <span class="current-school">
+                    School {{ $schoolPagination->current_page }} of {{ $schoolPagination->last_page }}
+                </span>
+                @if($schools->isNotEmpty())
+                    <span class="school-name">
+                        ({{ $schools->first()->name }})
+                    </span>
+                @endif
             </div>
 
-            @if ($submissions->hasMorePages())
-                <a href="{{ $submissions->nextPageUrl() }}" class="pagination-button">
-                    Next <i class="fas fa-chevron-right"></i>
+            @if ($schoolPagination->has_more_pages)
+                @php
+                    $nextPage = $schoolPagination->current_page + 1;
+                    $currentUrl = request()->fullUrlWithQuery(['school_page' => $nextPage]);
+                @endphp
+                <a href="{{ $currentUrl }}" class="pagination-button">
+                    Next School <i class="fas fa-chevron-right"></i>
                 </a>
             @else
                 <span class="pagination-button disabled">
-                    Next <i class="fas fa-chevron-right"></i>
+                    Next School <i class="fas fa-chevron-right"></i>
                 </span>
             @endif
         </div>
@@ -393,27 +470,137 @@
         font-size: 1.5rem;
         font-weight: 600;
     }
-     .submission-id-small {
+
+    .school-pagination-info {
         margin: 0;
         font-size: 0.9rem;
         opacity: 0.9;
-     }
+        color: var(--info-color);
+    }
+
+    .school-pagination-info i {
+        margin-right: 5px;
+    }
 
     .card-body-custom {
         padding: 20px;
     }
 
     .alert-custom {
-        padding: 10px 15px;
-        border-radius: 5px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px 20px;
         margin-bottom: 20px;
-        font-size: 0.9rem;
+        border-radius: 8px;
+        border-left: 4px solid;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        animation: slideInDown 0.3s ease-out;
     }
 
-     .alert-warning-custom {
+    .alert-success-custom {
+        background-color: #d4edda;
+        border-left-color: #28a745;
+        color: #155724;
+    }
+
+    .alert-error-custom {
+        background-color: #f8d7da;
+        border-left-color: #dc3545;
+        color: #721c24;
+    }
+
+    .alert-warning-custom {
         background-color: #fff3cd;
-        border: 1px solid #ffc107;
+        border-left-color: #ffc107;
         color: #856404;
+    }
+
+    .alert-info-custom {
+        background-color: #d1ecf1;
+        border-left-color: #17a2b8;
+        color: #0c5460;
+    }
+
+    .alert-icon {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 2px;
+    }
+
+    .alert-success-custom .alert-icon {
+        color: #28a745;
+    }
+
+    .alert-error-custom .alert-icon {
+        color: #dc3545;
+    }
+
+    .alert-warning-custom .alert-icon {
+        color: #ffc107;
+    }
+
+    .alert-info-custom .alert-icon {
+        color: #17a2b8;
+    }
+
+    .alert-icon i {
+        font-size: 18px;
+    }
+
+    .alert-content {
+        flex: 1;
+        line-height: 1.5;
+    }
+
+    .alert-content strong {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+
+    .alert-content p {
+        margin: 0;
+        font-size: 14px;
+    }
+
+    @keyframes slideInDown {
+        from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Auto-hide success messages */
+    .alert-success-custom {
+        position: relative;
+    }
+
+    .alert-success-custom::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: #28a745;
+        animation: progressBar 5s linear forwards;
+    }
+
+    @keyframes progressBar {
+        from {
+            width: 100%;
+        }
+        to {
+            width: 0%;
+        }
     }
 
     .filter-section {
@@ -424,36 +611,69 @@
     }
      .filter-section h3 {
         margin-top: 0;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         font-size: 1.25rem;
         color: var(--dark-text);
      }
 
-    .filter-form-custom {
+    .filter-dropdowns-container {
         display: flex;
-        align-items: center;
-        gap: 15px; /* Space between form elements */
-        flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+
+    @media (min-width: 768px) {
+        .filter-dropdowns-container {
+            flex-direction: row;
+            align-items: flex-end;
+            gap: 20px;
+        }
+    }
+
+    .filter-form-custom {
+        display: block;
     }
 
     .form-group-custom.filter-group {
         margin-bottom: 0; /* Remove margin from form group in flex container */
-        flex-grow: 1; /* Allow the select to grow */
-        max-width: 300px; /* Limit width for better layout */
+        flex: 1; /* Allow the select to grow equally */
+        min-width: 250px; /* Minimum width for readability */
+        max-width: 350px; /* Increased max width for better text visibility */
+    }
+
+    @media (min-width: 768px) {
+        .form-group-custom.filter-group {
+            flex: 1 1 280px; /* Flexible basis with minimum width */
+            max-width: 400px; /* Even larger max width on desktop */
+        }
     }
 
      .form-control-custom {
         width: 100%; /* Make select fill its container */
-        padding: 8px 10px;
+        padding: 10px 14px; /* Increased padding for better spacing */
         border: 1px solid var(--border-color);
         border-radius: 5px;
-        font-size: 1rem;
+        font-size: 1rem; /* Good readable font size */
         box-sizing: border-box;
+        white-space: nowrap; /* Prevent text wrapping */
+        overflow: hidden; /* Hide overflow */
+        text-overflow: ellipsis; /* Show ellipsis for long text */
+        min-height: 44px; /* Consistent height for all dropdowns */
      }
      .form-control-custom:focus {
          border-color: var(--primary-color);
          outline: none;
          box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+     }
+
+     /* Dropdown option styling for better text visibility */
+     .form-control-custom option {
+         padding: 8px 12px;
+         font-size: 0.95rem;
+         white-space: nowrap;
+         overflow: hidden;
+         text-overflow: ellipsis;
      }
 
     .visually-hidden {
@@ -527,10 +747,20 @@
 
     .filter-buttons {
         display: flex;
-        gap: 4px;
-        margin-top: 8px;
-        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 0;
+        justify-content: flex-start;
         align-items: center;
+        flex-shrink: 0; /* Prevent buttons from shrinking */
+        min-width: 200px; /* Ensure buttons have enough space */
+    }
+
+    @media (max-width: 767px) {
+        .filter-buttons {
+            margin-top: 15px;
+            justify-content: center;
+            width: 100%;
+        }
     }
 
     .action-buttons {
@@ -763,6 +993,11 @@
 
     .submission-section {
         margin-bottom: 30px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
     .submission-section:last-child {
@@ -770,14 +1005,53 @@
     }
 
     .submission-header {
-        margin-bottom: 15px;
+        background-color: var(--light-bg);
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 0;
+    }
+
+    .submission-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
     }
 
     .submission-header h4 {
         margin: 0;
         color: var(--dark-text);
         font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .class-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--primary-color);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
         font-weight: 500;
+        box-shadow: 0 2px 4px rgba(34, 187, 234, 0.2);
+    }
+
+    .class-label i {
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 768px) {
+        .submission-title {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .class-label {
+            align-self: flex-end;
+        }
     }
 
     /* Submission-specific pagination styles */
@@ -857,5 +1131,168 @@
             justify-content: center;
         }
     }
+
+    /* School Pagination Styles */
+    .school-pagination-container {
+        margin-top: 30px;
+        padding: 20px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid var(--primary-color);
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(34, 187, 234, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .school-pagination-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pagination-text {
+        color: var(--dark-text);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .pagination-text i {
+        color: var(--primary-color);
+        font-size: 1.1rem;
+    }
+
+    .school-pagination-buttons {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .current-school {
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+
+    .school-name {
+        color: var(--dark-text);
+        font-style: italic;
+        margin-left: 5px;
+        font-size: 0.9rem;
+    }
+
+    .page-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        text-align: center;
+    }
+
+    @media (max-width: 768px) {
+        .school-pagination-container {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .school-pagination-buttons {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 </style>
-@endsection 
+@endsection
+
+<script>
+// All classes data for dynamic filtering
+const allClassesBySchool = @json($allClassesBySchool ?? []);
+
+function updateClassDropdown(autoSubmit = true) {
+    const schoolSelect = document.getElementById('school_id');
+    const classSelect = document.getElementById('class_id');
+    const submissionSelect = document.getElementById('filter_key');
+    const selectedSchoolId = schoolSelect.value;
+
+    // Clear current class options
+    classSelect.innerHTML = '<option value="">All Classes</option>';
+
+    if (selectedSchoolId && allClassesBySchool[selectedSchoolId]) {
+        // Add classes for selected school
+        allClassesBySchool[selectedSchoolId].forEach(function(classItem) {
+            const option = document.createElement('option');
+            option.value = classItem.class_id;
+            option.textContent = classItem.class_name;
+
+            // Maintain selected class if it belongs to the selected school
+            if (classItem.class_id === '{{ request("class_id") }}') {
+                option.selected = true;
+            }
+
+            classSelect.appendChild(option);
+        });
+    }
+
+    // Clear submission filter when school/class changes
+    if (autoSubmit) {
+        submissionSelect.value = '';
+    }
+
+    // Submit form to apply school filter only if requested
+    if (autoSubmit) {
+        schoolSelect.form.submit();
+    }
+}
+
+function clearSubmissionFilterAndSubmit() {
+    const submissionSelect = document.getElementById('filter_key');
+    const classSelect = document.getElementById('class_id');
+
+    // Clear submission filter when class changes
+    submissionSelect.value = '';
+
+    // Submit form
+    classSelect.form.submit();
+}
+
+function updateSubmissionFilter() {
+    const submissionSelect = document.getElementById('filter_key');
+
+    // Clear submission filter and submit form
+    submissionSelect.value = '';
+    submissionSelect.form.submit();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide success messages after 5 seconds
+    const successAlerts = document.querySelectorAll('.alert-success-custom');
+    successAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            alert.style.transition = 'opacity 0.5s ease-out';
+            alert.style.opacity = '0';
+            setTimeout(function() {
+                alert.remove();
+            }, 500);
+        }, 5000);
+    });
+
+    // Add click to dismiss functionality for all alerts
+    const allAlerts = document.querySelectorAll('.alert-custom');
+    allAlerts.forEach(function(alert) {
+        alert.style.cursor = 'pointer';
+        alert.title = 'Click to dismiss';
+        alert.addEventListener('click', function() {
+            this.style.transition = 'opacity 0.3s ease-out';
+            this.style.opacity = '0';
+            setTimeout(() => {
+                this.remove();
+            }, 300);
+        });
+    });
+
+    // Initialize class dropdown on page load (without auto-submit)
+    updateClassDropdown(false);
+});
+</script>

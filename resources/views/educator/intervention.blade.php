@@ -323,9 +323,9 @@
                         <select id="submission_id" name="submission_id" disabled>
                             <option value="">Select Class First</option>
                             @foreach($submissions as $submission)
-                                <option value="{{ $submission->id }}"
-                                    {{ request('submission_id') == $submission->id ? 'selected' : '' }}>
-                                    {{ $submission->display_name ?? ($submission->semester . ' - ' . $submission->term . ' (' . $submission->academic_year . ')') }}
+                                <option value="{{ $submission['id'] }}"
+                                    {{ request('submission_id') == $submission['id'] ? 'selected' : '' }}>
+                                    {{ $submission['display_name'] }}
                                 </option>
                             @endforeach
                         </select>

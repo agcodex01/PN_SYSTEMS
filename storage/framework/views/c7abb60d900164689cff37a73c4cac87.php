@@ -325,9 +325,9 @@
                         <select id="submission_id" name="submission_id" disabled>
                             <option value="">Select Class First</option>
                             <?php $__currentLoopData = $submissions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $submission): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($submission->id); ?>"
-                                    <?php echo e(request('submission_id') == $submission->id ? 'selected' : ''); ?>>
-                                    <?php echo e($submission->display_name ?? ($submission->semester . ' - ' . $submission->term . ' (' . $submission->academic_year . ')')); ?>
+                                <option value="<?php echo e($submission['id']); ?>"
+                                    <?php echo e(request('submission_id') == $submission['id'] ? 'selected' : ''); ?>>
+                                    <?php echo e($submission['display_name']); ?>
 
                                 </option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

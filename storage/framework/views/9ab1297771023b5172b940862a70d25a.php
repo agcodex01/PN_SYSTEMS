@@ -4,8 +4,13 @@
 
 <div class="dashboard-container" style="padding: 20px;">
 
-    <h1 style="margin-bottom: 20px; color: #333; font-weight: 300;">Dashboard</h1>
-    <hr>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="<?php echo e(asset('images/Dashboard.png')); ?>" alt="Dashboard Icon" style="width: 32px; height: 32px;">
+            <h1 style="color: #333; font-weight: 600; margin: 0; font-size: 24px;">Dashboard</h1>
+        </div>
+    </div>
+    <hr style="margin-bottom: 20px;">
 
     <!-- Stats Grid -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px;">
@@ -44,8 +49,8 @@
     <div class="options">
     <div style="background: #fff; width: 95%; border-radius: 12px; padding: 30px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); max-width: 600px; margin: 30px auto 0 auto; display: flex; flex-direction: column; align-items: center;">
         <div style="width:100%; display:flex; flex-direction:column; align-items:center; margin-bottom: 10px;">
-            <select id="batchFilter" style="width:135px; padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; font-size:1em; color:#333; outline:none; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                <option value="all">All Batches</option>
+            <select id="batchFilter" style="width:135px; padding: 5px 10px; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; font-size:1em; color:#333; outline:none; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <option value="all">Batches</option>
                 <?php $__currentLoopData = $batchCounts->keys(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $batch): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <option value="<?php echo e($batch); ?>">Batch <?php echo e($batch); ?></option>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

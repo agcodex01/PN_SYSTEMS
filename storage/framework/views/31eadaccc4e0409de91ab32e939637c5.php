@@ -1,6 +1,4 @@
-@extends('layouts.student_layout')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <style>
 /* Pure CSS Grade Status - Training Design */
 
@@ -645,24 +643,24 @@
             Filter Options
         </div>
         <div class="grades-card-body">
-            <form action="{{ route('student.grades') }}" method="GET" class="grades-filter-form">
+            <form action="<?php echo e(route('student.grades')); ?>" method="GET" class="grades-filter-form">
                 <div class="grades-filter-row">
                     <div class="grades-filter-group">
                         <label for="term" class="grades-filter-label">Term</label>
                         <select name="term" id="term" class="grades-filter-select">
                             <option value="">All Terms</option>
-                            @foreach($terms as $term)
-                                <option value="{{ $term }}" {{ request('term') == $term ? 'selected' : '' }}>{{ ucfirst($term) }}</option>
-                            @endforeach
+                            <?php $__currentLoopData = $terms; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $term): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($term); ?>" <?php echo e(request('term') == $term ? 'selected' : ''); ?>><?php echo e(ucfirst($term)); ?></option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
                     <div class="grades-filter-group">
                         <label for="academic_year" class="grades-filter-label">Academic Year</label>
                         <select name="academic_year" id="academic_year" class="grades-filter-select">
                             <option value="">All Years</option>
-                            @foreach($years as $year)
-                                <option value="{{ $year }}" {{ request('academic_year') == $year ? 'selected' : '' }}>{{ $year }}</option>
-                            @endforeach
+                            <?php $__currentLoopData = $years; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $year): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($year); ?>" <?php echo e(request('academic_year') == $year ? 'selected' : ''); ?>><?php echo e($year); ?></option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
                     <div class="grades-filter-actions">
@@ -670,19 +668,19 @@
                             <i class="fas fa-search"></i>
                             Apply Filter
                         </button>
-                        @if(request()->has('term') || request()->has('academic_year'))
-                            <a href="{{ route('student.grades') }}" class="grades-btn grades-btn-secondary">
+                        <?php if(request()->has('term') || request()->has('academic_year')): ?>
+                            <a href="<?php echo e(route('student.grades')); ?>" class="grades-btn grades-btn-secondary">
                                 <i class="fas fa-times"></i>
                                 Clear Filter
                             </a>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </form>
         </div>
     </div>
 
-    @php
+    <?php
         // Sort subjectsWithGrades by academic_year (desc) and term (desc)
         if (isset($subjectsWithGrades)) {
             $subjectsWithGrades = $subjectsWithGrades->sortByDesc(function($subject) {
@@ -691,11 +689,11 @@
                 return $year . '-' . $term;
             })->values();
         }
-    @endphp
+    ?>
     
     <!-- Subjects by Status Chart -->
-    @if(isset($subjectsWithGrades) && $subjectsWithGrades->count() > 0)
-        @php
+    <?php if(isset($subjectsWithGrades) && $subjectsWithGrades->count() > 0): ?>
+        <?php
             $subjectLabels = [];
             $subjectGrades = [];
             $subjectColors = [];
@@ -735,15 +733,15 @@
                 }
                 $subjectStatuses[] = $friendlyStatus;
             }
-        @endphp
+        ?>
         
-        @php
+        <?php
             // Reverse arrays so newest is last (rightmost bar)
             $subjectLabels = array_reverse($subjectLabels);
             $subjectGrades = array_reverse($subjectGrades);
             $subjectColors = array_reverse($subjectColors);
             $subjectStatuses = array_reverse($subjectStatuses);
-        @endphp
+        ?>
 
         <!-- Chart Card -->
         <div class="grades-card">
@@ -759,17 +757,17 @@
         </div>
         
 
-    @else
+    <?php else: ?>
         <!-- No Data State -->
         <div class="grades-no-data">
             <i class="fas fa-chart-line"></i>
             <h4>No Grade Data Available</h4>
             <p>You don't have any approved grades to display yet.</p>
         </div>
-    @endif
+    <?php endif; ?>
 
     <!-- Detailed Grade Report -->
-    @if(isset($subjectsWithGrades) && $subjectsWithGrades->count() > 0)
+    <?php if(isset($subjectsWithGrades) && $subjectsWithGrades->count() > 0): ?>
         <div class="grades-card">
             <div class="grades-card-header">
                 <i class="fas fa-table"></i>
@@ -789,8 +787,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($subjectsWithGrades as $subject)
-                                @php
+                            <?php $__currentLoopData = $subjectsWithGrades; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php
                                     $grade = $subject->grade ?? ($subject->pivot->grade ?? null);
                                     $status = strtolower($subject->status ?? ($subject->pivot->status ?? 'pending'));
                                     $gradeDisplay = is_numeric($grade) ? number_format($grade, 2) : ($grade ?? 'N/A');
@@ -829,34 +827,35 @@
 
                                     // Determine status badge class
                                     $badgeClass = 'grades-badge-' . str_replace(' ', '-', $status);
-                                @endphp
-                                @if(!is_null($grade) && $grade !== '' && $grade !== 'N/A')
+                                ?>
+                                <?php if(!is_null($grade) && $grade !== '' && $grade !== 'N/A'): ?>
                                     <tr>
-                                        <td><span class="grades-subject-code">{{ $subjectCode }}</span></td>
-                                        <td class="grades-subject-name">{{ $subjectName }}</td>
-                                        <td class="grades-term-info">{{ ucfirst($subject->term ?? 'N/A') }}</td>
-                                        <td class="grades-year-info">{{ $subject->academic_year ?? 'N/A' }}</td>
+                                        <td><span class="grades-subject-code"><?php echo e($subjectCode); ?></span></td>
+                                        <td class="grades-subject-name"><?php echo e($subjectName); ?></td>
+                                        <td class="grades-term-info"><?php echo e(ucfirst($subject->term ?? 'N/A')); ?></td>
+                                        <td class="grades-year-info"><?php echo e($subject->academic_year ?? 'N/A'); ?></td>
                                         <td>
-                                            <span class="grades-grade-display {{ $gradeClass }}">{{ $gradeDisplay }}</span>
+                                            <span class="grades-grade-display <?php echo e($gradeClass); ?>"><?php echo e($gradeDisplay); ?></span>
                                         </td>
                                         <td>
-                                            <span class="grades-status-badge {{ $badgeClass }}">
-                                                {{ ucfirst($status) }}
+                                            <span class="grades-status-badge <?php echo e($badgeClass); ?>">
+                                                <?php echo e(ucfirst($status)); ?>
+
                                             </span>
                                         </td>
                                     </tr>
-                                @endif
-                            @endforeach
+                                <?php endif; ?>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-    @endif
+    <?php endif; ?>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -864,13 +863,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('gradeStatusChart');
     if (!ctx) return;
 
-    const labels = @json($subjectLabels ?? []);
-    const data = @json($subjectGrades ?? []);
-    const backgroundColors = @json($subjectColors ?? []);
-    const statuses = @json($chartSubjectStatuses ?? []);
+    const labels = <?php echo json_encode($subjectLabels ?? [], 15, 512) ?>;
+    const data = <?php echo json_encode($subjectGrades ?? [], 15, 512) ?>;
+    const backgroundColors = <?php echo json_encode($subjectColors ?? [], 15, 512) ?>;
+    const statuses = <?php echo json_encode($chartSubjectStatuses ?? [], 15, 512) ?>;
 
     // Get school grading system
-    const schoolGrading = @json($studentSchool ?? null);
+    const schoolGrading = <?php echo json_encode($studentSchool ?? null, 15, 512) ?>;
     const gradeMin = schoolGrading?.passing_grade_min ?? 1.0;
     const gradeMax = schoolGrading?.passing_grade_max ?? 3.0;
     const passingMin = schoolGrading?.passing_grade_min ?? 1.0;
@@ -1015,4 +1014,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.student_layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laravel\PNPH-CAPSTONE\resources\views/student/grades.blade.php ENDPATH**/ ?>

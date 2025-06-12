@@ -117,8 +117,8 @@ class InterventionController extends Controller
                 $totalStudents = 0;
 
                 // Get school's passing grade - handle different grading systems
-                $passingGradeMin = $school->passing_grade_min ?? 75;
-                $passingGradeMax = $school->passing_grade_max ?? 100;
+                $passingGradeMin = $school->passing_grade_min ?? 1.0;
+                $passingGradeMax = $school->passing_grade_max ?? 3.0;
 
                 foreach ($subjectGrades as $grade) {
                     $totalStudents++;

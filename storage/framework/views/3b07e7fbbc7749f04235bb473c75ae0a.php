@@ -1,12 +1,12 @@
 <?php $__env->startSection('content'); ?>
+
 <div class="page-container">
     <div class="header-section">
-        <h1 style="font-weight: 300">📊 Class Progress Analytics</h1>
+        <h1 style= "font-weight: 300">📊 Class Progress</h1>
         <hr>
-        <p class="text-muted">Monitor overall class performance and progress across different subjects and terms.</p>
+        <p class="text-muted">View the progress distribution of students in a class for a specific submission.</p>
     </div>
 
-    <!-- Filters Section -->
     <div class="filter-card">
         <div class="filter-card-header">
             <h5>
@@ -25,46 +25,80 @@
                 <div class="filter-group">
                     <label for="classSelect">Class</label>
                     <select id="classSelect" disabled>
-                        <option value="">Select School First</option>
+                        <option value="">Select Class</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="submissionSelect">Submission</label>
                     <select id="submissionSelect" disabled>
-                        <option value="">Select Class First</option>
+                        <option value="">Select Submission</option>
                     </select>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Header information section moved above the graph -->
+    <div id="headerInfo" class="text-center mb-4" style="display: none;">
+        <h4 class="mb-2" id="schoolClassInfo"></h4>
+        <p class="text-muted mb-0" id="submissionInfo"></p>
+    </div>
+
     <!-- Progress Display -->
     <div class="card shadow-sm">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <i class="bi bi-bar-chart me-2"></i>
-                Class Progress Report
-            </h5>
-        </div>
         <div class="card-body">
-            <div id="progressContainer">
-                <div class="text-center p-5 text-muted">
-                    <i class="bi bi-bar-chart-line" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                    <p class="mt-3 mb-0">Select a school, class, and submission to view class progress data</p>
+            <div id="progressChartContainer" class="w-100" style="min-height: 600px; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+                <div class="text-center text-muted w-100">
+                    <div style="width: 100%; max-width: 800px; margin: 0 auto; padding: 2rem;">
+                        <i class="bi bi-pie-chart" style="font-size: 3rem; color: #6c757d; opacity: 0.7; display: block; margin: 0 auto 1rem;"></i>
+                        <p class="instruction-text" style="margin: 0; padding: 0 1rem;">Select a school, class, and submission to view class progress chart</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Load schools
+    const schoolSelect = document.getElementById('schoolSelect');
+    const classSelect = document.getElementById('classSelect');
+    const submissionSelect = document.getElementById('submissionSelect');
+    const chartContainer = document.getElementById('progressChartContainer');
+
+    let myChart = null; // To hold the Chart.js instance
+    let selectedSchoolName = ''; // Store the selected school name
+
+    // Function to initialize the chart area with placeholder/loading state
+    function resetChartArea(message = 'Select a school, class, and submission to view class progress chart', showSpinner = false) {
+        if (myChart) {
+            myChart.destroy(); // Destroy existing chart instance
+            myChart = null;
+        }
+        chartContainer.innerHTML = `
+            <div class="text-center text-muted w-100 p-5">
+                ${showSpinner ? '<div class="spinner-border text-primary mb-3" role="status"><span class="visually-hidden">Loading...</span></div>' : '<i class="bi bi-pie-chart" style="font-size: 3rem; color: #6c757d; opacity: 0.7; display: block; margin: 0 auto 1rem;"></i>'}
+                <p class="instruction-text" style="margin: 0; padding: 0 1rem;">${message}</p>
+            </div>
+        `;
+        chartContainer.style.minHeight = '400px';
+        chartContainer.style.display = 'flex';
+        chartContainer.style.flexDirection = 'column';
+        chartContainer.style.justifyContent = 'center';
+        chartContainer.style.alignItems = 'center';
+    }
+
+    // Initial reset
+    resetChartArea();
+
+    // Fetch schools
     fetch('/educator/analytics/schools')
         .then(res => res.json())
-        .then(data => {
-            const schoolSelect = document.getElementById('schoolSelect');
-            data.forEach(school => {
+        .then(schools => {
+            schools.forEach(school => {
                 const opt = document.createElement('option');
                 opt.value = school.id;
                 opt.textContent = school.name;
@@ -72,244 +106,271 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-    // School change handler
-    document.getElementById('schoolSelect').addEventListener('change', function() {
+    // Handle school selection change
+    schoolSelect.addEventListener('change', function() {
         const schoolId = this.value;
-        const classSelect = document.getElementById('classSelect');
-        const submissionSelect = document.getElementById('submissionSelect');
-        
+        selectedSchoolName = this.options[this.selectedIndex].text; // Store the selected school name
         classSelect.innerHTML = '<option value="">Select Class</option>';
         submissionSelect.innerHTML = '<option value="">Select Submission</option>';
         classSelect.disabled = true;
         submissionSelect.disabled = true;
-        
-        const container = document.getElementById('progressContainer');
-        container.innerHTML = `
-            <div class="d-flex justify-content-center p-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <span class="ms-2">Loading classes...</span>
-            </div>`;
-        
-        if (!schoolId) {
-            container.innerHTML = `
-                <div class="text-center p-5 text-muted">
-                    <i class="bi bi-bar-chart-line" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                    <p class="mt-3 mb-0">Select a school, class, and submission to view class progress data</p>
-                </div>`;
-            return;
-        }
-        
-        // Load classes for the selected school
-        fetch(`/educator/analytics/classes/${schoolId}`)
-            .then(res => res.json())
-            .then(classes => {
-                classSelect.innerHTML = '<option value="">Select Class</option>';
-                classes.forEach(cls => {
-                    const opt = document.createElement('option');
-                    opt.value = cls.id;
-                    opt.textContent = cls.name;
-                    classSelect.appendChild(opt);
+        resetChartArea('Loading classes...', true);
+        document.getElementById('headerInfo').style.display = 'none';
+
+        if (schoolId) {
+            fetch(`/educator/analytics/classes/${schoolId}`)
+                .then(res => res.json())
+                .then(classes => {
+                    if (classes.length === 0) {
+                        classSelect.innerHTML = '<option value="">No classes found</option>';
+                        resetChartArea('No classes found for this school.');
+                    } else {
+                        classes.forEach(cls => {
+                            const opt = document.createElement('option');
+                            opt.value = cls.id;
+                            opt.textContent = cls.name;
+                            classSelect.appendChild(opt);
+                        });
+                        resetChartArea('Select a class and submission to view class progress chart');
+                    }
+                    classSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error loading classes:', error);
+                    resetChartArea('Failed to load classes. Please try again.');
                 });
-                classSelect.disabled = false;
-                
-                container.innerHTML = `
-                    <div class="text-center p-5 text-muted">
-                        <i class="bi bi-bar-chart-line" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                        <p class="mt-3 mb-0">Select a class and submission to view class progress data</p>
-                    </div>`;
-            });
+        } else {
+            resetChartArea();
+        }
     });
-    
-    // Class change handler
-    document.getElementById('classSelect').addEventListener('change', function() {
-        const schoolId = document.getElementById('schoolSelect').value;
+
+    // Handle class selection change
+    classSelect.addEventListener('change', function() {
+        const schoolId = schoolSelect.value;
         const classId = this.value;
-        const submissionSelect = document.getElementById('submissionSelect');
-        
         submissionSelect.innerHTML = '<option value="">Select Submission</option>';
         submissionSelect.disabled = true;
-        
-        const container = document.getElementById('progressContainer');
-        container.innerHTML = `
-            <div class="d-flex justify-content-center p-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <span class="ms-2">Loading submissions...</span>
-            </div>`;
-        
-        if (!classId) {
-            container.innerHTML = `
-                <div class="text-center p-5 text-muted">
-                    <i class="bi bi-bar-chart-line" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                    <p class="mt-3 mb-0">Select a class and submission to view class progress data</p>
-                </div>`;
-            return;
-        }
-        
-        // Load submissions for the selected school and class
-        fetch(`/educator/analytics/class-submissions/${schoolId}/${classId}`)
-            .then(res => res.json())
-            .then(submissions => {
-                submissionSelect.innerHTML = '<option value="">Select Submission</option>';
-                submissions.forEach(submission => {
-                    const opt = document.createElement('option');
-                    opt.value = submission.id;
-                    opt.textContent = submission.label;
-                    submissionSelect.appendChild(opt);
+        resetChartArea('Loading submissions...', true);
+
+        if (schoolId && classId) {
+            fetch(`/educator/analytics/class-submissions/${schoolId}/${classId}`)
+                .then(res => res.json())
+                .then(submissions => {
+                    if (!submissions || submissions.length === 0) {
+                        submissionSelect.innerHTML = '<option value="">No submissions found</option>';
+                         resetChartArea('No submissions found for this class.');
+                    } else {
+                         // Sort submissions: approved first, then by created_at desc
+                            const sortedData = [...submissions].sort((a, b) => {
+                                if (a.status === 'approved' && b.status !== 'approved') return -1;
+                                if (a.status !== 'approved' && b.status === 'approved') return 1;
+                                return 0;
+                            });
+
+                        sortedData.forEach(sub => {
+                             if (sub && sub.id && sub.label) {
+                                    const opt = document.createElement('option');
+                                    opt.value = sub.id;
+                                    // Extract just the Semester, Term, and Year from the label
+                                    const labelParts = sub.label.split(' | ');
+                                    opt.textContent = labelParts.join(' | '); // Use the formatted label from backend
+
+                                    opt.disabled = false; // Always enable for selection
+                                    submissionSelect.appendChild(opt);
+                                }
+                        });
+                         resetChartArea('Select a submission to view class progress chart');
+                    }
+                    submissionSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error loading submissions:', error);
+                    resetChartArea('Failed to load submissions. Please try again.');
                 });
-                submissionSelect.disabled = false;
-                
-                container.innerHTML = `
-                    <div class="text-center p-5 text-muted">
-                        <i class="bi bi-bar-chart-line" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                        <p class="mt-3 mb-0">Select a submission to view class progress data</p>
-                    </div>`;
-            })
-            .catch(error => {
-                console.error('Error loading submissions:', error);
-                container.innerHTML = `
-                    <div class="alert alert-danger m-3">
-                        <i class="bi-exclamation-triangle-fill me-2"></i>
-                        Failed to load submissions. Please try again.
-                    </div>`;
-            });
-    });
-    
-    // Submission change handler
-    document.getElementById('submissionSelect').addEventListener('change', function() {
-        const schoolId = document.getElementById('schoolSelect').value;
-        const classId = document.getElementById('classSelect').value;
-        const submissionId = this.value;
-        
-        const container = document.getElementById('progressContainer');
-        container.innerHTML = `
-            <div class="d-flex justify-content-center p-5">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <span class="ms-2">Loading data...</span>
-            </div>`;
-        
-        if (!submissionId) {
-            container.innerHTML = `
-                <div class="text-center p-5 text-muted">
-                    <i class="bi bi-bar-chart-line" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                    <p class="mt-3 mb-0">Select a submission to view class progress data</p>
-                </div>`;
-            return;
+        } else {
+             resetChartArea('Select a class and submission to view class progress chart');
         }
-        
-        // Fetch class progress data
+    });
+
+    // Handle submission selection change and fetch data
+    submissionSelect.addEventListener('change', function() {
+        const schoolId = schoolSelect.value;
+        const classId = classSelect.value;
+        const submissionId = this.value;
+
+        if (schoolId && classId && submissionId) {
+            fetchProgressData(schoolId, classId, submissionId);
+        } else {
+            resetChartArea('Select a submission to view class progress chart');
+        }
+    });
+
+    // Function to update header information
+    function updateHeaderInfo(data) {
+        const headerInfo = document.getElementById('headerInfo');
+        const schoolClassInfo = document.getElementById('schoolClassInfo');
+        const submissionInfo = document.getElementById('submissionInfo');
+
+        if (data && data.class_name && data.submission_details) {
+            schoolClassInfo.textContent = `${selectedSchoolName} - ${data.class_name}`;
+            submissionInfo.textContent = `Semester: ${data.submission_details.semester} | Term: ${data.submission_details.term} | Academic Year: ${data.submission_details.academic_year}`;
+            headerInfo.style.display = 'block';
+        } else {
+            headerInfo.style.display = 'none';
+        }
+    }
+
+    // Modify the fetchProgressData function to update header info
+    function fetchProgressData(schoolId, classId, submissionId) {
+        resetChartArea('Loading class progress data...', true);
+
         fetch(`/educator/analytics/class-progress-data?school_id=${schoolId}&class_id=${classId}&submission_id=${submissionId}`)
-            .then(res => res.json())
-            .then(data => {
-                // Check if we have data
-                const hasData = data.students && data.students.length > 0;
-                
-                if (!hasData) {
-                    container.innerHTML = `
-                        <div class="text-center p-5 text-muted">
-                            <i class="bi bi-exclamation-circle" style="font-size: 2.5rem; opacity: 0.5;"></i>
-                            <p class="mt-3 mb-0">No data available for the selected criteria</p>
-                        </div>`;
-                    return;
+            .then(async res => {
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await res.text();
+                    console.error('Non-JSON response:', text);
+                    throw new Error('Server returned non-JSON response. Please try again.');
                 }
 
-                // Create header with school, class, and submission info
-                let headerHtml = `
-                    <div class="card-header bg-light p-3">
-                        <div class="d-flex flex-column align-items-center justify-content-center w-100">
-                            <div style="font-size: 1.5rem; font-weight: 600; line-height: 1.2; text-align: center;">
-                                ${data.school.name} - ${data.class_name}
-                            </div>
-                            <div class="mt-2" style="font-size: 1rem; color: #6c757d; white-space: nowrap; text-align: center;">
-                                ${data.submission.semester ? `Semester: ${data.submission.semester}` : ''}
-                                ${data.submission.term ? ` | Term: ${data.submission.term}` : ''}
-                                ${data.submission.academic_year ? ` | Academic Year: ${data.submission.academic_year}` : ''}
-                            </div>
-                        </div>
-                    </div>`;
-                
-                // Create table
-                let tableHtml = `
-                    <div class="table-responsive">
-                        <div class="table-container">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th class="text-center" style="background-color: #22BBEA !important; color: white; border-color: #22BBEA !important;">Student Name</th>
-                                        <th class="text-center" style="background-color: #22BBEA !important; color: white; border-color: #22BBEA !important;">Total Subjects</th>
-                                        <th class="text-center" style="background-color: #22BBEA !important; color: white; border-color: #22BBEA !important;">Passed</th>
-                                        <th class="text-center" style="background-color: #22BBEA !important; color: white; border-color: #22BBEA !important;">Failed</th>
-                                        <th class="text-center" style="background-color: #22BBEA !important; color: white; border-color: #22BBEA !important;">Average Grade</th>
-                                        <th class="text-center" style="background-color: #22BBEA !important; color: white; border-color: #22BBEA !important;">Overall Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>`;
-                
-                // Add rows for each student
-                data.students.forEach(student => {
-                    // Determine row class based on status
-                    let rowClass = '';
-                    if (student.overall_status === 'Failed') {
-                        rowClass = 'table-danger';
-                    } else if (student.overall_status === 'Pending') {
-                        rowClass = 'table-warning';
-                    } else {
-                        rowClass = 'table-success';
-                    }
-                    
-                    tableHtml += `
-                        <tr class="${rowClass}">
-                            <td>${student.student_name}</td>
-                            <td class="text-center">${student.total_subjects}</td>
-                            <td class="text-center">${student.passed_subjects}</td>
-                            <td class="text-center">${student.failed_subjects}</td>
-                            <td class="text-center">${student.average_grade.toFixed(2)}</td>
-                            <td class="text-center">
-                                <span class="badge ${getStatusBadgeClass(student.overall_status)}">
-                                    ${student.overall_status}
-                                </span>
-                            </td>
-                        </tr>`;
-                });
-                
-                // Close table
-                tableHtml += `
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>`;
-                    
-                container.innerHTML = headerHtml + tableHtml;
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
+                }
+
+                return res.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    resetChartArea(`Error: ${data.error}`);
+                    updateHeaderInfo(null);
+                } else if (data.submission_status === 'not_found') {
+                    resetChartArea('Submission not found.');
+                    updateHeaderInfo(null);
+                } else if (data.total_students === 0) {
+                    resetChartArea('No students found for this class and submission.');
+                    updateHeaderInfo(null);
+                } else {
+                    updateHeaderInfo(data);
+                    renderProgressChart(data);
+                }
             })
             .catch(error => {
-                console.error('Error fetching data:', error);
-                container.innerHTML = `
-                    <div class="text-center p-5 text-danger">
-                        <i class="bi bi-exclamation-triangle" style="font-size: 2.5rem;"></i>
-                        <p class="mt-3 mb-0">Error loading data. Please try again.</p>
-                    </div>`;
+                console.error('Error fetching progress data:', error);
+                resetChartArea(`Error fetching data: ${error.message}`);
+                updateHeaderInfo(null);
             });
-    });
-});
-
-// Helper function to get badge class based on status
-function getStatusBadgeClass(status) {
-    switch (status) {
-        case 'Passed':
-            return 'bg-success';
-        case 'Pending':
-            return 'bg-warning';
-        case 'Failed':
-            return 'bg-danger';
-        default:
-            return 'bg-secondary';
     }
-}
+
+    // Function to render the pie chart
+    function renderProgressChart(data) {
+        chartContainer.innerHTML = ''; // Clear previous content
+        chartContainer.style.minHeight = '600px'; // Increased height
+        chartContainer.style.display = 'block';
+
+        const canvas = document.createElement('canvas');
+        canvas.style.width = '100%';
+        canvas.style.height = '500px'; // Set explicit height for canvas
+        chartContainer.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+
+        // Define colors for the chart slices
+        const backgroundColors = ['#198754', '#dc3545', '#ffc107', '#6c757d']; // Green, Red, Orange, Muted
+        const borderColors = ['#ffffff', '#ffffff', '#ffffff', '#ffffff'];
+
+        myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: data.labels.map((label, index) => {
+                    const count = data.counts[label];
+                    const percentage = data.data[index];
+                    return `${label}: ${count} (${percentage}%)`;
+                }),
+                datasets: [{
+                    data: data.data,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 14 // Increased font size for legend
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Class Progress',
+                        font: {
+                            size: 16 // Increased font size for title
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label;
+                            }
+                        }
+                    }
+                },
+                layout: {
+                    padding: 30 // Increased padding around the chart
+                }
+            }
+        });
+    }
+
+    // Basic styles for instruction text and spinner (can be moved to CSS file)
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .instruction-text {
+            font-size: 1.1rem;
+            color: #495057;
+            font-weight: 500;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+        .bi-pie-chart {
+             color: #6c757d;
+             opacity: 0.7;
+             transition: all 0.3s ease;
+             margin: 0 auto;
+             display: block;
+        }
+        .text-center:hover .bi-pie-chart {
+            transform: scale(1.1);
+            opacity: 0.9;
+        }
+         .spinner-border {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            vertical-align: -0.125em;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            -webkit-animation: .75s linear infinite spinner-border;
+            animation: .75s linear infinite spinner-border;
+        }
+        @keyframes spinner-border {
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+
+});
+</script>
+
 </script>
 
 <style>
@@ -469,6 +530,51 @@ function getStatusBadgeClass(status) {
     letter-spacing: 0.5px;
     background-color: #f8f9fa;
     text-align: center;
+}
+
+/* Chart and Summary Styling */
+.chart-container {
+    position: relative;
+    height: 400px;
+    padding: 20px;
+}
+
+.summary-stats {
+    padding: 20px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.stat-value {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 300px;
+        padding: 10px;
+    }
+
+    .summary-stats {
+        padding: 15px;
+        margin-top: 20px;
+    }
 }
 </style>
 <?php $__env->stopSection(); ?>

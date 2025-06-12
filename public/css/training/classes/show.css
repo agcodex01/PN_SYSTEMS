@@ -1,4 +1,17 @@
 
+/* Force Poppins font for all elements */
+* {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Preserve icon fonts */
+.fas, .far, .fal, .fab, .fa,
+[class*="fa-"],
+.material-icons,
+.glyphicon {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 5 Free", "Font Awesome 5 Pro", "Material Icons", "Glyphicons Halflings" !important;
+}
+
 .page-container {
     padding: 20px;
     max-width: 100%;
@@ -41,8 +54,8 @@
     align-items: center;
     gap: 5px;
     padding: 8px 15px;
-    background-color: #ff9933;
-    color: white;
+    /* background-color: #ff9933; */
+    color: rgb(50, 50, 50);
     border-radius: 4px;
     text-decoration: none;
     font-size: 14px;
@@ -50,8 +63,7 @@
 }
 
 .back-button:hover {
-    background-color: #5a6268;
-    color: white;
+    color: #ff9933;
 }
 
 .back-button i {
@@ -113,7 +125,7 @@
 }
 
 .table th {
-    background-color: #4CAF50;
+    background-color: #22bbea;
     font-weight: 500;
     color: white;
 }

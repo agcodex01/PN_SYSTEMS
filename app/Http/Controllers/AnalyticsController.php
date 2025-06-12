@@ -85,43 +85,47 @@ class AnalyticsController extends Controller
             ->where('class_id', $classId)
             ->orderByDesc('created_at')
             ->get();
-            
+
         \Log::info('Submissions query:', [
             'school_id' => $schoolId,
             'class_id' => $classId,
-            'count' => $submissions->count()
+            'count' => $submissions->count(),
+            'submissions' => $submissions->toArray()
         ]);
-        
+
         $result = $submissions->map(function($sub) {
             $label = [];
             if (!empty($sub->semester)) $label[] = 'Semester: ' . $sub->semester;
             if (!empty($sub->term)) $label[] = 'Term: ' . $sub->term;
             if (!empty($sub->academic_year)) $label[] = 'Year: ' . $sub->academic_year;
-            
-            // Check for incomplete grades only if submission is not approved
-            $incompleteGrades = false;
-            if ($sub->status !== 'approved') {
-                $incompleteGrades = DB::table('grade_submission_subject')
-                    ->where('grade_submission_id', $sub->id)
-                    ->whereNull('grade')
-                    ->exists();
-            }
-            
+
+            // Check for incomplete grades - check if any grades exist for this submission
+            $hasGrades = DB::table('grade_submission_subject')
+                ->where('grade_submission_id', $sub->id)
+                ->whereNotNull('grade')
+                ->exists();
+
+            $incompleteGrades = DB::table('grade_submission_subject')
+                ->where('grade_submission_id', $sub->id)
+                ->whereNull('grade')
+                ->exists();
+
             // If no specific fields, use created_at as identifier
             if (empty($label)) {
                 $label[] = 'Submission: ' . $sub->created_at->format('Y-m-d H:i:s');
             }
-            
+
             return [
                 'id' => $sub->id,
                 'label' => implode(' | ', $label),
                 'status' => $sub->status,
-                'has_incomplete_grades' => $incompleteGrades
+                'has_incomplete_grades' => $incompleteGrades,
+                'has_grades' => $hasGrades
             ];
         });
-        
+
         \Log::info('Formatted submissions:', $result->toArray());
-        
+
         return response()->json($result);
     }
 
@@ -144,26 +148,46 @@ class AnalyticsController extends Controller
             ->where('school_id', $schoolId)
             ->where('class_id', $classId)
             ->first();
-            
+
+        \Log::info('Looking for submission:', [
+            'submission_id' => $submissionId,
+            'school_id' => $schoolId,
+            'class_id' => $classId,
+            'found' => $gradeSubmission ? 'yes' : 'no'
+        ]);
+
         if (!$gradeSubmission) {
             return response()->json([
                 'error' => 'Submission not found',
-                'submission_status' => 'not_found'
+                'submission_status' => 'not_found',
+                'debug_info' => [
+                    'submission_id' => $submissionId,
+                    'school_id' => $schoolId,
+                    'class_id' => $classId
+                ]
             ]);
         }
 
-        // Get all grades for this submission
+        // Get all grades for this submission (include all statuses, not just approved)
         $grades = DB::table('grade_submission_subject')
             ->join('subjects', 'subjects.id', '=', 'grade_submission_subject.subject_id')
             ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
-            ->where('grade_submission_subject.student_status', 'approved')
+            ->whereNotNull('grade_submission_subject.grade')
             ->select(
                 'subjects.id as subject_id',
                 'subjects.name as subject_name',
                 'grade_submission_subject.grade',
-                'grade_submission_subject.user_id'
+                'grade_submission_subject.user_id',
+                'grade_submission_subject.status',
+                'grade_submission_subject.student_status'
             )
             ->get();
+
+        \Log::info('Grades found for submission:', [
+            'submission_id' => $gradeSubmission->id,
+            'grades_count' => $grades->count(),
+            'grades' => $grades->toArray()
+        ]);
             
         // Group grades by subject
         $groupedGrades = $grades->groupBy('subject_name');
@@ -282,15 +306,17 @@ class AnalyticsController extends Controller
             ]);
         }
 
-        // Get all grades for this submission
+        // Get all grades for this submission (include all statuses, not just approved)
         $grades = DB::table('grade_submission_subject')
             ->join('subjects', 'subjects.id', '=', 'grade_submission_subject.subject_id')
             ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
-            ->where('grade_submission_subject.student_status', 'approved')
+            ->whereNotNull('grade_submission_subject.grade')
             ->select(
                 'subjects.id as subject_id',
                 'subjects.name as subject_name',
-                'grade_submission_subject.grade'
+                'grade_submission_subject.grade',
+                'grade_submission_subject.status',
+                'grade_submission_subject.student_status'
             )
             ->get();
             

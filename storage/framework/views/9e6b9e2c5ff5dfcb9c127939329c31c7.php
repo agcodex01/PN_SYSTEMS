@@ -1,6 +1,4 @@
-@extends('layouts.student_layout')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 
 <style>
 /* Reset and Base Styles */
@@ -471,41 +469,41 @@
             </h3>
         </div>
         <div class="filter-content">
-            <form method="GET" action="{{ route('student.grade-submissions.list') }}" class="filter-form">
+            <form method="GET" action="<?php echo e(route('student.grade-submissions.list')); ?>" class="filter-form">
                 <div class="filter-grid">
                     <div class="filter-group">
                         <label for="filter_key" class="filter-label">Filter by Period</label>
                         <select name="filter_key" id="filter_key" class="filter-select" onchange="this.form.submit()">
                             <option value="">All Submissions</option>
-                            @if(isset($filterOptions))
-                                @foreach($filterOptions as $option)
-                                    <option value="{{ $option }}" {{ request('filter_key') == $option ? 'selected' : '' }}>{{ $option }}</option>
-                                @endforeach
-                            @endif
+                            <?php if(isset($filterOptions)): ?>
+                                <?php $__currentLoopData = $filterOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($option); ?>" <?php echo e(request('filter_key') == $option ? 'selected' : ''); ?>><?php echo e($option); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <?php endif; ?>
                         </select>
                     </div>
-                    @if(request('filter_key'))
+                    <?php if(request('filter_key')): ?>
                         <div class="filter-buttons">
-                            <a href="{{ route('student.grade-submissions.list') }}" class="filter-btn filter-btn-secondary">
+                            <a href="<?php echo e(route('student.grade-submissions.list')); ?>" class="filter-btn filter-btn-secondary">
                                 <i class="fas fa-times"></i>
                                 Clear Filter
                             </a>
                         </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Submissions Section -->
-    @if($gradeSubmissions->isEmpty())
+    <?php if($gradeSubmissions->isEmpty()): ?>
         <!-- Empty State -->
         <div class="empty-state">
             <i class="fas fa-file-alt empty-state-icon"></i>
             <h4 class="empty-state-title">No Grade Submissions Found</h4>
             <p class="empty-state-text">You don't have any grade submissions yet. They will appear here when available.</p>
         </div>
-    @else
+    <?php else: ?>
         <div class="submissions-section">
             <div class="submissions-section-header">
                 <h3 class="submissions-section-title">
@@ -527,48 +525,50 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($gradeSubmissions as $submission)
-                            @php
+                        <?php $__currentLoopData = $gradeSubmissions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $submission): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php
                                 $studentPivot = $submission->students->where('pivot.user_id', Auth::id())->first();
                                 $overallStatus = $studentPivot ? ($studentPivot->pivot->status ?? 'pending') : 'pending';
 
                                 // Determine status badge class
                                 $badgeClass = 'badge-' . str_replace(' ', '-', $overallStatus);
-                            @endphp
+                            ?>
                             <tr>
-                                <td class="semester-display">{{ $submission->semester ?? 'N/A' }}</td>
-                                <td class="term-display">{{ ucfirst($submission->term ?? 'N/A') }}</td>
-                                <td class="year-display">{{ $submission->academic_year ?? 'N/A' }}</td>
+                                <td class="semester-display"><?php echo e($submission->semester ?? 'N/A'); ?></td>
+                                <td class="term-display"><?php echo e(ucfirst($submission->term ?? 'N/A')); ?></td>
+                                <td class="year-display"><?php echo e($submission->academic_year ?? 'N/A'); ?></td>
                                 <td>
-                                    <span class="status-display {{ $badgeClass }}">
-                                        {{ ucfirst($overallStatus) }}
+                                    <span class="status-display <?php echo e($badgeClass); ?>">
+                                        <?php echo e(ucfirst($overallStatus)); ?>
+
                                     </span>
                                 </td>
-                                <td class="date-display">{{ $submission->created_at ? $submission->created_at->format('M d, Y') : 'N/A' }}</td>
+                                <td class="date-display"><?php echo e($submission->created_at ? $submission->created_at->format('M d, Y') : 'N/A'); ?></td>
                                 <td class="actions-display">
-                                    @if(in_array($overallStatus, ['submitted', 'approved']))
-                                        <a href="{{ route('student.grades', ['submission_id' => $submission->id]) }}" class="action-button btn-info-action">
+                                    <?php if(in_array($overallStatus, ['submitted', 'approved'])): ?>
+                                        <a href="<?php echo e(route('student.grades', ['submission_id' => $submission->id])); ?>" class="action-button btn-info-action">
                                             <i class="fas fa-chart-line"></i>
                                             <span>View Grades</span>
                                         </a>
-                                        <a href="{{ route('student.view-submission', $submission->id) }}" class="action-button btn-secondary-action">
+                                        <a href="<?php echo e(route('student.view-submission', $submission->id)); ?>" class="action-button btn-secondary-action">
                                             <i class="fas fa-file-alt"></i>
                                             <span>View Details</span>
                                         </a>
-                                    @else
-                                        <a href="{{ route('student.submit-grades.show', $submission->id) }}" class="action-button btn-primary-action">
+                                    <?php else: ?>
+                                        <a href="<?php echo e(route('student.submit-grades.show', $submission->id)); ?>" class="action-button btn-primary-action">
                                             <i class="fas fa-upload"></i>
                                             <span>Submit Grades</span>
                                         </a>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
                             </tr>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </tbody>
                 </table>
             </div>
         </div>
-    @endif
+    <?php endif; ?>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.student_layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laravel\PNPH-CAPSTONE\resources\views/student/grade_submissions_list.blade.php ENDPATH**/ ?>

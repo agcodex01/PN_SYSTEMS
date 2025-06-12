@@ -17,17 +17,65 @@
         --topbar-height: 80px;
         --content-padding: 20px;
     }
+
+    /* Theme Loader */
+    .loader {
+        width: 50px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 8px solid #22bbea;
+        border-right-color: #ff9933;
+        animation: l2 1s infinite linear;
+    }
+    @keyframes l2 {
+        to { transform: rotate(1turn); }
+    }
+
+    /* Loader Overlay */
+    .loader-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+    }
+
+    .loader-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
     
     * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
+        font-family: 'Poppins', sans-serif !important;
     }
-    
+
+    /* Preserve icon fonts */
+    .fas, .far, .fal, .fab, .fa,
+    [class*="fa-"],
+    .material-icons,
+    .glyphicon {
+        font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 5 Free", "Font Awesome 5 Pro", "Material Icons", "Glyphicons Halflings" !important;
+    }
+
+    /* Preserve SVG icons */
+    svg {
+        font-family: inherit !important;
+    }
+
     body {
         margin: 0;
         padding: 0;
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Poppins', sans-serif !important;
         background-color: #f1f5f9;
         min-height: 100vh;
         display: flex;
@@ -164,6 +212,10 @@
     </style>
 </head>
 <body>
+    <!-- Theme Loader -->
+    <div class="loader-overlay" id="pageLoader">
+        <div class="loader"></div>
+    </div>
     <div class="top-bar">
         <img class="PN-logo" src="{{ asset('images/PN-logo.png') }}" alt="PN Logo">
 
@@ -252,7 +304,7 @@
                     </a>
                     <div class="dropdown-content">
                         <a href="{{ route('training.analytics.class-grades') }}" class="{{ request()->routeIs('training.analytics.class-grades') ? 'active' : '' }}">
-                            <img src="{{ asset('images/class grades.png') }}" alt="Class Grades"> Class Grades
+                            <img src="{{ asset('images/class cg.png') }}" alt="Class Grades"> Class Grades
                         </a>
                         <a href="{{ route('training.analytics.subject-progress') }}" class="{{ request()->routeIs('training.analytics.subject-progress') ? 'active' : '' }}">
                             <img src="{{ asset('images/subject progress.png') }}" alt="Subject Progress"> Subject Progress
@@ -289,6 +341,98 @@
     </div>
 
     <script>
+    // Hide loader when page is loaded
+    window.addEventListener('load', function() {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.classList.add('hidden');
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 300);
+        }
+    });
+
+    // Show loader on user interactions
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show loader on form submissions
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (form.checkValidity()) {
+                    showLoader();
+                }
+            });
+        });
+
+        // Show loader on navigation links
+        document.querySelectorAll('a:not([href^="#"]):not([href^="javascript:"]):not([target="_blank"]):not([href^="mailto:"]):not([href^="tel:"])').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!this.getAttribute('onclick') || this.getAttribute('href') !== '#') {
+                    const onclick = this.getAttribute('onclick');
+
+                    // If it has confirm() in onclick, don't show loader immediately
+                    if (onclick && onclick.includes('confirm(')) {
+                        return;
+                    }
+
+                    showLoader();
+                }
+            });
+        });
+
+        // Show loader on button clicks that might navigate
+        document.querySelectorAll('button[type="submit"], .btn[href], button[onclick*="location"], button[onclick*="window.location"]').forEach(button => {
+            button.addEventListener('click', function() {
+                const onclick = this.getAttribute('onclick');
+
+                // If it has confirm() in onclick, don't show loader immediately
+                if (onclick && onclick.includes('confirm(')) {
+                    return;
+                }
+
+                showLoader();
+            });
+        });
+
+        // Hide loader on browser back/forward navigation
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                hideLoader();
+            }
+        });
+
+        window.addEventListener('popstate', function() {
+            hideLoader();
+        });
+    });
+
+    function showLoader() {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.style.display = 'flex';
+            loader.classList.remove('hidden');
+        }
+    }
+
+    function hideLoader() {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.classList.add('hidden');
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    // Enhanced confirm function that handles loader properly
+    window.confirmWithLoader = function(message, callback) {
+        if (confirm(message)) {
+            showLoader();
+            if (callback) callback();
+            return true;
+        }
+        return false;
+    };
+
     function toggleDropdown(event) {
         event.preventDefault();
         const dropdown = event.target.closest('.dropdown');

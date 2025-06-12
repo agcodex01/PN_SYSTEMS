@@ -14,6 +14,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\GradeSubmissionNotification;
 
 class GradeSubmissionController extends Controller
 {
@@ -227,9 +229,46 @@ class GradeSubmissionController extends Controller
                 'grade_records_count' => count($gradeRecords)
             ]);
 
+            // Send email notifications to students
+            try {
+                // Load the grade submission with relationships for email
+                $gradeSubmission->load(['school', 'classModel', 'subjects']);
+
+                foreach ($students as $student) {
+                    // Check if student has a valid email
+                    if (!empty($student->user_email) && filter_var($student->user_email, FILTER_VALIDATE_EMAIL)) {
+                        Mail::to($student->user_email)->send(new GradeSubmissionNotification($student, $gradeSubmission));
+
+                        \Log::info('Email notification sent:', [
+                            'student_id' => $student->user_id,
+                            'student_email' => $student->user_email,
+                            'submission_id' => $gradeSubmission->id
+                        ]);
+                    } else {
+                        \Log::warning('Invalid email for student:', [
+                            'student_id' => $student->user_id,
+                            'student_email' => $student->user_email ?? 'null'
+                        ]);
+                    }
+                }
+
+                \Log::info('Email notifications process completed for submission:', [
+                    'submission_id' => $gradeSubmission->id,
+                    'total_students' => $students->count()
+                ]);
+
+            } catch (\Exception $emailException) {
+                // Log email errors but don't fail the grade submission creation
+                \Log::error('Email notification error:', [
+                    'submission_id' => $gradeSubmission->id,
+                    'error' => $emailException->getMessage(),
+                    'trace' => $emailException->getTraceAsString()
+                ]);
+            }
+
             return redirect()
                 ->route('training.grade-submissions.index')
-                ->with('success', 'Grade submission created successfully!');
+                ->with('success', 'Grade submission created successfully and email notifications sent to students!');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();

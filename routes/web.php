@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PNUserController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\AuthController;
+use App\Mail\GradeSubmissionNotification;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\ClassController;
@@ -214,8 +215,41 @@ Route::middleware('auth')->group(function () {
         Route::get('/grade-submissions/{submissionId}', [StudentController::class, 'showSubmissionForm'])->name('submit-grades.show');
         Route::post('/grade-submissions/{submissionId}', [StudentController::class, 'submitGrades'])->name('submit-grades.store');
         Route::get('/view-submission/{submissionId}', [StudentController::class, 'viewSubmission'])->name('view-submission');
-        Route::get('/grade-submissions', [StudentController::class, 'submissionsList'])->name('student.grade-submissions');
+        Route::get('/grade-submissions', [StudentController::class, 'submissionsList'])->name('grade-submissions.list');
+
     });
 
 
 });
+
+// Test route for email notifications (remove in production)
+Route::get('/test-email', function () {
+    // Find a test student and grade submission
+    $student = \App\Models\PNUser::where('user_role', 'student')->first();
+    $gradeSubmission = \App\Models\GradeSubmission::with(['school', 'classModel', 'subjects'])->first();
+
+    if (!$student || !$gradeSubmission) {
+        return response()->json([
+            'error' => 'No test data found. Please create a student and grade submission first.',
+            'student_found' => $student ? true : false,
+            'submission_found' => $gradeSubmission ? true : false
+        ]);
+    }
+
+    try {
+        Mail::to($student->user_email)->send(new GradeSubmissionNotification($student, $gradeSubmission));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Test email sent successfully!',
+            'student_email' => $student->user_email,
+            'submission_id' => $gradeSubmission->id,
+            'note' => 'Check your Laravel logs (storage/logs/laravel.log) to see the email content since MAIL_MAILER is set to "log"'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Failed to send email: ' . $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+    }
+})->name('test-email');

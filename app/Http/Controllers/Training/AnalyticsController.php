@@ -88,6 +88,11 @@ class AnalyticsController extends Controller
             ->orderByDesc('created_at')
             ->get()
             ->map(function ($submission) {
+                $hasGrades = DB::table('grade_submission_subject')
+                    ->where('grade_submission_id', $submission->id)
+                    ->whereNotNull('grade')
+                    ->exists();
+
                 return [
                     'id' => $submission->id,
                     'label' => sprintf(
@@ -100,7 +105,8 @@ class AnalyticsController extends Controller
                     'has_incomplete_grades' => DB::table('grade_submission_subject')
                         ->where('grade_submission_id', $submission->id)
                         ->whereNull('grade')
-                        ->exists()
+                        ->exists(),
+                    'has_grades' => $hasGrades
                 ];
             });
             
@@ -152,12 +158,13 @@ class AnalyticsController extends Controller
                 ]);
             }
 
-            // Get all detailed grades for this submission
+            // Get all detailed grades for this submission (include all grades, not just approved)
             $grades = DB::table('grade_submission_subject')
                 ->join('pnph_users', 'grade_submission_subject.user_id', '=', 'pnph_users.user_id')
                 ->leftJoin('student_details', 'pnph_users.user_id', '=', 'student_details.user_id')
                 ->join('subjects', 'grade_submission_subject.subject_id', '=', 'subjects.id')
                 ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
+                ->whereNotNull('grade_submission_subject.grade')
                 ->select(
                     'student_details.student_id as student_id',
                     'pnph_users.user_fname',
@@ -166,6 +173,7 @@ class AnalyticsController extends Controller
                     'subjects.name as subject_name',
                     'grade_submission_subject.grade',
                     'grade_submission_subject.status',
+                    'grade_submission_subject.student_status',
                     'pnph_users.user_id'
                 )
                 ->get();

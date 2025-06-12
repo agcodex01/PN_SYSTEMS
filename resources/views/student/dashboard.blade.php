@@ -74,26 +74,50 @@
         </div>
     </div>
     
-    <!-- Dropdown filter for term and year -->
-    <div class="d-flex justify-content-center align-items-center mb-4">
-        <form action="{{ route('student.dashboard') }}" method="GET" class="d-flex align-items-center gap-2">
-            <select name="term" id="term" class="form-select form-select-sm" style="width: auto;">
-                <option value="">All Terms</option>
-                @foreach($terms as $term)
-                    <option value="{{ $term }}" {{ request('term') == $term ? 'selected' : '' }}>{{ ucfirst($term) }}</option>
-                @endforeach
-            </select>
-            <select name="academic_year" id="academic_year" class="form-select form-select-sm" style="width: auto;">
-                <option value="">All Years</option>
-                @foreach($years as $year)
-                    <option value="{{ $year }}" {{ request('academic_year') == $year ? 'selected' : '' }}>{{ $year }}</option>
-                @endforeach
-            </select>
-            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-            @if(request()->has('term') || request()->has('academic_year'))
-                <a href="{{ route('student.dashboard') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
-            @endif
-        </form>
+    <!-- Filter Section -->
+    <div class="filter-card">
+        <div class="filter-card-header">
+            <h5>
+                <i class="fas fa-filter"></i>
+                Filter Submissions
+            </h5>
+        </div>
+        <div class="filter-card-body">
+            <form action="{{ route('student.dashboard') }}" method="GET" class="filter-form">
+                <div class="filter-inline-container">
+                    <div class="filter-group">
+                        <label for="term">Term</label>
+                        <select name="term" id="term" class="filter-select">
+                            <option value="">All Terms</option>
+                            @foreach($terms as $term)
+                                <option value="{{ $term }}" {{ request('term') == $term ? 'selected' : '' }}>{{ ucfirst($term) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="academic_year">Academic Year</label>
+                        <select name="academic_year" id="academic_year" class="filter-select">
+                            <option value="">All Years</option>
+                            @foreach($years as $year)
+                                <option value="{{ $year }}" {{ request('academic_year') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-buttons">
+                    <button type="submit" class="btn btn-filter">
+                        <i class="fas fa-search"></i>
+                        Apply Filter
+                    </button>
+                    @if(request()->has('term') || request()->has('academic_year'))
+                        <a href="{{ route('student.dashboard') }}" class="btn btn-clear">
+                            <i class="fas fa-times"></i>
+                            Clear Filter
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </div>
     </div>
     
     <div class="submissions-section">
@@ -525,6 +549,133 @@ h1 {
     font-size: 24px;
 }
 
+/* Filter Card Styles */
+.filter-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+}
+
+.filter-card-header {
+    background: #22bbea;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.filter-card-header h5 {
+    margin: 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-card-header i {
+    font-size: 14px;
+}
+
+.filter-card-body {
+    padding: 20px;
+}
+
+.filter-form {
+    margin: 0;
+}
+
+.filter-inline-container {
+    display: flex;
+    gap: 20px;
+    align-items: end;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 180px;
+    flex: 1;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.filter-select {
+    padding: 10px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    background-color: #fff;
+    font-size: 14px;
+    color: #495057;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.filter-select:focus {
+    border-color: #22bbea;
+    box-shadow: 0 0 0 3px rgba(34, 187, 234, 0.1);
+    outline: none;
+}
+
+.filter-select:hover {
+    border-color: #22bbea;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.btn-filter {
+    background: #22bbea;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(34, 187, 234, 0.3);
+}
+
+.btn-filter:hover {
+    background: linear-gradient(135deg, #1e9bc4 0%, #1a87a8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(34, 187, 234, 0.4);
+}
+
+.btn-clear {
+    background: #6c757d;
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+}
+
+.btn-clear:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4);
+}
+
 .alert {
     padding: 15px;
     margin-bottom: 20px;
@@ -702,7 +853,73 @@ h1 {
     background-color: #5a6268;
 }
 
-/* Add only responsive styles at the end */
+/* Responsive Design Improvements */
+
+/* Large screens (1200px and up) */
+@media (min-width: 1200px) {
+    .dashboard-container {
+        padding: 30px;
+        max-width: 1400px;
+    }
+
+    .status-cards-container {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+    }
+
+    .subject-list {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+
+    .submissions-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+}
+
+/* Medium screens (992px to 1199px) */
+@media (max-width: 1199px) {
+    .dashboard-container {
+        padding: 25px;
+    }
+
+    .status-cards-container {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
+    }
+}
+
+/* Small screens (768px to 991px) */
+@media (max-width: 991px) {
+    .dashboard-container {
+        padding: 20px;
+    }
+
+    .status-cards-container {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 12px;
+    }
+
+    .status-card {
+        padding: 12px;
+    }
+
+    .status-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        margin-right: 10px;
+    }
+
+    .status-details h3 {
+        font-size: 14px;
+    }
+
+    .status-details p {
+        font-size: 12px;
+    }
+}
+
+/* Tablet screens (768px and below) */
 @media (max-width: 768px) {
     .dashboard-container {
         padding: 15px;
@@ -713,6 +930,7 @@ h1 {
         display: flex;
         overflow-x: auto;
         padding-bottom: 10px;
+        gap: 10px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none; /* Firefox */
         -ms-overflow-style: none; /* IE and Edge */
@@ -724,39 +942,55 @@ h1 {
 
     .status-card {
         flex: 0 0 140px;
-        margin-right: 10px;
+        min-width: 140px;
+        margin-right: 0;
     }
 
     /* Make subject list single column on mobile */
     .subject-list {
         grid-template-columns: 1fr;
+        gap: 12px;
     }
 
-    /* Adjust filter form for mobile */
-    .d-flex.justify-content-center.align-items-center.mb-4 {
+    /* Improve filter form for mobile */
+    .filter-card-body {
+        padding: 15px;
+    }
+
+    .filter-inline-container {
         flex-direction: column;
-        align-items: stretch !important;
+        gap: 15px;
+        align-items: stretch;
     }
 
-    .d-flex.justify-content-center.align-items-center.mb-4 form {
-        width: 100%;
+    .filter-group {
+        min-width: 100%;
     }
 
-    .d-flex.justify-content-center.align-items-center.mb-4 select,
-    .d-flex.justify-content-center.align-items-center.mb-4 button,
-    .d-flex.justify-content-center.align-items-center.mb-4 a {
+    .filter-select {
+        padding: 12px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+
+    .filter-buttons {
+        flex-direction: column;
+    }
+
+    .btn {
         width: 100%;
-        margin: 5px 0;
+        padding: 12px;
+        font-size: 16px;
     }
 
     /* Make submissions grid single column on mobile */
     .submissions-grid {
         grid-template-columns: 1fr;
+        gap: 15px;
     }
 
     /* Adjust card content for mobile */
     .submission-card {
-        margin-bottom: 15px;
+        margin-bottom: 0;
     }
 
     .card-header h3 {
@@ -765,23 +999,57 @@ h1 {
 
     .info-row {
         font-size: 0.9rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+
+    .info-row .label {
+        font-weight: 600;
+        color: #555;
+    }
+
+    .info-row .value,
+    .info-row .date,
+    .info-row .status {
+        margin-left: 0;
     }
 
     /* Make buttons full width on mobile */
     .btn-submit-grades,
     .btn-view-submission {
         width: 100%;
-        margin-top: 5px;
+        margin-top: 10px;
+        padding: 12px;
+        font-size: 16px;
     }
 }
 
-@media (max-width: 480px) {
+/* Mobile screens (576px and below) */
+@media (max-width: 576px) {
     .dashboard-container {
         padding: 10px;
     }
 
     .status-card {
         flex: 0 0 130px;
+        min-width: 130px;
+        padding: 10px;
+    }
+
+    .status-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 18px;
+        margin-right: 8px;
+    }
+
+    .status-details h3 {
+        font-size: 13px;
+    }
+
+    .status-details p {
+        font-size: 11px;
     }
 
     .subject-card {
@@ -789,24 +1057,158 @@ h1 {
     }
 
     .subject-code {
-        font-size: 0.9em;
+        font-size: 0.85em;
     }
 
     .subject-name {
-        font-size: 0.95em;
+        font-size: 0.9em;
     }
 
     .status-badge {
-        font-size: 0.75em;
-        padding: 2px 8px;
+        font-size: 0.7em;
+        padding: 2px 6px;
     }
 
-    .card-actions {
-        flex-direction: column;
+    .card-header {
+        padding: 12px;
     }
 
-    .card-actions a {
-        margin: 5px 0;
+    .card-content {
+        padding: 12px;
+    }
+
+    .card-header h3 {
+        font-size: 1rem;
+    }
+
+    .info-row {
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+    }
+
+    .btn-submit-grades,
+    .btn-view-submission {
+        padding: 10px;
+        font-size: 14px;
+    }
+}
+
+/* Extra small screens (480px and below) */
+@media (max-width: 480px) {
+    .dashboard-container {
+        padding: 8px;
+    }
+
+    h1, h2 {
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+    }
+
+    .status-card {
+        flex: 0 0 120px;
+        min-width: 120px;
+        padding: 8px;
+    }
+
+    .status-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+        margin-right: 6px;
+    }
+
+    .status-details h3 {
+        font-size: 12px;
+    }
+
+    .status-details p {
+        font-size: 10px;
+    }
+
+    .subject-card {
+        padding: 10px;
+    }
+
+    .subject-code {
+        font-size: 0.8em;
+    }
+
+    .subject-name {
+        font-size: 0.85em;
+    }
+
+    .status-badge {
+        font-size: 0.65em;
+        padding: 1px 4px;
+    }
+
+    .card-header {
+        padding: 10px;
+    }
+
+    .card-content {
+        padding: 10px;
+    }
+
+    .card-header h3 {
+        font-size: 0.95rem;
+    }
+
+    .info-row {
+        font-size: 0.8rem;
+        margin-bottom: 6px;
+    }
+
+    .btn-submit-grades,
+    .btn-view-submission {
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    /* Improve form elements for very small screens */
+    .filter-card-header {
+        padding: 12px 15px;
+    }
+
+    .filter-card-header h5 {
+        font-size: 14px;
+    }
+
+    .filter-card-body {
+        padding: 12px;
+    }
+
+    .filter-select {
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .btn {
+        padding: 10px;
+        font-size: 14px;
+    }
+}
+
+/* Landscape orientation for mobile devices */
+@media (max-height: 500px) and (orientation: landscape) {
+    .dashboard-container {
+        padding: 10px;
+    }
+
+    .status-cards-container {
+        margin: 10px 0 15px;
+    }
+
+    .submissions-section {
+        margin-top: 15px;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .PN-logo {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
     }
 }
 </style>

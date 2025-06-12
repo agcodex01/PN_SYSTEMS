@@ -1,450 +1,656 @@
 @extends('layouts.educator_layout')
 @section('content')
-    <div class="dashboard-header">
-        <h1>Internship Grades Analytics</h1>
-        <div class="filters">
-            <div class="filter-group">
-                <label for="classFilter">Filter by Class:</label>
-                <select id="classFilter" class="form-control styled-select">
-                    <option value="">All Classes</option>
-                    @foreach($classes as $class)
-                        <option value="{{ $class->class_id }}">{{ $class->class_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="companyFilter">Filter by Company:</label>
-                <select id="companyFilter" class="form-control styled-select">
-                    <option value="">All Companies</option>
-                    @foreach($classCompanies[array_key_first($classCompanies)] as $company)
-                        <option value="{{ $company }}">{{ $company }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="filter-group">
-                <label for="submissionNumberFilter">Filter by Submission:</label>
-                <select id="submissionNumberFilter" class="form-control styled-select">
-                    <option value="">All Submissions</option>
-                    <option value="1st">1st Submission</option>
-                    <option value="2nd">2nd Submission</option>
-                    <option value="3rd">3rd Submission</option>
-                    <option value="4th">4th Submission</option>
-                </select>
+
+<div class="content-wrapper">
+    <div class="analytics-container">
+    <div class="header-section">
+        <h1 style="font-weight: 300">📊 Internship Grades Analytics</h1>
+        <hr>
+        <p class="text-muted">View the internship grades distribution by competency for different submissions.</p>
+    </div>
+
+    <div class="filter-card">
+        <div class="filter-card-header">
+            <h5>
+                <i class="bi bi-funnel me-2"></i>
+                Filter Internship Grades
+            </h5>
+        </div>
+        <div class="filter-card-body">
+            <div class="filter-inline-container">
+                <div class="filter-group">
+                    <label for="classFilter">Class</label>
+                    <select id="classFilter" class="styled-select">
+                        <option value="">All Classes</option>
+                        @foreach($classes as $class)
+                            <option value="{{ $class->class_id }}">{{ $class->class_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="companyFilter">Company</label>
+                    <select id="companyFilter" class="styled-select">
+                        <option value="">All Companies</option>
+                        @foreach($classCompanies[array_key_first($classCompanies)] as $company)
+                            <option value="{{ $company }}">{{ $company }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="submissionNumberFilter">Submission</label>
+                    <select id="submissionNumberFilter" class="styled-select">
+                        <option value="">All Submissions</option>
+                        <option value="1st">1st Submission</option>
+                        <option value="2nd">2nd Submission</option>
+                        <option value="3rd">3rd Submission</option>
+                        <option value="4th">4th Submission</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
-    <hr>
 
     @foreach($classes as $class)
-    <div class="chart-section" id="chart-section-{{ $class->class_id }}">
-        <div class="chart-header">
-            <h3>{{ $class->class_name }}</h3>
+    <div class="card shadow-sm chart-section" id="chart-section-{{ $class->class_id }}">
+        <div class="card-header">
+            <h5 class="mb-0">{{ $class->class_name }}</h5>
         </div>
+        <div class="card-body">
+            <!-- Charts for each submission number -->
+            <div class="submission-charts" id="submission-charts-{{ $class->class_id }}">
+                <div class="submission-chart" id="submission-1st-{{ $class->class_id }}" style="display: none;">
+                    <h6>1st Submission</h6>
+                    <div class="chart-container">
+                        <canvas id="chart-1st-{{ $class->class_id }}"></canvas>
+                    </div>
+                    <div class="no-data-message" id="no-data-1st-{{ $class->class_id }}" style="display: none;">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h6>No Data Available</h6>
+                        <p>There is no data available for the selected filters.</p>
+                    </div>
+                </div>
 
-        <!-- Charts for each submission number -->
-        <div class="submission-charts" id="submission-charts-{{ $class->class_id }}">
-            <div class="submission-chart" id="submission-1st-{{ $class->class_id }}" style="display: none;">
-                <h4>1st Submission</h4>
-                <div class="chart-container">
-                    <canvas id="chart-1st-{{ $class->class_id }}"></canvas>
+                <div class="submission-chart" id="submission-2nd-{{ $class->class_id }}" style="display: none;">
+                    <h6>2nd Submission</h6>
+                    <div class="chart-container">
+                        <canvas id="chart-2nd-{{ $class->class_id }}"></canvas>
+                    </div>
+                    <div class="no-data-message" id="no-data-2nd-{{ $class->class_id }}" style="display: none;">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h6>No Data Available</h6>
+                        <p>There is no data available for the selected filters.</p>
+                    </div>
                 </div>
-                <div class="no-data-message" id="no-data-1st-{{ $class->class_id }}" style="display: none;">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3>No Data Available</h3>
-                    <p>There is no data available for the selected filters.</p>
-                </div>
-            </div>
 
-            <div class="submission-chart" id="submission-2nd-{{ $class->class_id }}" style="display: none;">
-                <h4>2nd Submission</h4>
-                <div class="chart-container">
-                    <canvas id="chart-2nd-{{ $class->class_id }}"></canvas>
+                <div class="submission-chart" id="submission-3rd-{{ $class->class_id }}" style="display: none;">
+                    <h6>3rd Submission</h6>
+                    <div class="chart-container">
+                        <canvas id="chart-3rd-{{ $class->class_id }}"></canvas>
+                    </div>
+                    <div class="no-data-message" id="no-data-3rd-{{ $class->class_id }}" style="display: none;">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h6>No Data Available</h6>
+                        <p>There is no data available for the selected filters.</p>
+                    </div>
                 </div>
-                <div class="no-data-message" id="no-data-2nd-{{ $class->class_id }}" style="display: none;">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3>No Data Available</h3>
-                    <p>There is no data available for the selected filters.</p>
-                </div>
-            </div>
 
-            <div class="submission-chart" id="submission-3rd-{{ $class->class_id }}" style="display: none;">
-                <h4>3rd Submission</h4>
-                <div class="chart-container">
-                    <canvas id="chart-3rd-{{ $class->class_id }}"></canvas>
-                </div>
-                <div class="no-data-message" id="no-data-3rd-{{ $class->class_id }}" style="display: none;">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3>No Data Available</h3>
-                    <p>There is no data available for the selected filters.</p>
-                </div>
-            </div>
-
-            <div class="submission-chart" id="submission-4th-{{ $class->class_id }}" style="display: none;">
-                <h4>4th Submission</h4>
-                <div class="chart-container">
-                    <canvas id="chart-4th-{{ $class->class_id }}"></canvas>
-                </div>
-                <div class="no-data-message" id="no-data-4th-{{ $class->class_id }}" style="display: none;">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <h3>No Data Available</h3>
-                    <p>There is no data available for the selected filters.</p>
+                <div class="submission-chart" id="submission-4th-{{ $class->class_id }}" style="display: none;">
+                    <h6>4th Submission</h6>
+                    <div class="chart-container">
+                        <canvas id="chart-4th-{{ $class->class_id }}"></canvas>
+                    </div>
+                    <div class="no-data-message" id="no-data-4th-{{ $class->class_id }}" style="display: none;">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <h6>No Data Available</h6>
+                        <p>There is no data available for the selected filters.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     @endforeach
+    </div>
+</div>
 
-    <style>
-        .dashboard-header {
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
+<style>
+/* Content Wrapper - matches training pattern */
+.content-wrapper {
+    margin-top: 70px;
+    margin-left: 270px; /* Account for sidebar width + extra space */
+    padding: 20px;
+    min-height: 100vh;
+}
 
-        .filters {
-            display: flex;
-            gap: 20px;
-            margin-top: 15px;
-        }
+.analytics-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
-        .filter-group {
-            flex: 1;
-        }
+.header-section {
+    margin-bottom: 25px;
+    padding-top: 10px;
+}
 
-        .filter-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
+.header-section h1 {
+    font-weight: 300;
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 2rem;
+    line-height: 1.2;
+    padding-top: 5px;
+}
 
-        .styled-select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background-color: white;
-        }
+.header-section hr {
+    border: none;
+    height: 1px;
+    background-color: #ddd;
+    margin-bottom: 15px;
+}
 
-        .chart-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+.header-section .text-muted {
+    color: #6c757d;
+    font-size: 1rem;
+    margin-bottom: 0;
+}
 
-        .chart-header {
-            margin-bottom: 20px;
-        }
+/* Filter Card Styling - matches working educator analytics */
+.filter-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 1.5rem;
+}
 
-        .submission-charts {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
+.filter-card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+}
 
-        .submission-chart {
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-        }
+.filter-card-header h5 {
+    margin: 0;
+    font-weight: 500;
+    color: #495057;
+}
 
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin-top: 15px;
-        }
+.filter-card-body {
+    padding: 20px;
+}
 
-        .no-data-message {
-            text-align: center;
-            padding: 40px 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-        }
+/* Filter Section Styling - matches working educator analytics */
+.filter-inline-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 20px;
+}
 
-        .no-data-message svg {
-            width: 48px;
-            height: 48px;
-            color: #6c757d;
-            margin-bottom: 15px;
-        }
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    flex: 1;
+}
 
-        .no-data-message h3 {
-            color: #343a40;
-            margin-bottom: 10px;
-        }
+.filter-group label {
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #495057;
+    font-size: 14px;
+}
 
-        .no-data-message p {
-            color: #6c757d;
-            margin: 0;
-        }
-    </style>
+.styled-select {
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 14px;
+}
+
+.styled-select:focus {
+    border-color: #22bbea;
+    box-shadow: 0 0 0 0.2rem rgba(34, 187, 234, 0.25);
+    outline: none;
+}
+
+.styled-select:disabled {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Card styling - matches working educator analytics */
+.card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: #22bbea;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Chart specific styling */
+.submission-charts {
+    display: grid;
+    gap: 15px;
+    margin-top: 15px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.submission-chart {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.submission-chart h6 {
+    color: #495057;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: white;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.no-data-message {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.no-data-message svg {
+    width: 48px;
+    height: 48px;
+    color: #6c757d;
+    margin-bottom: 16px;
+}
+
+.no-data-message h6 {
+    color: #495057;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+}
+
+.no-data-message p {
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .content-wrapper {
+        margin-left: 0;
+        margin-top: 60px;
+        padding: 15px;
+    }
+
+    .analytics-container {
+        padding: 15px;
+    }
+
+    .filter-inline-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .filter-group {
+        min-width: 100%;
+    }
+
+    .submission-charts {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+    }
+
+    .chart-container {
+        height: 250px;
+    }
+
+    .header-section h1 {
+        font-size: 1.7rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .content-wrapper {
+        padding: 10px;
+    }
+
+    .analytics-container {
+        padding: 12px;
+    }
+
+    .chart-container {
+        height: 220px;
+    }
+
+    .header-section h1 {
+        font-size: 1.5rem;
+    }
+}
+</style>
 
     @section('scripts')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 
-    <script>
-        // Add CSRF token to all AJAX requests
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            }
-        });
+@push('scripts')
+<!-- Include Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 
-        // Store all charts
-        const charts = {};
+<script>
+    // Add CSRF token to all AJAX requests
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
 
-        // Initialize charts for each class and submission number
-        @foreach($classes as $class)
-        ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
-            const ctx = document.getElementById(`chart-${submissionNumber}-{{ $class->class_id }}`).getContext('2d');
-            charts[`${submissionNumber}-{{ $class->class_id }}`] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['ICT Learning', '21st Century Skills', 'Expected Outputs'],
-                    datasets: [
-                        {
-                            label: 'Grade 1',
-                            data: [0, 0, 0],
-                            backgroundColor: '#10B981',
-                            borderColor: '#10B981',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Grade 2',
-                            data: [0, 0, 0],
-                            backgroundColor: '#F59E0B',
-                            borderColor: '#F59E0B',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Grade 3',
-                            data: [0, 0, 0],
-                            backgroundColor: '#F97316',
-                            borderColor: '#F97316',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Grade 4',
-                            data: [0, 0, 0],
-                            backgroundColor: '#EF4444',
-                            borderColor: '#EF4444',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 10,
-                            title: {
-                                display: true,
-                                text: 'Number of Students'
-                            },
-                            ticks: {
-                                precision: 0,
-                                stepSize: 2
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Competencies'
-                            }
-                        }
+    // Store all charts
+    const charts = {};
+
+    // Initialize charts for each class and submission number
+    @foreach($classes as $class)
+    ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
+        const ctx = document.getElementById(`chart-${submissionNumber}-{{ $class->class_id }}`).getContext('2d');
+        charts[`${submissionNumber}-{{ $class->class_id }}`] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['ICT Learning', '21st Century Skills', 'Expected Outputs'],
+                datasets: [
+                    {
+                        label: 'Grade 1',
+                        data: [0, 0, 0],
+                        backgroundColor: '#10B981',
+                        borderColor: '#10B981',
+                        borderWidth: 1
                     },
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                        },
+                    {
+                        label: 'Grade 2',
+                        data: [0, 0, 0],
+                        backgroundColor: '#F59E0B',
+                        borderColor: '#F59E0B',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Grade 3',
+                        data: [0, 0, 0],
+                        backgroundColor: '#F97316',
+                        borderColor: '#F97316',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Grade 4',
+                        data: [0, 0, 0],
+                        backgroundColor: '#EF4444',
+                        borderColor: '#EF4444',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
                         title: {
                             display: true,
-                            text: `Internship Grades Distribution by Competency - ${submissionNumber} Submission`
+                            text: 'Number of Students'
+                        },
+                        ticks: {
+                            precision: 0,
+                            stepSize: 2
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Competencies'
                         }
                     }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: `Internship Grades Distribution by Competency - ${submissionNumber} Submission`
+                    }
                 }
-            });
+            }
         });
-        @endforeach
+    });
+    @endforeach
 
-        // Function to update a specific chart
-        function updateChart(classId, company, submissionNumber) {
-            const chartContainer = document.querySelector(`#submission-${submissionNumber}-${classId} .chart-container`);
-            const noDataMessage = document.getElementById(`no-data-${submissionNumber}-${classId}`);
-            const submissionChart = document.getElementById(`submission-${submissionNumber}-${classId}`);
-            
-            // Build query parameters
-            const params = new URLSearchParams();
-            if (company) params.append('company', company);
-            params.append('class_id', classId);
-            params.append('submission_number', submissionNumber);
-            
-            // Make an AJAX call to get updated data
-            fetch(`{{ route('educator.intern-grades-progress-data') }}?${params.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Received data:', data);
-                // Update the chart with new data
-                const chart = charts[`${submissionNumber}-${classId}`];
+    // Function to update a specific chart
+    function updateChart(classId, company, submissionNumber) {
+        const chartContainer = document.querySelector(`#submission-${submissionNumber}-${classId} .chart-container`);
+        const noDataMessage = document.getElementById(`no-data-${submissionNumber}-${classId}`);
+        const submissionChart = document.getElementById(`submission-${submissionNumber}-${classId}`);
+
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (company) params.append('company', company);
+        params.append('class_id', classId);
+        params.append('submission_number', submissionNumber);
+
+        // Make an AJAX call to get updated data
+        fetch(`{{ route('educator.intern-grades-progress-data') }}?${params.toString()}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Received data for class', classId, 'with company', company, 'and submission', submissionNumber, ':', data);
+
+            if (charts[`${submissionNumber}-${classId}`] && data.classChartData[classId]) {
                 const chartData = data.classChartData[classId].chart_data;
-                console.log('Chart data for class:', classId, chartData);
-                
-                chart.data.datasets = chartData.datasets;
-                chart.update();
 
-                // Show/hide chart and no-data message
+                // Update the chart data
+                charts[`${submissionNumber}-${classId}`].data.labels = chartData.labels;
+                charts[`${submissionNumber}-${classId}`].data.datasets = chartData.datasets;
+                charts[`${submissionNumber}-${classId}`].update();
+
+                // Show/hide based on hasData flag
                 if (chartData.hasData) {
                     chartContainer.style.display = 'block';
                     noDataMessage.style.display = 'none';
+                    submissionChart.style.display = 'block';
                 } else {
                     chartContainer.style.display = 'none';
-                    noDataMessage.style.display = 'block';
+                    noDataMessage.style.display = 'none';
+                    submissionChart.style.display = 'none';
                 }
-                submissionChart.style.display = 'block';
-
-                // Update the layout of submission charts
-                updateSubmissionChartsLayout(classId);
-            })
-            .catch(error => {
-                console.error('Error fetching chart data:', error);
-                chartContainer.style.display = 'none';
-                noDataMessage.style.display = 'block';
-                submissionChart.style.display = 'block';
-            });
-        }
+            }
+        })
+        .catch(error => {
+            console.error('Error updating chart:', error);
+            alert('Failed to update chart data. Please try again.');
+        });
+    }
 
         // Function to update the layout of submission charts
-        function updateSubmissionChartsLayout(classId) {
-            const submissionCharts = document.getElementById(`submission-charts-${classId}`);
-            const visibleCharts = Array.from(submissionCharts.querySelectorAll('.submission-chart'))
-                .filter(chart => chart.style.display !== 'none');
+    // Function to update submission charts layout
+    function updateSubmissionChartsLayout(classId) {
+        const submissionCharts = document.getElementById(`submission-charts-${classId}`);
+        const visibleCharts = Array.from(submissionCharts.querySelectorAll('.submission-chart'))
+            .filter(chart => chart.style.display !== 'none');
 
-            // Always use block display for charts
-            submissionCharts.style.display = 'block';
+        // Always use block display for charts
+        submissionCharts.style.display = 'block';
 
-            // Update grid columns based on number of visible charts
-            if (visibleCharts.length === 1) {
-                submissionCharts.style.gridTemplateColumns = '1fr';
-            } else if (visibleCharts.length === 2) {
-                submissionCharts.style.gridTemplateColumns = 'repeat(2, 1fr)';
-            } else if (visibleCharts.length === 3) {
-                submissionCharts.style.gridTemplateColumns = 'repeat(3, 1fr)';
-            } else if (visibleCharts.length === 4) {
-                submissionCharts.style.gridTemplateColumns = 'repeat(2, 1fr)';
-            }
+        // Update grid columns based on number of visible charts
+        if (visibleCharts.length === 1) {
+            submissionCharts.style.gridTemplateColumns = '1fr';
+        } else if (visibleCharts.length === 2) {
+            submissionCharts.style.gridTemplateColumns = 'repeat(2, 1fr)';
+        } else if (visibleCharts.length === 3) {
+            submissionCharts.style.gridTemplateColumns = 'repeat(3, 1fr)';
+        } else if (visibleCharts.length === 4) {
+            submissionCharts.style.gridTemplateColumns = 'repeat(2, 1fr)';
         }
+    }
 
-        // Add event listener to class filter
-        document.getElementById('classFilter').addEventListener('change', function() {
-            const selectedClass = this.value;
-            const selectedCompany = document.getElementById('companyFilter').value;
-            const selectedSubmission = document.getElementById('submissionNumberFilter').value;
+    // Add event listener to class filter
+    document.getElementById('classFilter').addEventListener('change', function() {
+        const selectedClassId = this.value;
+        const company = document.getElementById('companyFilter').value;
 
-            // Update company options based on selected class
-            if (selectedClass) {
-                fetch(`{{ route('educator.intern-grades-progress-data') }}?class_id=${selectedClass}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const companyFilter = document.getElementById('companyFilter');
-                        companyFilter.innerHTML = '<option value="">All Companies</option>';
-                        
-                        if (data.classChartData[selectedClass]) {
-                            const companies = data.classChartData[selectedClass].companies || [];
-                            companies.forEach(company => {
-                                const option = document.createElement('option');
-                                option.value = company;
-                                option.textContent = company;
-                                companyFilter.appendChild(option);
-                            });
-                        }
-                    });
-            }
+        // Get all chart sections
+        const sections = document.querySelectorAll('.chart-section');
 
-            // Update all charts for the selected class
-            if (selectedClass) {
+        // Show/hide sections based on selection
+        sections.forEach(section => {
+            const sectionId = section.getAttribute('id');
+            const sectionClassId = sectionId.replace('chart-section-', '');
+
+            if (!selectedClassId || sectionClassId === selectedClassId) {
+                section.style.display = 'block';
+                // Update all submission charts for this class
                 ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
-                    if (!selectedSubmission || selectedSubmission === submissionNumber) {
-                        updateChart(selectedClass, selectedCompany, submissionNumber);
-                    }
+                    updateChart(sectionClassId, company, submissionNumber);
                 });
+                // Ensure the submission charts container is visible
+                const submissionCharts = document.getElementById(`submission-charts-${sectionClassId}`);
+                if (submissionCharts) {
+                    submissionCharts.style.display = 'block';
+                }
+                updateSubmissionChartsLayout(sectionClassId);
+            } else {
+                section.style.display = 'none';
             }
         });
+    });
 
         // Add event listener to company filter
         document.getElementById('companyFilter').addEventListener('change', function() {
-            const selectedClass = document.getElementById('classFilter').value;
-            const selectedCompany = this.value;
-            const selectedSubmission = document.getElementById('submissionNumberFilter').value;
+            const company = this.value;
+            const selectedClassId = document.getElementById('classFilter').value;
 
-            if (selectedClass) {
-                ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
-                    if (!selectedSubmission || selectedSubmission === submissionNumber) {
-                        updateChart(selectedClass, selectedCompany, submissionNumber);
-                    }
-                });
-            }
+            // Update charts for all visible classes
+            document.querySelectorAll('.chart-section').forEach(section => {
+                const sectionId = section.getAttribute('id');
+                const sectionClassId = sectionId.replace('chart-section-', '');
+
+                if (!selectedClassId || sectionClassId === selectedClassId) {
+                    ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
+                        updateChart(sectionClassId, company, submissionNumber);
+                    });
+                    updateSubmissionChartsLayout(sectionClassId);
+                }
+            });
         });
 
         // Add event listener to submission number filter
         document.getElementById('submissionNumberFilter').addEventListener('change', function() {
-            const selectedClass = document.getElementById('classFilter').value;
-            const selectedCompany = document.getElementById('companyFilter').value;
             const selectedSubmission = this.value;
+            const selectedClassId = document.getElementById('classFilter').value;
+            const company = document.getElementById('companyFilter').value;
 
-            if (selectedClass) {
-                if (selectedSubmission) {
-                    // Show only the selected submission chart
-                    ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
-                        const chart = document.getElementById(`submission-${submissionNumber}-${selectedClass}`);
-                        if (submissionNumber === selectedSubmission) {
-                            updateChart(selectedClass, selectedCompany, submissionNumber);
-                        } else {
-                            chart.style.display = 'none';
-                        }
-                    });
+            // Show/hide submission charts based on selection
+            document.querySelectorAll('.submission-chart').forEach(chart => {
+                const chartId = chart.getAttribute('id');
+                const [_, submissionNumber, classId] = chartId.split('-');
+
+                if (!selectedSubmission || submissionNumber === selectedSubmission) {
+                    if (selectedClassId && classId === selectedClassId) {
+                        updateChart(classId, company, submissionNumber);
+                    }
                 } else {
-                    // Show all submission charts
-                    ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
-                        updateChart(selectedClass, selectedCompany, submissionNumber);
-                    });
+                    chart.style.display = 'none';
                 }
-            }
+            });
+
+            // Update layout for each class
+            document.querySelectorAll('.chart-section').forEach(section => {
+                const sectionId = section.getAttribute('id');
+                const sectionClassId = sectionId.replace('chart-section-', '');
+                if (!selectedClassId || sectionClassId === selectedClassId) {
+                    // Ensure the submission charts container is visible
+                    const submissionCharts = document.getElementById(`submission-charts-${sectionClassId}`);
+                    if (submissionCharts) {
+                        submissionCharts.style.display = 'block';
+                    }
+                    updateSubmissionChartsLayout(sectionClassId);
+                }
+            });
         });
 
-        // Initialize charts for the first class if available
-        const firstClass = document.querySelector('.chart-section');
-        if (firstClass) {
-            const classId = firstClass.id.split('-')[2];
-            document.getElementById('classFilter').value = classId;
-            ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
-                updateChart(classId, '', submissionNumber);
-            });
+    // Initial load - update all charts and layouts
+    document.querySelectorAll('.chart-section').forEach(section => {
+        const sectionId = section.getAttribute('id');
+        const sectionClassId = sectionId.replace('chart-section-', '');
+        const company = document.getElementById('companyFilter').value;
+        ['1st', '2nd', '3rd', '4th'].forEach(submissionNumber => {
+            updateChart(sectionClassId, company, submissionNumber);
+        });
+        // Ensure the submission charts container is visible
+        const submissionCharts = document.getElementById(`submission-charts-${sectionClassId}`);
+        if (submissionCharts) {
+            submissionCharts.style.display = 'block';
         }
-    </script>
-    @endsection
-@endsection 
+        updateSubmissionChartsLayout(sectionClassId);
+    });
+</script>
+
+
+@endpush

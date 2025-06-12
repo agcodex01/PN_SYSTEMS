@@ -17,6 +17,40 @@
         --topbar-height: 80px;
         --content-padding: 20px;
     }
+
+    /* Theme Loader */
+    .loader {
+        width: 50px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 8px solid #22bbea;
+        border-right-color: #ff9933;
+        animation: l2 1s infinite linear;
+    }
+    @keyframes l2 {
+        to { transform: rotate(1turn); }
+    }
+
+    /* Loader Overlay */
+    .loader-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        opacity: 1;
+        transition: opacity 0.3s ease;
+    }
+
+    .loader-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
     
     * {
         box-sizing: border-box;
@@ -173,6 +207,10 @@
 
 </head>
 <body>
+    <!-- Theme Loader -->
+    <div class="loader-overlay" id="pageLoader">
+        <div class="loader"></div>
+    </div>
     <div class="top-bar">
         <img class="PN-logo" src="<?php echo e(asset('images/PN-logo.png')); ?>" alt="PN Logo">
 
@@ -267,6 +305,50 @@
     </div>
 
     <script>
+    // Hide loader when page is loaded
+    window.addEventListener('load', function() {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.classList.add('hidden');
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 300);
+        }
+    });
+
+    // Show loader on user interactions
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show loader on form submissions
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                showLoader();
+            });
+        });
+
+        // Show loader on navigation links
+        document.querySelectorAll('a:not([href^="#"]):not([href^="javascript:"]):not([target="_blank"]):not([href^="mailto:"]):not([href^="tel:"])').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!this.getAttribute('onclick') || this.getAttribute('href') !== '#') {
+                    showLoader();
+                }
+            });
+        });
+
+        // Show loader on button clicks that might navigate
+        document.querySelectorAll('button[type="submit"], .btn[href], button[onclick*="location"], button[onclick*="window.location"]').forEach(button => {
+            button.addEventListener('click', function() {
+                showLoader();
+            });
+        });
+    });
+
+    function showLoader() {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.style.display = 'flex';
+            loader.classList.remove('hidden');
+        }
+    }
 
     function toggleDropdown(event) {
         event.preventDefault();

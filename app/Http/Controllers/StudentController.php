@@ -35,10 +35,25 @@ class StudentController extends Controller
     public function grades(Request $request)
     {
         $user = Auth::user();
-        
+
+        // Get the student's school information to determine grading system
+        $studentSchool = null;
+        $studentClass = DB::table('class_student')
+            ->join('classes', 'class_student.class_id', '=', 'classes.class_id')
+            ->join('schools', 'classes.school_id', '=', 'schools.school_id')
+            ->where('class_student.user_id', $user->user_id)
+            ->select('schools.*')
+            ->first();
+
+        if ($studentClass) {
+            $studentSchool = $studentClass;
+        }
+
+
+
         // Get unique terms and years for the filter dropdowns
         $terms = $this->getSortedTerms();
-            
+
         $years = DB::table('grade_submissions')
             ->distinct()
             ->pluck('academic_year')
@@ -51,31 +66,34 @@ class StudentController extends Controller
                 return 9999; // Default for invalid formats (put them at the end)
             })
             ->values();
-        
+
         // Build the base query for filtered results (used for table/chart)
         $query = DB::table('grade_submission_subject')
             ->join('subjects', 'grade_submission_subject.subject_id', '=', 'subjects.id')
             ->join('grade_submissions', 'grade_submission_subject.grade_submission_id', '=', 'grade_submissions.id')
+            ->leftJoin('schools', 'grade_submissions.school_id', '=', 'schools.school_id')
             ->where('grade_submission_subject.user_id', $user->user_id);
-        
+
         // Apply filters if provided
         if ($request->filled('term')) {
             $query->where('grade_submissions.term', $request->term);
         }
-        
+
         if ($request->filled('academic_year')) {
             $query->where('grade_submissions.academic_year', $request->academic_year);
         }
-        
+
         // Get the filtered subjects with grades (for table/chart)
         $subjectsWithGrades = $query
             ->select(
-                'grade_submission_subject.*', 
-                'subjects.name as subject_name', 
+                'grade_submission_subject.*',
+                'subjects.name as subject_name',
                 'subjects.offer_code as subject_code',
                 'grade_submissions.term',
                 'grade_submissions.academic_year',
-                'grade_submissions.semester'
+                'grade_submissions.semester',
+                'schools.passing_grade_min',
+                'schools.passing_grade_max'
             )
             ->orderBy('grade_submissions.academic_year', 'desc')
             ->orderBy('grade_submissions.term')
@@ -91,19 +109,45 @@ class StudentController extends Controller
             'dr' => 0
         ];
 
-        // Get all subjects for the user (unfiltered) for status cards
+        // Get all subjects for the user (unfiltered) for status cards with school grading info
         $allSubjects = DB::table('grade_submission_subject')
             ->join('subjects', 'grade_submission_subject.subject_id', '=', 'subjects.id')
             ->join('grade_submissions', 'grade_submission_subject.grade_submission_id', '=', 'grade_submissions.id')
+            ->leftJoin('schools', 'grade_submissions.school_id', '=', 'schools.school_id')
             ->where('grade_submission_subject.user_id', $user->user_id)
-            ->select('grade_submission_subject.status')
+            ->select(
+                'grade_submission_subject.status',
+                'grade_submission_subject.grade',
+                'schools.passing_grade_min',
+                'schools.passing_grade_max'
+            )
             ->get();
 
-        // Count subjects by status (unfiltered)
+        // Count subjects by status using school's grading system
         foreach ($allSubjects as $subject) {
-            $status = strtolower($subject->status);
-            if (array_key_exists($status, $statusCounts)) {
-                $statusCounts[$status]++;
+            $status = strtolower($subject->status ?? '');
+            $grade = $subject->grade ?? null;
+
+            // Get school's passing grade range (fallback to default if not available)
+            $passingMin = $subject->passing_grade_min ?? ($studentSchool->passing_grade_min ?? 1.0);
+            $passingMax = $subject->passing_grade_max ?? ($studentSchool->passing_grade_max ?? 3.0);
+
+            if (is_numeric($grade)) {
+                $gradeValue = floatval($grade);
+                // Check if grade is within the school's passing range
+                if ($gradeValue >= $passingMin && $gradeValue <= $passingMax) {
+                    $statusCounts['pass']++;
+                } else {
+                    $statusCounts['fail']++;
+                }
+
+
+            } elseif ($status === 'inc') {
+                $statusCounts['inc']++;
+            } elseif ($status === 'nc') {
+                $statusCounts['nc']++;
+            } elseif ($status === 'dr') {
+                $statusCounts['dr']++;
             }
         }
 
@@ -120,13 +164,57 @@ class StudentController extends Controller
             ->pluck('grade_submission_subject.status', 'grade_submission_subject.id')
             ->toArray();
 
+        // Prepare chart data
+        $subjectLabels = [];
+        $subjectGrades = [];
+        $subjectColors = [];
+        $chartSubjectStatuses = [];
+
+        // Get school's grading system for color coding
+        $passingMin = $studentSchool->passing_grade_min ?? 1.0;
+        $passingMax = $studentSchool->passing_grade_max ?? 3.0;
+
+        foreach ($subjectsWithGrades as $subject) {
+            if (is_numeric($subject->grade)) {
+                $subjectLabels[] = $subject->subject_code ?: substr($subject->subject_name, 0, 10);
+                $subjectGrades[] = floatval($subject->grade);
+                $chartSubjectStatuses[] = $subject->status;
+
+                // Color based on school's grading system
+                $grade = floatval($subject->grade);
+
+
+
+                if ($grade >= $passingMin && $grade <= $passingMax) {
+                    $range = $passingMax - $passingMin;
+                    $excellentThreshold = $passingMin + ($range * 0.8);
+                    $goodThreshold = $passingMin + ($range * 0.5);
+
+                    if ($grade >= $excellentThreshold) {
+                        $subjectColors[] = 'rgba(34, 197, 94, 0.8)'; // Green for excellent
+                    } elseif ($grade >= $goodThreshold) {
+                        $subjectColors[] = 'rgba(59, 130, 246, 0.8)'; // Blue for good
+                    } else {
+                        $subjectColors[] = 'rgba(251, 191, 36, 0.8)'; // Yellow for fair
+                    }
+                } else {
+                    $subjectColors[] = 'rgba(239, 68, 68, 0.8)'; // Red for failing
+                }
+            }
+        }
+
         return view('student.grades', compact(
-            'subjectsWithGrades', 
+            'subjectsWithGrades',
             'statusCounts',
             'terms',
             'years',
             'request',
-            'subjectStatuses'
+            'subjectStatuses',
+            'studentSchool',
+            'subjectLabels',
+            'subjectGrades',
+            'subjectColors',
+            'chartSubjectStatuses'
         ));
     }
 
@@ -218,14 +306,33 @@ class StudentController extends Controller
             'dr' => 0
         ];
 
+        // Get student's school information for grading system
+        $studentSchool = null;
+        $studentClass = DB::table('class_student')
+            ->join('classes', 'class_student.class_id', '=', 'classes.class_id')
+            ->join('schools', 'classes.school_id', '=', 'schools.school_id')
+            ->where('class_student.user_id', $user->user_id)
+            ->select('schools.*')
+            ->first();
+
+        if ($studentClass) {
+            $studentSchool = $studentClass;
+        }
+
         foreach ($allSubjects as $subject) {
             $status = strtolower($subject->status ?? '');
             $grade = $subject->grade ?? null;
 
             if (is_numeric($grade)) {
-                if ($grade >= 3.0 && $grade <= 5.0) {
+                $gradeValue = floatval($grade);
+                // Use school's grading system or fallback to default
+                $passingMin = $studentSchool->passing_grade_min ?? 1.0;
+                $passingMax = $studentSchool->passing_grade_max ?? 3.0;
+
+                // Check if grade is within the school's passing range
+                if ($gradeValue >= $passingMin && $gradeValue <= $passingMax) {
                     $statusCounts['pass']++;
-                } elseif ($grade > 0 && $grade < 3.0) {
+                } else {
                     $statusCounts['fail']++;
                 }
             } elseif ($status === 'inc') {

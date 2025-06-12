@@ -8,7 +8,7 @@
         </a>
         <h2>Class Details</h2>
         <a href="<?php echo e(route('training.schools.show', ['school' => $class->school->school_id])); ?>" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Go to School page
+            <!-- <i class="fas fa-arrow-left"></i>--> Go to School page
         </a>
     </div>
 

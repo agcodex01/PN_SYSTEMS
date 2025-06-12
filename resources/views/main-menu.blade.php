@@ -15,8 +15,25 @@
             --dark-color: #2c3e50;
         }
         
+        * {
+            font-family: 'Poppins', sans-serif !important;
+        }
+
+        /* Preserve icon fonts */
+        .fas, .far, .fal, .fab, .fa,
+        [class*="fa-"],
+        .material-icons,
+        .glyphicon {
+            font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 5 Free", "Font Awesome 5 Pro", "Material Icons", "Glyphicons Halflings" !important;
+        }
+
+        /* Preserve SVG icons */
+        svg {
+            font-family: inherit !important;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', sans-serif !important;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
             margin: 0;

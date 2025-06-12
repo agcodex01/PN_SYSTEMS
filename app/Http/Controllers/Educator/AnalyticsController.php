@@ -50,8 +50,12 @@ class AnalyticsController extends Controller
         // Get the first school's passing grade range as default
         $school = School::select('passing_grade_min', 'passing_grade_max')->first();
 
+        // Get all schools for the dropdown
+        $schools = School::orderBy('name')->get();
+
         return view('educator.analytics.class-progress', [
-            'defaultSchool' => $school
+            'defaultSchool' => $school,
+            'schools' => $schools
         ]);
     }
 
@@ -83,6 +87,11 @@ class AnalyticsController extends Controller
             ->orderByDesc('created_at')
             ->get()
             ->map(function ($submission) {
+                $hasGrades = DB::table('grade_submission_subject')
+                    ->where('grade_submission_id', $submission->id)
+                    ->whereNotNull('grade')
+                    ->exists();
+
                 return [
                     'id' => $submission->id,
                     'label' => sprintf(
@@ -95,17 +104,18 @@ class AnalyticsController extends Controller
                     'has_incomplete_grades' => DB::table('grade_submission_subject')
                         ->where('grade_submission_id', $submission->id)
                         ->whereNull('grade')
-                        ->exists()
+                        ->exists(),
+                    'has_grades' => $hasGrades
                 ];
             });
-            
-        \Log::info('Submissions query:', [
+
+        \Log::info('Educator Submissions query:', [
             'school_id' => $schoolId,
             'class_id' => $classId,
             'count' => $submissions->count(),
             'submissions' => $submissions->toArray()
         ]);
-        
+
         return response()->json($submissions);
     }
 
@@ -140,12 +150,13 @@ class AnalyticsController extends Controller
                 ]);
             }
 
-            // Get all detailed grades for this submission
+            // Get all detailed grades for this submission (include all grades, not just approved)
             $grades = DB::table('grade_submission_subject')
                 ->join('pnph_users', 'grade_submission_subject.user_id', '=', 'pnph_users.user_id')
                 ->leftJoin('student_details', 'pnph_users.user_id', '=', 'student_details.user_id')
                 ->join('subjects', 'grade_submission_subject.subject_id', '=', 'subjects.id')
                 ->where('grade_submission_subject.grade_submission_id', $gradeSubmission->id)
+                ->whereNotNull('grade_submission_subject.grade')
                 ->select(
                     'pnph_users.user_id as student_id',
                     'pnph_users.user_fname',
@@ -153,7 +164,8 @@ class AnalyticsController extends Controller
                     'student_details.gender',
                     'subjects.name as subject_name',
                     'grade_submission_subject.grade',
-                    'grade_submission_subject.student_status as status' // Assuming this is the remarks
+                    'grade_submission_subject.status',
+                    'grade_submission_subject.student_status'
                 )
                 ->get();
             
@@ -327,7 +339,7 @@ class AnalyticsController extends Controller
                     } elseif ($grade->grade === 'NC') {
                         $nc++;
                     } elseif (is_numeric($grade->grade)) {
-                        if ($grade->grade >= $school->passing_grade_min) {
+                        if ($grade->grade >= $school->passing_grade_min && $grade->grade <= $school->passing_grade_max) {
                             $passed++;
                         } else {
                             $failed++;
@@ -445,7 +457,7 @@ class AnalyticsController extends Controller
                     } elseif ($grade->grade === 'NC') {
                         $nc++;
                     } elseif (is_numeric($grade->grade)) {
-                        if ($grade->grade >= $school->passing_grade_min) {
+                        if ($grade->grade >= $school->passing_grade_min && $grade->grade <= $school->passing_grade_max) {
                             $passed++;
                         } else {
                             $failed++;
@@ -538,10 +550,20 @@ class AnalyticsController extends Controller
                 ]);
             }
 
-            // Get students for this class
+            // Get the class record first to get the auto-increment ID
+            $classRecord = ClassModel::where('class_id', $classId)->first();
+            if (!$classRecord) {
+                Log::warning('Class not found for class_id: ' . $classId);
+                return response()->json([
+                    'error' => 'Class not found',
+                    'total_students' => 0
+                ]);
+            }
+
+            // Get students for this class using the auto-increment ID
             $students = PNUser::select('pnph_users.user_id', 'pnph_users.user_fname', 'pnph_users.user_lname')
                 ->join('class_student', 'pnph_users.user_id', '=', 'class_student.user_id')
-                ->where('class_student.class_id', $classId)
+                ->where('class_student.class_id', $classRecord->id) // Use auto-increment ID
                 ->where('pnph_users.user_role', 'Student')
                 ->where('pnph_users.status', 'active')
                 ->orderBy('pnph_users.user_lname')
@@ -605,7 +627,7 @@ class AnalyticsController extends Controller
 
                 if ($hasIncomplete) {
                     $incompleteStudents++;
-                } elseif ($hasFailed || ($validGradesCount > 0 && ($totalGrade / $validGradesCount) < $school->passing_grade_min)) {
+                } elseif ($hasFailed || ($validGradesCount > 0 && (($totalGrade / $validGradesCount) < $school->passing_grade_min || ($totalGrade / $validGradesCount) > $school->passing_grade_max))) {
                     $failedStudents++;
                 } else {
                     $passedStudents++;

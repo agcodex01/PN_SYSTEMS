@@ -51,8 +51,8 @@
     <div class="options">
     <div style="background: #fff; width: 95%; border-radius: 12px; padding: 30px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); max-width: 600px; margin: 30px auto 0 auto; display: flex; flex-direction: column; align-items: center;">
         <div style="width:100%; display:flex; flex-direction:column; align-items:center; margin-bottom: 10px;">
-            <select id="batchFilter" style="width:135px; padding: 10px 14px; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; font-size:1em; color:#333; outline:none; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                <option value="all">All Batches</option>
+            <select id="batchFilter" style="width:135px; padding: 5px 10px; border-radius: 8px; border: 1px solid #ddd; background: #f8f9fa; font-size:1em; color:#333; outline:none; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <option value="all">Batches</option>
                 @foreach($batchCounts->keys() as $batch)
                     <option value="{{ $batch }}">Batch {{ $batch }}</option>
                 @endforeach

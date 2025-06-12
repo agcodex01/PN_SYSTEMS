@@ -1,6 +1,18 @@
+* {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Preserve icon fonts */
+.fas, .far, .fal, .fab, .fa,
+[class*="fa-"],
+.material-icons,
+.glyphicon {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 5 Free", "Font Awesome 5 Pro", "Material Icons", "Glyphicons Halflings" !important;
+}
+
 body{
     margin: 20px;
-    font-family: Poppins;
+    font-family: 'Poppins', sans-serif !important;
 }
 
 .icon-back{

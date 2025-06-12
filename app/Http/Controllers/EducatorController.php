@@ -294,7 +294,8 @@ public function update(Request $request, $user_id)
                     } elseif ($grade->grade === 'NC') {
                         $nc++;
                     } elseif (is_numeric($grade->grade)) {
-                        if ($grade->grade >= $school->passing_grade_min) {
+                        $gradeValue = (float)$grade->grade;
+                        if ($gradeValue >= $school->passing_grade_min && $gradeValue <= $school->passing_grade_max) {
                             $passed++;
                         } else {
                             $failed++;

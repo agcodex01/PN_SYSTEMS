@@ -11,15 +11,60 @@ use Carbon\Carbon;
 
 class InternGradesAnalyticsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Get all classes for the filter
-        $classes = \App\Models\ClassModel::orderBy('class_name')->get();
+        // Get pagination parameters
+        $classPage = $request->get('class_page', 1);
+        $submissionPage = $request->get('submission_page', 1);
+        $classesPerPage = 1; // 1 class per page
+        $submissionsPerPage = 1; // 1 submission per page
 
-        // Get companies for each class
-        $classCompanies = [];
-        foreach ($classes as $class) {
-            $classCompanies[$class->class_id] = InternGrade::select('company_name')
+        // Get all classes
+        $allClasses = \App\Models\ClassModel::orderBy('class_name')->get();
+        $totalClasses = $allClasses->count();
+
+        // Apply class pagination
+        $classOffset = ($classPage - 1) * $classesPerPage;
+        $paginatedClasses = $allClasses->skip($classOffset)->take($classesPerPage);
+
+        // Create class pagination info
+        $classPagination = (object)[
+            'current_page' => $classPage,
+            'last_page' => max(1, ceil($totalClasses / $classesPerPage)),
+            'per_page' => $classesPerPage,
+            'total' => $totalClasses,
+            'from' => $totalClasses > 0 ? $classOffset + 1 : 0,
+            'to' => min($classOffset + $classesPerPage, $totalClasses),
+            'has_pages' => true, // Always show pagination
+            'on_first_page' => $classPage == 1,
+            'has_more_pages' => $classPage < ceil(max(1, $totalClasses) / $classesPerPage)
+        ];
+
+        // Get available submissions for current class
+        $availableSubmissions = ['1st', '2nd', '3rd', '4th'];
+        $totalSubmissions = count($availableSubmissions);
+
+        // Apply submission pagination
+        $submissionOffset = ($submissionPage - 1) * $submissionsPerPage;
+        $currentSubmissions = array_slice($availableSubmissions, $submissionOffset, $submissionsPerPage);
+
+        // Create submission pagination info
+        $submissionPagination = (object)[
+            'current_page' => $submissionPage,
+            'last_page' => max(1, ceil($totalSubmissions / $submissionsPerPage)),
+            'per_page' => $submissionsPerPage,
+            'total' => $totalSubmissions,
+            'from' => $totalSubmissions > 0 ? $submissionOffset + 1 : 0,
+            'to' => min($submissionOffset + $submissionsPerPage, $totalSubmissions),
+            'has_pages' => true, // Always show pagination
+            'on_first_page' => $submissionPage == 1,
+            'has_more_pages' => $submissionPage < ceil(max(1, $totalSubmissions) / $submissionsPerPage)
+        ];
+
+        // Get companies for ALL classes (for filtering dropdown)
+        $allClassCompanies = [];
+        foreach ($allClasses as $class) {
+            $allClassCompanies[$class->class_id] = InternGrade::select('company_name')
                 ->where('class_id', $class->class_id)
                 ->whereNotNull('company_name')
                 ->distinct()
@@ -27,17 +72,23 @@ class InternGradesAnalyticsController extends Controller
                 ->pluck('company_name');
         }
 
-        // Get chart data for each class - always show all data initially
+        // Get submission dates for each submission number
+        $submissionDates = [];
+        foreach ($currentSubmissions as $submissionNumber) {
+            // Get the most recent submission date for this submission number across all classes
+            $submissionDate = InternGrade::where('submission_number', $submissionNumber)
+                ->whereNotNull('submission_date')
+                ->orderBy('submission_date', 'desc')
+                ->value('submission_date');
+
+            $submissionDates[$submissionNumber] = $submissionDate ? \Carbon\Carbon::parse($submissionDate)->format('M d, Y') : null;
+        }
+
+        // Get chart data for paginated classes
         $classChartData = [];
-
-        // First, get all data (no filters) to ensure we have something to show
-        $allData = $this->getDistributionChartData(null, null);
-
-        foreach ($classes as $class) {
-            // Always use all data for initial display to ensure charts show
+        foreach ($paginatedClasses as $class) {
             $classChartData[$class->class_id] = [
                 'class_name' => $class->class_name,
-                'chart_data' => $allData,
                 'companies' => InternGrade::where('class_id', $class->class_id)
                     ->whereNotNull('company_name')
                     ->distinct()
@@ -47,9 +98,14 @@ class InternGradesAnalyticsController extends Controller
         }
 
         return view('training.analytics.intern-grades-progress', compact(
-            'classCompanies',
-            'classes',
-            'classChartData'
+            'allClassCompanies',
+            'allClasses',
+            'paginatedClasses',
+            'classChartData',
+            'classPagination',
+            'submissionPagination',
+            'currentSubmissions',
+            'submissionDates'
         ));
     }
 
@@ -57,6 +113,13 @@ class InternGradesAnalyticsController extends Controller
     {
         $company = $request->input('company');
         $classId = $request->input('class_id');
+        $submissionNumber = $request->input('submission_number');
+
+        \Log::info('Training Intern Grades Analytics Data Request:', [
+            'company' => $company,
+            'class_id' => $classId,
+            'submission_number' => $submissionNumber
+        ]);
 
         // Get chart data for each class
         $classChartData = [];
@@ -77,6 +140,28 @@ class InternGradesAnalyticsController extends Controller
         return response()->json([
             'classChartData' => $classChartData
         ]);
+    }
+
+    public function checkSubmissions(Request $request)
+    {
+        $classId = $request->input('class_id');
+
+        if (!$classId) {
+            // Check if there are any submissions across all classes
+            $hasSubmissions = InternGrade::whereNotNull('submission_number')->exists();
+        } else {
+            // Check if the specific class has any intern grades with submission numbers
+            $hasSubmissions = InternGrade::where('class_id', $classId)
+                ->whereNotNull('submission_number')
+                ->exists();
+        }
+
+        \Log::info('Training Check Submissions:', [
+            'class_id' => $classId,
+            'hasSubmissions' => $hasSubmissions
+        ]);
+
+        return response()->json(['hasSubmissions' => $hasSubmissions]);
     }
 
     private function getSummaryData($company = null)

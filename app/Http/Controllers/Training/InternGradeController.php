@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Training;
 use App\Http\Controllers\Controller;
 use App\Models\InternGrade;
 use App\Models\School;
+use App\Models\ClassModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,34 +15,94 @@ class InternGradeController extends Controller
 {
     public function index(Request $request)
     {
+        // Get current page for class pagination
+        $classPage = $request->get('class_page', 1);
+        $classesPerPage = 1; // 1 class per page as requested
+
+        // Build base query
         $query = InternGrade::with(['intern', 'school', 'classModel', 'intern.studentDetail'])
             ->select('intern_grades.*')
             ->leftJoin('pnph_users', 'intern_grades.intern_id', '=', 'pnph_users.user_id')
             ->leftJoin('schools', 'intern_grades.school_id', '=', 'schools.school_id')
             ->leftJoin('classes', 'intern_grades.class_id', '=', 'classes.class_id');
 
-        if ($request->filled('school_filter')) {
-            $query->where('intern_grades.school_id', $request->school_filter);
+        // Apply filters - Class is now the main filter
+        if ($request->filled('class_filter')) {
+            $query->where('intern_grades.class_id', $request->class_filter);
+        }
+
+        if ($request->filled('submission_filter')) {
+            $query->where('intern_grades.submission_number', $request->submission_filter);
+        }
+
+        if ($request->filled('company_filter')) {
+            $query->where('intern_grades.company_name', 'LIKE', '%' . $request->company_filter . '%');
         }
 
         $internGrades = $query->get();
 
-        \Log::info('InternGradeController@index: Fetched Intern Grades', [
-            'count' => $internGrades->count(), 
-            'grades' => $internGrades->toArray(),
-            'first_grade_class' => $internGrades->first()?->classModel?->toArray()
-        ]);
+        // Get filter options based on current filters
+        $filterOptions = $this->getFilterOptions($request);
 
-        $schools = School::all();
+        // Group grades by class and submission
+        $groupedGrades = $internGrades->groupBy(['class_id', 'submission_number']);
 
-        $groupedGrades = $internGrades->groupBy('class_id');
+        // Apply class pagination
+        $allClassIds = $groupedGrades->keys();
+        $totalClasses = $allClassIds->count();
+        $classOffset = ($classPage - 1) * $classesPerPage;
+        $currentClassIds = $allClassIds->skip($classOffset)->take($classesPerPage);
 
-        \Log::info('InternGradeController@index: Grouped Intern Grades', [
-            'groupedGrades' => $groupedGrades->toArray(),
-            'first_group_class' => $groupedGrades->first()?->first()?->classModel?->toArray()
-        ]);
+        // Filter grouped grades to only include current page classes
+        $paginatedGroupedGrades = $groupedGrades->only($currentClassIds->toArray());
 
-        return view('training.intern.index', compact('groupedGrades', 'schools'));
+        // Create class pagination info
+        $classPagination = (object)[
+            'current_page' => $classPage,
+            'last_page' => max(1, ceil($totalClasses / $classesPerPage)), // Ensure at least 1 page
+            'per_page' => $classesPerPage,
+            'total' => $totalClasses,
+            'from' => $totalClasses > 0 ? $classOffset + 1 : 0,
+            'to' => min($classOffset + $classesPerPage, $totalClasses),
+            'has_pages' => true, // Always show pagination
+            'on_first_page' => $classPage == 1,
+            'has_more_pages' => $classPage < ceil(max(1, $totalClasses) / $classesPerPage)
+        ];
+
+        return view('training.intern.index', compact(
+            'paginatedGroupedGrades',
+            'filterOptions',
+            'classPagination'
+        ));
+    }
+
+    private function getFilterOptions(Request $request)
+    {
+        // Get all classes for the class dropdown (not filtered by school)
+        $allClassesQuery = InternGrade::with(['school', 'classModel']);
+        $allClasses = $allClassesQuery->get();
+
+        // Get filtered data for submission and company options based on class filter
+        $filteredQuery = InternGrade::with(['school', 'classModel']);
+
+        if ($request->filled('class_filter')) {
+            $filteredQuery->where('class_id', $request->class_filter);
+        }
+
+        $filteredGrades = $filteredQuery->get();
+
+        return [
+            'classes' => $allClasses->groupBy('class_id')->map(function($classGrades) {
+                $first = $classGrades->first();
+                return [
+                    'class_id' => $first->class_id,
+                    'class_name' => $first->classModel->class_name ?? 'N/A',
+                    'school_name' => $first->school->name ?? 'N/A'
+                ];
+            })->values(),
+            'submissions' => $filteredGrades->pluck('submission_number')->unique()->sort()->values(),
+            'companies' => $filteredGrades->pluck('company_name')->unique()->sort()->values()
+        ];
     }
 
     public function create()
@@ -186,6 +247,7 @@ class InternGradeController extends Controller
     public function update(Request $request, InternGrade $internGrade)
     {
         $validated = $request->validate([
+            'company_name' => 'required|string|max:255',
             'grades.ict_learning_competency' => 'required|integer|min:1|max:4',
             'grades.twenty_first_century_skills' => 'required|integer|min:1|max:4',
             'grades.expected_outputs_deliverables' => 'required|integer|min:1|max:4',
@@ -199,6 +261,11 @@ class InternGradeController extends Controller
 
             // Assign the validated grades array to the grades JSON column
             $internGrade->grades = $validated['grades'];
+
+            // Update company name if provided
+            if (isset($validated['company_name'])) {
+                $internGrade->company_name = $validated['company_name'];
+            }
 
             $internGrade->remarks = $validated['remarks'] ?? null;
             $internGrade->updated_by = Auth::id();

@@ -3,10 +3,57 @@
 <div class="create-submission-container">
     <h1>Create Grade Submission</h1>
     
+    <!-- Enhanced Success and Error Messages -->
+    <?php if(session('success')): ?>
+        <div class="alert-custom alert-success-custom">
+            <div class="alert-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="alert-content">
+                <strong>Success!</strong>
+                <p><?php echo e(session('success')); ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
+
     <?php if(session('error')): ?>
         <div class="alert-custom alert-error-custom">
-            <?php echo e(session('error')); ?>
+            <div class="alert-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="alert-content">
+                <strong>Error!</strong>
+                <p><?php echo e(session('error')); ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
 
+    <?php if(session('warning')): ?>
+        <div class="alert-custom alert-warning-custom">
+            <div class="alert-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="alert-content">
+                <strong>Warning!</strong>
+                <p><?php echo e(session('warning')); ?></p>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Validation Errors -->
+    <?php if($errors->any()): ?>
+        <div class="alert-custom alert-error-custom">
+            <div class="alert-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="alert-content">
+                <strong>Please fix the following errors:</strong>
+                <ul class="error-list">
+                    <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <li><?php echo e($error); ?></li>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </ul>
+            </div>
         </div>
     <?php endif; ?>
 
@@ -528,7 +575,156 @@ document.addEventListener('DOMContentLoaded', function() {
         font-size: 0.875rem;
         margin-top: 5px;
     }
+
+    /* Enhanced Alert Styles */
+    .alert-custom {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        border-left: 4px solid;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        animation: slideInDown 0.3s ease-out;
+    }
+
+    .alert-success-custom {
+        background-color: #d4edda;
+        border-left-color: #28a745;
+        color: #155724;
+    }
+
+    .alert-error-custom {
+        background-color: #f8d7da;
+        border-left-color: #dc3545;
+        color: #721c24;
+    }
+
+    .alert-warning-custom {
+        background-color: #fff3cd;
+        border-left-color: #ffc107;
+        color: #856404;
+    }
+
+    .alert-icon {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 2px;
+    }
+
+    .alert-success-custom .alert-icon {
+        color: #28a745;
+    }
+
+    .alert-error-custom .alert-icon {
+        color: #dc3545;
+    }
+
+    .alert-warning-custom .alert-icon {
+        color: #ffc107;
+    }
+
+    .alert-icon i {
+        font-size: 18px;
+    }
+
+    .alert-content {
+        flex: 1;
+        line-height: 1.5;
+    }
+
+    .alert-content strong {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+
+    .alert-content p {
+        margin: 0;
+        font-size: 14px;
+    }
+
+    .error-list {
+        margin: 8px 0 0 0;
+        padding-left: 20px;
+        list-style-type: disc;
+    }
+
+    .error-list li {
+        margin-bottom: 4px;
+        font-size: 14px;
+    }
+
+    @keyframes slideInDown {
+        from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Auto-hide success messages */
+    .alert-success-custom {
+        position: relative;
+    }
+
+    .alert-success-custom::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: #28a745;
+        animation: progressBar 5s linear forwards;
+    }
+
+    @keyframes progressBar {
+        from {
+            width: 100%;
+        }
+        to {
+            width: 0%;
+        }
+    }
 </style>
 <?php $__env->stopSection(); ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide success messages after 5 seconds
+    const successAlerts = document.querySelectorAll('.alert-success-custom');
+    successAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            alert.style.transition = 'opacity 0.5s ease-out';
+            alert.style.opacity = '0';
+            setTimeout(function() {
+                alert.remove();
+            }, 500);
+        }, 5000);
+    });
+
+    // Add click to dismiss functionality for all alerts
+    const allAlerts = document.querySelectorAll('.alert-custom');
+    allAlerts.forEach(function(alert) {
+        alert.style.cursor = 'pointer';
+        alert.title = 'Click to dismiss';
+        alert.addEventListener('click', function() {
+            this.style.transition = 'opacity 0.3s ease-out';
+            this.style.opacity = '0';
+            setTimeout(() => {
+                this.remove();
+            }, 300);
+        });
+    });
+});
+</script>
 
 <?php echo $__env->make('layouts.nav', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laravel\PNPH-CAPSTONE\resources\views/training/grade-submissions/create.blade.php ENDPATH**/ ?>

@@ -306,7 +306,7 @@
                     </a>
                     <div class="dropdown-content">
                         <a href="<?php echo e(route('training.analytics.class-grades')); ?>" class="<?php echo e(request()->routeIs('training.analytics.class-grades') ? 'active' : ''); ?>">
-                            <img src="<?php echo e(asset('images/class cg.png')); ?>" alt="Class Grades"> Class Grades
+                            <img src="<?php echo e(asset('images/cg.png')); ?>" alt="Class Grades"> Class Grades
                         </a>
                         <a href="<?php echo e(route('training.analytics.subject-progress')); ?>" class="<?php echo e(request()->routeIs('training.analytics.subject-progress') ? 'active' : ''); ?>">
                             <img src="<?php echo e(asset('images/subject progress.png')); ?>" alt="Subject Progress"> Subject Progress

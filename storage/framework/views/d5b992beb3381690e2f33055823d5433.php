@@ -1,33 +1,32 @@
-@extends('layouts.nav')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="create-submission-container">
     <div class="page-header">
         <h1>Edit Intern Grade</h1>
         <p class="subtitle">Update the intern's evaluation grades</p>
     </div>
     
-    @if (session('error'))
+    <?php if(session('error')): ?>
         <div class="alert alert-error">
-            {{ session('error') }}
-        </div>
-    @endif
+            <?php echo e(session('error')); ?>
 
-    <form action="{{ route('training.intern-grades.update', $internGrade->id) }}" method="POST" class="submission-form">
-        @csrf
-        @method('PUT')
+        </div>
+    <?php endif; ?>
+
+    <form action="<?php echo e(route('training.intern-grades.update', $internGrade->id)); ?>" method="POST" class="submission-form">
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('PUT'); ?>
 
         <div class="form-section">
             <h3>Intern Information</h3>
             <div class="form-grid">
                 <div class="form-group">
                     <label>Student ID:</label>
-                    <div class="form-text-display">{{ $internGrade->intern->studentDetail->student_id ?? 'N/A' }}</div>
+                    <div class="form-text-display"><?php echo e($internGrade->intern->studentDetail->student_id ?? 'N/A'); ?></div>
                 </div>
 
                 <div class="form-group">
                     <label>Student Name:</label>
-                    <div class="form-text-display">{{ $internGrade->intern->user_fname }} {{ $internGrade->intern->user_lname }}</div>
+                    <div class="form-text-display"><?php echo e($internGrade->intern->user_fname); ?> <?php echo e($internGrade->intern->user_lname); ?></div>
                 </div>
 
                 <div class="form-group">
@@ -35,12 +34,19 @@
                     <input type="text"
                            name="company_name"
                            id="company_name"
-                           value="{{ old('company_name', $internGrade->company_name) }}"
+                           value="<?php echo e(old('company_name', $internGrade->company_name)); ?>"
                            required
                            placeholder="Enter company name">
-                    @error('company_name')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
+                    <?php $__errorArgs = ['company_name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                        <span class="error-message"><?php echo e($message); ?></span>
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
             </div>
         </div>
@@ -54,7 +60,7 @@
                         <input type="number" 
                                name="grades[ict_learning_competency]" 
                                id="ict_learning"
-                               value="{{ old('grades.ict_learning_competency', $internGrade->ict_learning_competency) }}"
+                               value="<?php echo e(old('grades.ict_learning_competency', $internGrade->ict_learning_competency)); ?>"
                                min="1"
                                max="4"
                                step="1"
@@ -63,9 +69,16 @@
                                onkeypress="return event.charCode >= 49 && event.charCode <= 52">
                         <span class="grade-weight">(40%)</span>
                     </div>
-                    @error('grades.ict_learning_competency')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
+                    <?php $__errorArgs = ['grades.ict_learning_competency'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                        <span class="error-message"><?php echo e($message); ?></span>
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
                 <div class="grade-item">
@@ -74,7 +87,7 @@
                         <input type="number" 
                                name="grades[twenty_first_century_skills]" 
                                id="century_skills"
-                               value="{{ old('grades.twenty_first_century_skills', $internGrade->twenty_first_century_skills) }}"
+                               value="<?php echo e(old('grades.twenty_first_century_skills', $internGrade->twenty_first_century_skills)); ?>"
                                min="1"
                                max="4"
                                step="1"
@@ -83,9 +96,16 @@
                                onkeypress="return event.charCode >= 49 && event.charCode <= 52">
                         <span class="grade-weight">(30%)</span>
                     </div>
-                    @error('grades.twenty_first_century_skills')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
+                    <?php $__errorArgs = ['grades.twenty_first_century_skills'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                        <span class="error-message"><?php echo e($message); ?></span>
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
                 <div class="grade-item">
@@ -94,7 +114,7 @@
                         <input type="number" 
                                name="grades[expected_outputs_deliverables]" 
                                id="outputs"
-                               value="{{ old('grades.expected_outputs_deliverables', $internGrade->expected_outputs_deliverables) }}"
+                               value="<?php echo e(old('grades.expected_outputs_deliverables', $internGrade->expected_outputs_deliverables)); ?>"
                                min="1"
                                max="4"
                                step="1"
@@ -103,9 +123,16 @@
                                onkeypress="return event.charCode >= 49 && event.charCode <= 52">
                         <span class="grade-weight">(30%)</span>
                     </div>
-                    @error('grades.expected_outputs_deliverables')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
+                    <?php $__errorArgs = ['grades.expected_outputs_deliverables'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                        <span class="error-message"><?php echo e($message); ?></span>
+                    <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
             </div>
 
@@ -114,19 +141,20 @@
                     <label>Final Grade:</label>
                     <input type="text" 
                            id="final_grade" 
-                           value="{{ $internGrade->final_grade }}" 
+                           value="<?php echo e($internGrade->final_grade); ?>" 
                            readonly>
                 </div>
                 <div class="status-display mt-4">
                     <label>Status:</label>
                     <span class="status-badge 
-                        @if($internGrade->status === 'Fully Achieved') status-fully-achieved
-                        @elseif($internGrade->status === 'Partially Achieved') status-partially-achieved
-                        @elseif($internGrade->status === 'Barely Achieved') status-barely-achieved
-                        @elseif($internGrade->status === 'No Achievement') status-no-achievement
-                        @else status-unknown
-                        @endif">
-                        {{ $internGrade->status }}
+                        <?php if($internGrade->status === 'Fully Achieved'): ?> status-fully-achieved
+                        <?php elseif($internGrade->status === 'Partially Achieved'): ?> status-partially-achieved
+                        <?php elseif($internGrade->status === 'Barely Achieved'): ?> status-barely-achieved
+                        <?php elseif($internGrade->status === 'No Achievement'): ?> status-no-achievement
+                        <?php else: ?> status-unknown
+                        <?php endif; ?>">
+                        <?php echo e($internGrade->status); ?>
+
                     </span>
                 </div>
             </div>
@@ -139,10 +167,17 @@
                 <textarea name="remarks" 
                           id="remarks" 
                           rows="3" 
-                          placeholder="Enter any additional remarks about the evaluation">{{ old('remarks', $internGrade->remarks) }}</textarea>
-                @error('remarks')
-                    <span class="error-message">{{ $message }}</span>
-                @enderror
+                          placeholder="Enter any additional remarks about the evaluation"><?php echo e(old('remarks', $internGrade->remarks)); ?></textarea>
+                <?php $__errorArgs = ['remarks'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                    <span class="error-message"><?php echo e($message); ?></span>
+                <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
             </div>
         </div>
 
@@ -150,14 +185,14 @@
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save"></i> Update Grade
             </button>
-            <a href="{{ route('training.intern-grades.index') }}" class="btn btn-secondary">
+            <a href="<?php echo e(route('training.intern-grades.index')); ?>" class="btn btn-secondary">
                 <i class="fas fa-times"></i> Cancel
             </a>
         </div>
     </form>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 function calculateFinalGrade() {
     const ictLearning = parseInt(document.getElementById('ict_learning').value) || 0;
@@ -195,7 +230,7 @@ document.querySelectorAll('input[type="number"]').forEach(input => {
 // Calculate initial final grade
 calculateFinalGrade();
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
 <style>
 .create-submission-container {
@@ -485,4 +520,5 @@ calculateFinalGrade();
     }
 }
 </style>
-@endsection 
+<?php $__env->stopSection(); ?> 
+<?php echo $__env->make('layouts.nav', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laravel\PNPH-CAPSTONE\resources\views/training/intern/edit.blade.php ENDPATH**/ ?>

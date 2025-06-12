@@ -528,11 +528,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 let gradeColorClass = '';
                                 if (subject.remarks === 'Passed') {
                                     gradeColorClass = 'text-success';
+                                } else if (subject.remarks === 'Rejected') {
+                                    gradeColorClass = 'text-danger fw-bold';
                                 } else if (subject.remarks === 'Failed' || subject.remarks === 'Need Intervention') {
                                     gradeColorClass = 'text-danger';
                                 } else if (subject.remarks === 'Incomplete Submission') {
                                     gradeColorClass = 'text-info';
-                                } else if (subject.remarks === 'Pending') {
+                                } else if (subject.remarks === 'Pending' || subject.remarks === 'Not yet Approved') {
                                     gradeColorClass = 'text-warning';
                                 }
 
@@ -550,9 +552,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         let studentRemarksClass = '';
                         if (student.overall_status === 'Passed') {
                             studentRemarksClass = 'table-success';
+                        } else if (student.overall_status === 'Rejected') {
+                            studentRemarksClass = 'table-danger fw-bold';
                         } else if (student.overall_status === 'Failed' || student.overall_status === 'Need Intervention') {
                             studentRemarksClass = 'table-danger';
-                        } else if (student.overall_status === 'Pending') {
+                        } else if (student.overall_status === 'Pending' || student.overall_status === 'Not yet Approved') {
                             studentRemarksClass = 'table-warning';
                         } else if (student.overall_status === 'Incomplete Submission') {
                             studentRemarksClass = 'table-info';

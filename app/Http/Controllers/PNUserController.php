@@ -40,38 +40,86 @@ class PNUserController extends Controller
     // Store a newly created user in the database
     public function store(Request $request)
     {
-        // Validate the user input
-        $request->validate([
-            'user_id' => 'required|unique:pnph_users,user_id',
-            'user_lname' => 'required',
-            'user_fname' => 'required',
-            'user_mInitial' => 'nullable',
-            'user_suffix' => 'nullable',
-            'user_email' => 'required|email|unique:pnph_users,user_email',
-            'user_role' => 'required',
-        ]);
-    
-        // Generate a temporary password
-        $password = Str::random(8); // Generate an 8-character random password
-    
-        // Create the user in the database
-        $user = PNUser::create([
-            'user_id' => $request->user_id,
-            'user_lname' => $request->user_lname,
-            'user_fname' => $request->user_fname,
-            'user_mInitial' => $request->user_mInitial,
-            'user_suffix' => $request->user_suffix,
-            'user_email' => $request->user_email,
-            'user_role' => $request->user_role,
-            'user_password' => Hash::make($password), // Hash the password before saving
-            'status' => 'active', // Default status
-        ]);
-    
-        // Optionally, send an email with the temporary password
-        Mail::to($user->user_email)->send(new TempPasswordMail($user, $password));
-    
-        // Redirect to the user list page with a success message
-        return redirect()->route('admin.pnph_users.index')->with('success', 'User created successfully.');
+        try {
+            // Enhanced validation with custom messages
+            $request->validate([
+                'user_id' => 'required|string|max:20|unique:pnph_users,user_id',
+                'user_lname' => 'required|string|max:50',
+                'user_fname' => 'required|string|max:50',
+                'user_mInitial' => 'nullable|string|max:5',
+                'user_suffix' => 'nullable|string|max:10',
+                'user_email' => 'required|email|max:100|unique:pnph_users,user_email',
+                'user_role' => 'required|string|in:Admin,Training,Educator,Student',
+            ], [
+                'user_id.required' => 'User ID is required.',
+                'user_id.unique' => 'This User ID already exists. Please choose a different one.',
+                'user_lname.required' => 'Last name is required.',
+                'user_fname.required' => 'First name is required.',
+                'user_email.required' => 'Email address is required.',
+                'user_email.email' => 'Please enter a valid email address.',
+                'user_email.unique' => 'This email address is already registered. Please use a different email.',
+                'user_role.required' => 'User role is required.',
+                'user_role.in' => 'Please select a valid user role (Admin, Training, Educator, or Student).',
+            ]);
+
+            // Start database transaction
+            DB::beginTransaction();
+
+            // Generate a secure temporary password
+            $password = Str::random(12); // Generate a 12-character random password
+
+            // Create the user in the database
+            $user = PNUser::create([
+                'user_id' => trim($request->user_id),
+                'user_lname' => trim($request->user_lname),
+                'user_fname' => trim($request->user_fname),
+                'user_mInitial' => $request->user_mInitial ? trim($request->user_mInitial) : null,
+                'user_suffix' => $request->user_suffix ? trim($request->user_suffix) : null,
+                'user_email' => trim(strtolower($request->user_email)),
+                'user_role' => $request->user_role,
+                'user_password' => Hash::make($password),
+                'status' => 'active',
+                'is_temp_password' => true,
+            ]);
+
+            // Send email with temporary password
+            try {
+                Mail::to($user->user_email)->send(new TempPasswordMail($user, $password));
+                $emailSent = true;
+            } catch (\Exception $e) {
+                \Log::error('Failed to send email to new user: ' . $e->getMessage());
+                $emailSent = false;
+            }
+
+            // Commit the transaction
+            DB::commit();
+
+            // Success message with email status
+            $message = "User '{$user->user_fname} {$user->user_lname}' has been created successfully.";
+            if ($emailSent) {
+                $message .= " A temporary password has been sent to {$user->user_email}.";
+            } else {
+                $message .= " However, the email with temporary password could not be sent. Please contact the user manually.";
+            }
+
+            return redirect()->route('admin.pnph_users.index')->with('success', $message);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Validation errors will be automatically handled by Laravel
+            return back()->withErrors($e->errors())->withInput();
+
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            DB::rollBack();
+
+            \Log::error('Error creating user: ' . $e->getMessage(), [
+                'user_data' => $request->except(['_token']),
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', 'An error occurred while creating the user. Please try again. If the problem persists, contact the system administrator.')
+                        ->withInput();
+        }
     }
 
     
@@ -91,28 +139,96 @@ class PNUserController extends Controller
 
     // Update the user in the database
     public function update(Request $request, $user_id)
-{
+    {
+        try {
+            // Find the user first
+            $user = PNUser::findOrFail($user_id);
+
+            // Enhanced validation with custom messages
             $request->validate([
-                'user_fname' => 'required',
-                'user_lname' => 'required',
-                'user_email' => 'required|email',
-                'user_role' => 'required',
+                'user_fname' => 'required|string|max:50',
+                'user_lname' => 'required|string|max:50',
+                'user_mInitial' => 'nullable|string|max:5',
+                'user_suffix' => 'nullable|string|max:10',
+                'user_email' => 'required|email|max:100|unique:pnph_users,user_email,' . $user_id . ',user_id',
+                'user_role' => 'required|string|in:Admin,Training,Educator,Student',
                 'status' => 'required|in:active,inactive',
+            ], [
+                'user_fname.required' => 'First name is required.',
+                'user_lname.required' => 'Last name is required.',
+                'user_email.required' => 'Email address is required.',
+                'user_email.email' => 'Please enter a valid email address.',
+                'user_email.unique' => 'This email address is already registered to another user.',
+                'user_role.required' => 'User role is required.',
+                'user_role.in' => 'Please select a valid user role (Admin, Training, Educator, or Student).',
+                'status.required' => 'User status is required.',
+                'status.in' => 'Please select a valid status (active or inactive).',
             ]);
 
-            $user = PNUser::findOrFail($user_id);
+            // Start database transaction
+            DB::beginTransaction();
+
+            // Store original data for comparison
+            $originalData = $user->toArray();
+
+            // Update the user
             $user->update([
-                'user_fname' => $request->user_fname,
-                'user_lname' => $request->user_lname,
-                'user_email' => $request->user_email,
-                'user_mInitial' => $request->user_mInitial,
-                'user_suffix' => $request->user_suffix,
+                'user_fname' => trim($request->user_fname),
+                'user_lname' => trim($request->user_lname),
+                'user_mInitial' => $request->user_mInitial ? trim($request->user_mInitial) : null,
+                'user_suffix' => $request->user_suffix ? trim($request->user_suffix) : null,
+                'user_email' => trim(strtolower($request->user_email)),
                 'user_role' => $request->user_role,
                 'status' => $request->status,
             ]);
 
-            return redirect()->route('admin.pnph_users.index')->with('success', 'User updated successfully.');
-}
+            // Commit the transaction
+            DB::commit();
+
+            // Check what was changed for detailed success message
+            $changes = [];
+            if ($originalData['user_fname'] !== $user->user_fname || $originalData['user_lname'] !== $user->user_lname) {
+                $changes[] = 'name';
+            }
+            if ($originalData['user_email'] !== $user->user_email) {
+                $changes[] = 'email';
+            }
+            if ($originalData['user_role'] !== $user->user_role) {
+                $changes[] = 'role';
+            }
+            if ($originalData['status'] !== $user->status) {
+                $changes[] = 'status';
+            }
+
+            $message = "User '{$user->user_fname} {$user->user_lname}' has been updated successfully.";
+            if (!empty($changes)) {
+                $message .= " Updated: " . implode(', ', $changes) . ".";
+            }
+
+            return redirect()->route('admin.pnph_users.index')->with('success', $message);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('admin.pnph_users.index')
+                           ->with('error', 'User not found. The user may have been deleted by another administrator.');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Validation errors will be automatically handled by Laravel
+            return back()->withErrors($e->errors())->withInput();
+
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            DB::rollBack();
+
+            \Log::error('Error updating user: ' . $e->getMessage(), [
+                'user_id' => $user_id,
+                'user_data' => $request->except(['_token', '_method']),
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', 'An error occurred while updating the user. Please try again. If the problem persists, contact the system administrator.')
+                        ->withInput();
+        }
+    }
 
 
 
@@ -126,18 +242,105 @@ class PNUserController extends Controller
 }
 
 
-public function dashboard()
-{
-    // Get the count of users for each role
-    $rolesCount = \App\Models\PNUser::select('user_role', \DB::raw('count(*) as total'))
-                                    ->groupBy('user_role')
-                                    ->pluck('total', 'user_role')
-                                    ->toArray();
+    // Soft delete user (deactivate)
+    public function destroy($user_id)
+    {
+        try {
+            // Find the user
+            $user = PNUser::findOrFail($user_id);
 
+            // Prevent deletion of the current admin user
+            if (auth()->user()->user_id === $user_id) {
+                return back()->with('error', 'You cannot delete your own account while logged in.');
+            }
 
+            // Start database transaction
+            DB::beginTransaction();
 
-    return view('admin.dashboard', compact('rolesCount'), ['title'=> 'Dashboard']);
-}
+            // Soft delete by setting status to inactive
+            $user->update(['status' => 'inactive']);
+
+            // Commit the transaction
+            DB::commit();
+
+            return redirect()->route('admin.pnph_users.index')
+                           ->with('success', "User '{$user->user_fname} {$user->user_lname}' has been deactivated successfully.");
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('admin.pnph_users.index')
+                           ->with('error', 'User not found. The user may have already been deleted.');
+
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            DB::rollBack();
+
+            \Log::error('Error deactivating user: ' . $e->getMessage(), [
+                'user_id' => $user_id,
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', 'An error occurred while deactivating the user. Please try again.');
+        }
+    }
+
+    // Permanently delete user (hard delete)
+    public function forceDelete($user_id)
+    {
+        try {
+            // Find the user
+            $user = PNUser::findOrFail($user_id);
+
+            // Prevent deletion of the current admin user
+            if (auth()->user()->user_id === $user_id) {
+                return back()->with('error', 'You cannot delete your own account while logged in.');
+            }
+
+            // Additional safety check - only allow deletion of inactive users
+            if ($user->status === 'active') {
+                return back()->with('error', 'Cannot permanently delete an active user. Please deactivate the user first.');
+            }
+
+            // Start database transaction
+            DB::beginTransaction();
+
+            $userName = $user->user_fname . ' ' . $user->user_lname;
+
+            // Permanently delete the user
+            $user->delete();
+
+            // Commit the transaction
+            DB::commit();
+
+            return redirect()->route('admin.pnph_users.index')
+                           ->with('success', "User '{$userName}' has been permanently deleted.");
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('admin.pnph_users.index')
+                           ->with('error', 'User not found. The user may have already been deleted.');
+
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            DB::rollBack();
+
+            \Log::error('Error permanently deleting user: ' . $e->getMessage(), [
+                'user_id' => $user_id,
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', 'An error occurred while deleting the user. Please try again.');
+        }
+    }
+
+    public function dashboard()
+    {
+        // Get the count of users for each role
+        $rolesCount = \App\Models\PNUser::select('user_role', \DB::raw('count(*) as total'))
+                                        ->groupBy('user_role')
+                                        ->pluck('total', 'user_role')
+                                        ->toArray();
+
+        return view('admin.dashboard', compact('rolesCount'), ['title'=> 'Dashboard']);
+    }
 
 
 

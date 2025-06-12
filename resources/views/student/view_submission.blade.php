@@ -59,7 +59,10 @@
     @endif
 
     <div class="back-link" style="margin-top: 20px;">
-        <a href="{{ route('student.dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+        <a href="{{ route('student.grade-submissions.list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left" style="margin-right: 8px;"></i>
+            Back to Grade Submissions
+        </a>
     </div>
 
 </div>

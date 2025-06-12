@@ -113,13 +113,72 @@ class SchoolController extends Controller
                 ]);
             }
             
-            // Add classes and students
+            // Check for student conflicts across all classes before creating any
+            $allStudentIds = [];
+            $studentConflicts = [];
+
+            foreach ($validated['classes'] as $classIndex => $classData) {
+                if (!empty($classData['student_ids'])) {
+                    foreach ($classData['student_ids'] as $studentId) {
+                        if (in_array($studentId, $allStudentIds)) {
+                            // Find which class this student was already assigned to
+                            foreach ($validated['classes'] as $prevIndex => $prevClass) {
+                                if ($prevIndex < $classIndex && !empty($prevClass['student_ids']) && in_array($studentId, $prevClass['student_ids'])) {
+                                    $student = \App\Models\PNUser::where('user_id', $studentId)->first();
+                                    $studentConflicts[] = "{$student->user_fname} {$student->user_lname} ({$studentId}) cannot be assigned to both '{$prevClass['name']}' and '{$classData['name']}'";
+                                    break;
+                                }
+                            }
+                        } else {
+                            $allStudentIds[] = $studentId;
+                        }
+                    }
+                }
+            }
+
+            // Check if any students are already enrolled in existing classes
+            if (!empty($allStudentIds)) {
+                $studentsAlreadyInClasses = DB::table('class_student')
+                    ->join('classes', 'class_student.class_id', '=', 'classes.id')
+                    ->join('pnph_users', 'class_student.user_id', '=', 'pnph_users.user_id')
+                    ->whereIn('class_student.user_id', $allStudentIds)
+                    ->select(
+                        'pnph_users.user_fname',
+                        'pnph_users.user_lname',
+                        'pnph_users.user_id',
+                        'classes.class_name',
+                        'classes.class_id'
+                    )
+                    ->get();
+
+                foreach ($studentsAlreadyInClasses as $student) {
+                    $studentConflicts[] = "{$student->user_fname} {$student->user_lname} ({$student->user_id}) is already enrolled in class '{$student->class_name}' ({$student->class_id})";
+                }
+            }
+
+            // If there are conflicts, return with error
+            if (!empty($studentConflicts)) {
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot create school due to student enrollment conflicts:',
+                        'conflicts' => $studentConflicts
+                    ], 422);
+                }
+
+                return back()
+                    ->withInput()
+                    ->with('error', 'Cannot create school due to student enrollment conflicts:')
+                    ->with('student_conflicts', $studentConflicts);
+            }
+
+            // Add classes and students (only if no conflicts)
             foreach ($validated['classes'] as $classData) {
                 $class = $school->classes()->create([
                     'class_id' => $classData['class_id'],
                     'class_name' => $classData['name'],
                 ]);
-                
+
                 // Attach students to the class
                 if (!empty($classData['student_ids'])) {
                     $class->students()->sync($classData['student_ids']);
@@ -264,11 +323,69 @@ class SchoolController extends Controller
                     
                 \Log::info('Subjects updated and old subjects removed');
 
-                // Handle new classes
+                // Handle new classes with student conflict validation
                 if (isset($validated['new_classes'])) {
-                    foreach ($validated['new_classes'] as $classData) {
+                    // Check for student conflicts in new classes
+                    $allNewStudentIds = [];
+                    $studentConflicts = [];
+
+                    foreach ($validated['new_classes'] as $classIndex => $classData) {
                         if (empty($classData['name'])) {
                             \Log::warning('Skipping class due to missing name', $classData);
+                            continue;
+                        }
+
+                        $studentIds = isset($classData['students']) && is_array($classData['students']) ? $classData['students'] : [];
+
+                        if (!empty($studentIds)) {
+                            foreach ($studentIds as $studentId) {
+                                if (in_array($studentId, $allNewStudentIds)) {
+                                    // Find which class this student was already assigned to
+                                    foreach ($validated['new_classes'] as $prevIndex => $prevClass) {
+                                        if ($prevIndex < $classIndex && !empty($prevClass['students']) && in_array($studentId, $prevClass['students'])) {
+                                            $student = \App\Models\PNUser::where('user_id', $studentId)->first();
+                                            $studentConflicts[] = "{$student->user_fname} {$student->user_lname} ({$studentId}) cannot be assigned to both '{$prevClass['name']}' and '{$classData['name']}'";
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    $allNewStudentIds[] = $studentId;
+                                }
+                            }
+                        }
+                    }
+
+                    // Check if any students are already enrolled in existing classes
+                    if (!empty($allNewStudentIds)) {
+                        $studentsAlreadyInClasses = DB::table('class_student')
+                            ->join('classes', 'class_student.class_id', '=', 'classes.id')
+                            ->join('pnph_users', 'class_student.user_id', '=', 'pnph_users.user_id')
+                            ->whereIn('class_student.user_id', $allNewStudentIds)
+                            ->select(
+                                'pnph_users.user_fname',
+                                'pnph_users.user_lname',
+                                'pnph_users.user_id',
+                                'classes.class_name',
+                                'classes.class_id'
+                            )
+                            ->get();
+
+                        foreach ($studentsAlreadyInClasses as $student) {
+                            $studentConflicts[] = "{$student->user_fname} {$student->user_lname} ({$student->user_id}) is already enrolled in class '{$student->class_name}' ({$student->class_id})";
+                        }
+                    }
+
+                    // If there are conflicts, return with error
+                    if (!empty($studentConflicts)) {
+                        return back()
+                            ->withInput()
+                            ->with('error', 'Cannot add new classes due to student enrollment conflicts:')
+                            ->with('student_conflicts', $studentConflicts);
+                    }
+
+                    // Create new classes only if no conflicts
+                    foreach ($validated['new_classes'] as $classData) {
+                        if (empty($classData['name'])) {
                             continue;
                         }
                         $class = ClassModel::create([

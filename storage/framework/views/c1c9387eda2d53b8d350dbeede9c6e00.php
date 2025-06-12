@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Add status badge based on status
                 const statusLower = status.toLowerCase().trim();
-                if (statusLower === 'pending' || statusLower === 'pending_approval') {
+                if (statusLower === 'pending' || statusLower === 'pending_approval' || statusLower === 'submitted') {
                     statusBadge = ' <span class="badge bg-warning text-dark" title="Pending Approval"><i class="bi bi-hourglass"></i></span>';
                 } else if (statusLower === 'rejected') {
                     statusBadge = ' <span class="badge bg-danger" title="Rejected"><i class="bi bi-x-circle"></i></span>';
@@ -415,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
                              gradeClass = 'text-success fw-bold'; // Use Bootstrap for numeric passing
                         }
                     }
-                } else if (statusLower === 'pending' || statusLower === 'pending_approval') {
+                } else if (statusLower === 'pending' || statusLower === 'pending_approval' || statusLower === 'submitted') {
                     // Style for pending grades
                      gradeClass = 'text-muted'; // Muted color for pending grades
                 }
@@ -444,9 +444,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Determine status class based on the status text
                 if (statusText.includes('Passed')) {
                     statusClass = 'text-success'; // Green
+                } else if (statusText.includes('Rejected')) {
+                    statusClass = 'text-danger fw-bold'; // Red and bold for rejected
                 } else if (statusText.includes('Failed')) {
                     statusClass = 'text-danger'; // Red
-                } else if (statusText.includes('Pending')) {
+                } else if (statusText.includes('Pending') || statusText.includes('Not yet Approved')) {
                     statusClass = 'text-warning'; // Orange
                 } else if (statusText.includes('No Grades Submitted') || statusText.includes('No Calculable Average')) {
                      statusClass = 'text-muted'; // Muted color for informational statuses
@@ -464,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 let statusNote = '';
                 if (student.grades && student.grades.some(g => {
                     const status = (g?.status || '').toLowerCase().trim();
-                    return status === 'pending' || status === 'pending_approval';
+                    return status === 'pending' || status === 'pending_approval' || status === 'submitted';
                 })) {
                     statusNote = ' <span class="badge bg-warning text-dark">Pending Grades</span>';
                 }

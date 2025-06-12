@@ -199,6 +199,7 @@ class AnalyticsController extends Controller
                 $has_failed = false;
                 $has_incomplete = false;
                 $has_pending = false;
+                $has_rejected = false;
 
                 // Create grades array in the order of subjects
                 foreach ($allSubjects as $subjectName) {
@@ -209,13 +210,15 @@ class AnalyticsController extends Controller
                         $gradeStatus = $subjectGrade->status;
 
                         // Determine remarks based on status and grade
-                        if ($gradeStatus === 'approved') {
+                        if ($gradeStatus === 'pending' || $gradeStatus === 'pending_approval' || $gradeStatus === 'submitted') {
+                            $has_pending = true;
+                        } elseif ($gradeStatus === 'approved') {
                             if (is_numeric($gradeValue)) {
                                 $numeric_grade = (float) $gradeValue;
                                 $total_grade += $numeric_grade;
                                 $graded_subjects_count++;
 
-                                if ($numeric_grade >= $school->passing_grade_min) {
+                                if ($numeric_grade >= $school->passing_grade_min && $numeric_grade <= $school->passing_grade_max) {
                                     // Passed
                                 } else {
                                     $has_failed = true;
@@ -228,10 +231,8 @@ class AnalyticsController extends Controller
                                     $has_failed = true;
                                 }
                             }
-                        } else if ($gradeStatus === 'pending' || $gradeStatus === 'pending_approval') {
-                            $has_pending = true;
-                        } else if ($gradeStatus === 'rejected') {
-                            $has_failed = true;
+                        } elseif ($gradeStatus === 'rejected') {
+                            $has_rejected = true;
                         }
 
                         $grades_data[] = [
@@ -251,13 +252,16 @@ class AnalyticsController extends Controller
                 $average_grade = $graded_subjects_count > 0 ? $total_grade / $graded_subjects_count : null;
 
                 // Determine overall status
-                $overall_status = 'Passed';
-                if ($has_failed) {
+                if ($has_pending) {
+                    $overall_status = 'Not yet Approved';
+                } elseif ($has_rejected) {
+                    $overall_status = 'Rejected';
+                } elseif ($has_failed) {
                     $overall_status = 'Failed';
                 } elseif ($has_incomplete) {
                     $overall_status = 'Incomplete Submission';
-                } elseif ($has_pending) {
-                    $overall_status = 'Pending';
+                } else {
+                    $overall_status = 'Passed';
                 }
 
                 $studentResults[] = [
@@ -344,32 +348,47 @@ class AnalyticsController extends Controller
                 $inc = 0;
                 $dr = 0;
                 $nc = 0;
-                $totalGrades = 0;
+                $hasSubmittedGrades = false;
+                $hasApprovedGrades = false;
                 $remarks = '';
 
                 foreach ($grades as $grade) {
-                    $totalGrades++;
-                    if ($grade->grade === 'INC') {
-                        $inc++;
-                    } elseif ($grade->grade === 'DR') {
-                        $dr++;
-                    } elseif ($grade->grade === 'NC') {
-                        $nc++;
-                    } elseif (is_numeric($grade->grade)) {
-                        if ($grade->grade >= $school->passing_grade_min) {
-                            $passed++;
-                        } else {
-                            $failed++;
+                    // Only count as submitted if grade is not null/empty
+                    if (!is_null($grade->grade) && $grade->grade !== '' && $grade->grade !== '0') {
+                        $hasSubmittedGrades = true; // Student has submitted grades for this subject
+
+                        if ($grade->status === 'approved') {
+                            $hasApprovedGrades = true; // Training has approved some grades
+
+                            if ($grade->grade === 'INC') {
+                                $inc++;
+                            } elseif ($grade->grade === 'DR') {
+                                $dr++;
+                            } elseif ($grade->grade === 'NC') {
+                                $nc++;
+                            } elseif (is_numeric($grade->grade)) {
+                                if ($grade->grade >= $school->passing_grade_min && $grade->grade <= $school->passing_grade_max) {
+                                    $passed++;
+                                } else {
+                                    $failed++;
+                                }
+                            }
                         }
                     }
                 }
 
-                if ($totalGrades > 0) {
-                    // If any student has Failed, INC, DR, or NC, mark as 'Need Intervention'
+                // Determine remarks based on submission and approval status
+                if (!$hasSubmittedGrades) {
+                    // No students have submitted grades for this subject
+                    $remarks = 'No Grades Submitted';
+                } elseif ($hasSubmittedGrades && !$hasApprovedGrades) {
+                    // Students have submitted grades but training hasn't approved any yet
+                    $remarks = 'No Approved Grades';
+                } else {
+                    // Training has approved some grades, check if intervention is needed
                     if ($failed > 0 || $inc > 0 || $dr > 0 || $nc > 0) {
                         $remarks = 'Need Intervention';
                     } else {
-                        // Only mark as 'No Need Intervention' if all students have passed
                         $remarks = 'No Need Intervention';
                     }
                 }
@@ -457,32 +476,47 @@ class AnalyticsController extends Controller
                 $inc = 0;
                 $dr = 0;
                 $nc = 0;
-                $totalGrades = 0;
+                $hasSubmittedGrades = false;
+                $hasApprovedGrades = false;
                 $remarks = '';
 
                 foreach ($grades as $grade) {
-                    $totalGrades++;
-                    if ($grade->grade === 'INC') {
-                        $inc++;
-                    } elseif ($grade->grade === 'DR') {
-                        $dr++;
-                    } elseif ($grade->grade === 'NC') {
-                        $nc++;
-                    } elseif (is_numeric($grade->grade)) {
-                        if ($grade->grade >= $school->passing_grade_min) {
-                            $passed++;
-                        } else {
-                            $failed++;
+                    // Only count as submitted if grade is not null/empty
+                    if (!is_null($grade->grade) && $grade->grade !== '' && $grade->grade !== '0') {
+                        $hasSubmittedGrades = true; // Student has submitted grades for this subject
+
+                        if ($grade->status === 'approved') {
+                            $hasApprovedGrades = true; // Training has approved some grades
+
+                            if ($grade->grade === 'INC') {
+                                $inc++;
+                            } elseif ($grade->grade === 'DR') {
+                                $dr++;
+                            } elseif ($grade->grade === 'NC') {
+                                $nc++;
+                            } elseif (is_numeric($grade->grade)) {
+                                if ($grade->grade >= $school->passing_grade_min && $grade->grade <= $school->passing_grade_max) {
+                                    $passed++;
+                                } else {
+                                    $failed++;
+                                }
+                            }
                         }
                     }
                 }
 
-                if ($totalGrades > 0) {
-                    // If any student has Failed, INC, DR, or NC, mark as 'Need Intervention'
+                // Determine remarks based on submission and approval status
+                if (!$hasSubmittedGrades) {
+                    // No students have submitted grades for this subject
+                    $remarks = 'No Grades Submitted';
+                } elseif ($hasSubmittedGrades && !$hasApprovedGrades) {
+                    // Students have submitted grades but training hasn't approved any yet
+                    $remarks = 'No Approved Grades';
+                } else {
+                    // Training has approved some grades, check if intervention is needed
                     if ($failed > 0 || $inc > 0 || $dr > 0 || $nc > 0) {
                         $remarks = 'Need Intervention';
                     } else {
-                        // Only mark as 'No Need Intervention' if all students have passed
                         $remarks = 'No Need Intervention';
                     }
                 }
@@ -628,6 +662,7 @@ class AnalyticsController extends Controller
                 ->select(
                     'grade_submission_subject.user_id',
                     'grade_submission_subject.grade',
+                    'grade_submission_subject.status',
                     'subjects.name as subject_name'
                 )
                 ->get();
@@ -645,38 +680,68 @@ class AnalyticsController extends Controller
                 $totalSubjects = $studentGrades->count();
                 $passedSubjects = 0;
                 $failedSubjects = 0;
+                $pendingSubjects = 0;
                 $totalGradePoints = 0;
                 $gradedSubjects = 0;
+                $hasSubmittedGrades = false;
+                $hasApprovedGrades = false;
 
+                // Check if student has submitted any grades at all
                 if ($totalSubjects == 0) {
+                    // Student hasn't submitted any grades at all
                     $noGradesCount++;
                     continue;
                 }
 
+                // Check if student has actually submitted grades (not just empty records)
+                $actualGradeCount = 0;
                 foreach ($studentGrades as $grade) {
-                    if (is_numeric($grade->grade)) {
-                        $gradeValue = floatval($grade->grade);
-                        $totalGradePoints += $gradeValue;
-                        $gradedSubjects++;
+                    // Only count as submitted if grade is not null/empty
+                    if (!is_null($grade->grade) && $grade->grade !== '' && $grade->grade !== '0') {
+                        $actualGradeCount++;
+                        $hasSubmittedGrades = true;
 
-                        if ($gradeValue >= $school->passing_grade_min) {
-                            $passedSubjects++;
-                        } else {
-                            $failedSubjects++;
+                        if ($grade->status === 'approved') {
+                            $hasApprovedGrades = true;
+                            if (is_numeric($grade->grade)) {
+                                $gradeValue = floatval($grade->grade);
+                                $totalGradePoints += $gradeValue;
+                                $gradedSubjects++;
+
+                                if ($gradeValue >= $school->passing_grade_min && $gradeValue <= $school->passing_grade_max) {
+                                    $passedSubjects++;
+                                } else {
+                                    $failedSubjects++;
+                                }
+                            } else {
+                                // Non-numeric approved grades (INC, DR, NC) count as failed
+                                $failedSubjects++;
+                            }
+                        } elseif ($grade->status === 'pending' || $grade->status === 'pending_approval' || $grade->status === 'submitted') {
+                            $pendingSubjects++;
                         }
-                    } else {
-                        // Non-numeric grades (INC, DR, NC) count as failed
-                        $failedSubjects++;
                     }
                 }
 
                 // Determine overall status for this student
-                if ($failedSubjects > 0) {
+                if (!$hasSubmittedGrades || $actualGradeCount == 0) {
+                    // Student hasn't submitted any actual grades (only empty records or no records)
+                    $noGradesCount++;
+                } elseif ($hasSubmittedGrades && !$hasApprovedGrades && $pendingSubjects > 0) {
+                    // Student has submitted grades but none are approved yet (all are pending approval by training)
+                    $pendingCount++;
+                } elseif ($hasApprovedGrades && $failedSubjects > 0) {
+                    // Student has approved grades and some are failed
                     $failedCount++;
-                } elseif ($gradedSubjects < $totalSubjects) {
+                } elseif ($hasApprovedGrades && $passedSubjects > 0 && $failedSubjects == 0) {
+                    // Student has approved grades and all are passed
+                    $passedCount++;
+                } elseif ($hasSubmittedGrades && $pendingSubjects > 0) {
+                    // Student has submitted grades that are pending
                     $pendingCount++;
                 } else {
-                    $passedCount++;
+                    // Default case - if student has submitted but no clear status
+                    $pendingCount++;
                 }
             }
 

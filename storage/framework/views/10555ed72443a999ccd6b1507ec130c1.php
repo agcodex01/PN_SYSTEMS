@@ -77,6 +77,166 @@
     font-size: 14px;
 }
 
+/* Enhanced Filter Styles */
+.filter-dropdowns-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+}
+
+@media (min-width: 768px) {
+    .filter-dropdowns-container {
+        flex-direction: row;
+        align-items: flex-end;
+        gap: 20px;
+    }
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.filter-group label {
+    display: block;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.filter-group .form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #fff;
+    transition: border-color 0.3s ease;
+}
+
+.filter-group .form-control:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 0;
+    align-items: center;
+    flex-shrink: 0;
+    min-width: 200px;
+}
+
+@media (max-width: 767px) {
+    .filter-buttons {
+        margin-top: 15px;
+        justify-content: center;
+        width: 100%;
+    }
+}
+
+/* Submission Section Styles */
+.submission-section {
+    margin-bottom: 30px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.submission-title {
+    background-color: #f8f9fa;
+    color: #495057;
+    padding: 15px 20px;
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* Pagination Styles */
+.submission-pagination-container,
+.class-pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 0;
+}
+
+.submission-pagination-info,
+.class-pagination-info {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.submission-pagination-links,
+.class-pagination-links {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+}
+
+.pagination-btn:hover {
+    background-color: #0056b3;
+    color: white;
+    text-decoration: none;
+}
+
+.pagination-btn.disabled {
+    background-color: #6c757d;
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+.page-info,
+.page-info-small {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.875rem;
+}
+
+.class-pagination-container {
+    margin-top: 30px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+@media (max-width: 768px) {
+    .submission-pagination-container,
+    .class-pagination-container {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .submission-pagination-links,
+    .class-pagination-links {
+        justify-content: center;
+    }
+}
+
 /* Alert Messages */
 .alert {
     padding: 15px;
@@ -309,19 +469,58 @@
         </div>
     </div>
 
-    <!-- School Filter -->
+    <!-- Filter Section -->
     <div class="filter-section">
-        <form action="<?php echo e(route('training.intern-grades.index')); ?>" method="get" class="form-inline">
-            <label for="school_filter">Filter by School:</label>
-            <select name="school_filter" id="school_filter" onchange="this.form.submit();">
-                <option value="">-- Select School --</option>
-                <?php $__currentLoopData = $schools; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $school): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <option value="<?php echo e($school->school_id); ?>" <?php echo e((request('school_filter') == $school->school_id) ? 'selected' : ''); ?>>
-                        <?php echo e($school->name); ?>
+        <h3>Filter Grades</h3>
+        <form action="<?php echo e(route('training.intern-grades.index')); ?>" method="GET" class="filter-form">
+            <div class="filter-dropdowns-container">
+                <div class="form-group filter-group">
+                    <label for="class_filter">Class:</label>
+                    <select name="class_filter" id="class_filter" class="form-control" onchange="clearDependentFilters()">
+                        <option value="">All Classes</option>
+                        <?php $__currentLoopData = $filterOptions['classes']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $class): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($class['class_id']); ?>" <?php echo e(request('class_filter') == $class['class_id'] ? 'selected' : ''); ?>>
+                                <?php echo e($class['class_name']); ?> - <?php echo e($class['school_name']); ?>
 
-                    </option>
-                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-            </select>
+                            </option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
+
+                <div class="form-group filter-group">
+                    <label for="submission_filter">Submission:</label>
+                    <select name="submission_filter" id="submission_filter" class="form-control">
+                        <option value="">All Submissions</option>
+                        <?php $__currentLoopData = $filterOptions['submissions']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $submission): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($submission); ?>" <?php echo e(request('submission_filter') == $submission ? 'selected' : ''); ?>>
+                                <?php echo e($submission); ?> Submission
+                            </option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
+
+                <div class="form-group filter-group">
+                    <label for="company_filter">Company:</label>
+                    <select name="company_filter" id="company_filter" class="form-control">
+                        <option value="">All Companies</option>
+                        <?php $__currentLoopData = $filterOptions['companies']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $company): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($company); ?>" <?php echo e(request('company_filter') == $company ? 'selected' : ''); ?>>
+                                <?php echo e($company); ?>
+
+                            </option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </select>
+                </div>
+
+                <div class="filter-buttons">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <a href="<?php echo e(route('training.intern-grades.index')); ?>" class="btn btn-secondary">
+                        <i class="fas fa-undo"></i> Reset
+                    </a>
+                </div>
+            </div>
         </form>
     </div>
 
@@ -340,78 +539,196 @@
     <?php endif; ?>
 
     <!-- Grades Tables -->
-    <?php if(count($groupedGrades) > 0): ?>
-        <?php $__currentLoopData = $groupedGrades; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $classId => $grades): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+    <?php if(count($paginatedGroupedGrades) > 0): ?>
+        <?php $__currentLoopData = $paginatedGroupedGrades; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $classId => $submissionGroups): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
             <div class="class-grades-section">
-                <h2>Class: <?php echo e($grades->first()->classModel->class_name ?? 'N/A'); ?></h2>
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Student ID</th>
-                                <th>Student Name</th>
-                                <th>Company</th>
-                                <th class="text-center">ICT Learning</th>
-                                <th class="text-center">21st Century Skills</th>
-                                <th class="text-center">Expected Outputs</th>
-                                <th class="text-center">Average</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php $__currentLoopData = $grades; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $grade): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <tr>
-                                    <td><?php echo e($grade->intern->studentDetail->student_id ?? 'N/A'); ?></td>
-                                    <td><?php echo e($grade->intern->user_fname); ?> <?php echo e($grade->intern->user_lname); ?></td>
-                                    <td><?php echo e($grade->company_name); ?></td>
-                                    <td class="text-center"><?php echo e($grade->grades['ict_learning_competency'] ?? 'N/A'); ?></td>
-                                    <td class="text-center"><?php echo e($grade->grades['twenty_first_century_skills'] ?? 'N/A'); ?></td>
-                                    <td class="text-center"><?php echo e($grade->grades['expected_outputs_deliverables'] ?? 'N/A'); ?></td>
-                                    <td class="text-center">
-                                        <span class="badge <?php echo e(match(round($grade->final_grade)) { 1 => 'bg-success', 2 => 'bg-warning', 3 => 'bg-orange', 4 => 'bg-danger', default => 'bg-secondary' }); ?>">
-                                            <?php echo e(number_format($grade->final_grade, 1)); ?>
+                <h2>Class: <?php echo e($submissionGroups->first()->first()->classModel->class_name ?? 'N/A'); ?></h2>
 
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <span class="status-badge 
-                                            <?php if($grade->status === 'Fully Achieved'): ?> status-green
-                                            <?php elseif($grade->status === 'Partially Achieved'): ?> status-yellow
-                                            <?php elseif($grade->status === 'Barely Achieved'): ?> status-orange
-                                            <?php elseif($grade->status === 'No Achievement'): ?> status-red
-                                            <?php else: ?> status-gray
-                                            <?php endif; ?>">
-                                            <?php echo e($grade->status); ?>
+                <?php $__currentLoopData = $submissionGroups; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $submissionNumber => $grades): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <div class="submission-section">
+                        <h3 class="submission-title"><?php echo e($submissionNumber); ?> Submission</h3>
 
+                        <?php
+                            // Pagination for this submission table
+                            $currentPage = request()->get('submission_' . $classId . '_' . $submissionNumber . '_page', 1);
+                            $perPage = 10;
+                            $total = $grades->count();
+                            $offset = ($currentPage - 1) * $perPage;
+                            $paginatedGrades = $grades->skip($offset)->take($perPage);
+
+                            $pagination = (object)[
+                                'current_page' => $currentPage,
+                                'last_page' => max(1, ceil($total / $perPage)), // Ensure at least 1 page
+                                'per_page' => $perPage,
+                                'total' => $total,
+                                'from' => $total > 0 ? $offset + 1 : 0,
+                                'to' => min($offset + $perPage, $total),
+                                'has_pages' => true, // Always show pagination
+                                'on_first_page' => $currentPage == 1,
+                                'has_more_pages' => $currentPage < ceil(max(1, $total) / $perPage)
+                            ];
+                        ?>
+
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Student Name</th>
+                                        <th>Company</th>
+                                        <th class="text-center">ICT Learning</th>
+                                        <th class="text-center">21st Century Skills</th>
+                                        <th class="text-center">Expected Outputs</th>
+                                        <th class="text-center">Average</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $__currentLoopData = $paginatedGrades; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $grade): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <tr>
+                                            <td><?php echo e($grade->intern->studentDetail->student_id ?? 'N/A'); ?></td>
+                                            <td><?php echo e($grade->intern->user_fname); ?> <?php echo e($grade->intern->user_lname); ?></td>
+                                            <td><?php echo e($grade->company_name); ?></td>
+                                            <td class="text-center"><?php echo e($grade->grades['ict_learning_competency'] ?? 'N/A'); ?></td>
+                                            <td class="text-center"><?php echo e($grade->grades['twenty_first_century_skills'] ?? 'N/A'); ?></td>
+                                            <td class="text-center"><?php echo e($grade->grades['expected_outputs_deliverables'] ?? 'N/A'); ?></td>
+                                            <td class="text-center">
+                                                <span class="badge <?php echo e(match(round($grade->final_grade)) { 1 => 'bg-success', 2 => 'bg-warning', 3 => 'bg-orange', 4 => 'bg-danger', default => 'bg-secondary' }); ?>">
+                                                    <?php echo e(number_format($grade->final_grade, 1)); ?>
+
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="status-badge
+                                                    <?php if($grade->status === 'Fully Achieved'): ?> status-green
+                                                    <?php elseif($grade->status === 'Partially Achieved'): ?> status-yellow
+                                                    <?php elseif($grade->status === 'Barely Achieved'): ?> status-orange
+                                                    <?php elseif($grade->status === 'No Achievement'): ?> status-red
+                                                    <?php else: ?> status-gray
+                                                    <?php endif; ?>">
+                                                    <?php echo e($grade->status); ?>
+
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="action-buttons">
+                                                    <a href="<?php echo e(route('training.intern-grades.edit', $grade->id)); ?>" class="btn-primary"
+                                                       title="Edit Grade">
+                                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                                    </a>
+                                                    <form action="<?php echo e(route('training.intern-grades.destroy', $grade->id)); ?>"
+                                                          method="post"
+                                                          style="display: inline-block;"
+                                                          onsubmit="return confirm('Are you sure you want to delete this grade?');">
+                                                        <?php echo csrf_field(); ?>
+                                                        <?php echo method_field('DELETE'); ?>
+                                                        <button type="submit" class="btn-danger"
+                                                                title="Delete Grade">
+                                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Submission Table Pagination -->
+                        <?php if($pagination->has_pages): ?>
+                            <div class="submission-pagination-container">
+                                <div class="submission-pagination-info">
+                                    <small class="text-muted">
+                                        Showing <?php echo e($pagination->from); ?> to <?php echo e($pagination->to); ?> of <?php echo e($pagination->total); ?> students
+                                    </small>
+                                </div>
+                                <div class="submission-pagination-links">
+                                    <?php if($pagination->on_first_page): ?>
+                                        <span class="pagination-btn disabled">
+                                            <i class="fas fa-chevron-left"></i> Previous
                                         </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="action-buttons">
-                                            <a href="<?php echo e(route('training.intern-grades.edit', $grade->id)); ?>" class="btn-primary"
-                                               title="Edit Grade">
-                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                            </a>
-                                            <form action="<?php echo e(route('training.intern-grades.destroy', $grade->id)); ?>" 
-                                                  method="post" 
-                                                  style="display: inline-block;"
-                                                  onsubmit="return confirm('Are you sure you want to delete this grade?');">
-                                                <?php echo csrf_field(); ?>
-                                                <?php echo method_field('DELETE'); ?>
-                                                <button type="submit" class="btn-danger"
-                                                        title="Delete Grade">
-                                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </tbody>
-                    </table>
-                </div>
+                                    <?php else: ?>
+                                        <?php
+                                            $prevPage = $pagination->current_page - 1;
+                                            $currentUrl = request()->fullUrlWithQuery(['submission_' . $classId . '_' . $submissionNumber . '_page' => $prevPage]);
+                                        ?>
+                                        <a href="<?php echo e($currentUrl); ?>" class="pagination-btn">
+                                            <i class="fas fa-chevron-left"></i> Previous
+                                        </a>
+                                    <?php endif; ?>
+
+                                    <span class="page-info-small">
+                                        Page <?php echo e($pagination->current_page); ?> of <?php echo e($pagination->last_page); ?>
+
+                                    </span>
+
+                                    <?php if($pagination->has_more_pages): ?>
+                                        <?php
+                                            $nextPage = $pagination->current_page + 1;
+                                            $currentUrl = request()->fullUrlWithQuery(['submission_' . $classId . '_' . $submissionNumber . '_page' => $nextPage]);
+                                        ?>
+                                        <a href="<?php echo e($currentUrl); ?>" class="pagination-btn">
+                                            Next <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="pagination-btn disabled">
+                                            Next <i class="fas fa-chevron-right"></i>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </div>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+        <!-- Class Pagination -->
+        <?php if($classPagination->has_pages): ?>
+            <div class="class-pagination-container">
+                <div class="class-pagination-info">
+                    <small class="text-muted">
+                        Showing class <?php echo e($classPagination->from); ?> to <?php echo e($classPagination->to); ?> of <?php echo e($classPagination->total); ?> classes
+                    </small>
+                </div>
+                <div class="class-pagination-links">
+                    <?php if($classPagination->on_first_page): ?>
+                        <span class="pagination-btn disabled">
+                            <i class="fas fa-chevron-left"></i> Previous Class
+                        </span>
+                    <?php else: ?>
+                        <?php
+                            $prevPage = $classPagination->current_page - 1;
+                            $currentUrl = request()->fullUrlWithQuery(['class_page' => $prevPage]);
+                        ?>
+                        <a href="<?php echo e($currentUrl); ?>" class="pagination-btn">
+                            <i class="fas fa-chevron-left"></i> Previous Class
+                        </a>
+                    <?php endif; ?>
+
+                    <span class="page-info">
+                        Class <?php echo e($classPagination->current_page); ?> of <?php echo e($classPagination->last_page); ?>
+
+                    </span>
+
+                    <?php if($classPagination->has_more_pages): ?>
+                        <?php
+                            $nextPage = $classPagination->current_page + 1;
+                            $currentUrl = request()->fullUrlWithQuery(['class_page' => $nextPage]);
+                        ?>
+                        <a href="<?php echo e($currentUrl); ?>" class="pagination-btn">
+                            Next Class <i class="fas fa-chevron-right"></i>
+                        </a>
+                    <?php else: ?>
+                        <span class="pagination-btn disabled">
+                            Next Class <i class="fas fa-chevron-right"></i>
+                        </span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
     <?php else: ?>
         <div class="no-grades-message">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -422,6 +739,34 @@
         </div>
     <?php endif; ?>
 </div>
-<?php $__env->stopSection(); ?> 
+<?php $__env->stopSection(); ?>
+
+<script>
+function clearDependentFilters() {
+    const submissionSelect = document.getElementById('submission_filter');
+    const companySelect = document.getElementById('company_filter');
+
+    // Clear dependent filters when class changes
+    submissionSelect.value = '';
+    companySelect.value = '';
+
+    // Submit form
+    document.getElementById('class_filter').form.submit();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide success messages after 5 seconds
+    const successAlerts = document.querySelectorAll('.alert-success');
+    successAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            alert.style.transition = 'opacity 0.5s ease-out';
+            alert.style.opacity = '0';
+            setTimeout(function() {
+                alert.remove();
+            }, 500);
+        }, 5000);
+    });
+});
+</script>
 
 <?php echo $__env->make('layouts.nav', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laravel\PNPH-CAPSTONE\resources\views/training/intern/index.blade.php ENDPATH**/ ?>

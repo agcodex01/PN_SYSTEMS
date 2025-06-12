@@ -300,13 +300,6 @@
                         <img src="{{ asset('images/is.png') }}" alt="Intervention Status"> Intervention Status
                     </a>
                 </li>
-                <li>
-                    <a href="#">
-                        <img src="{{ asset('images/me.png') }}" alt="Profile"> Profile
-                    </a>
-                </li>
-
-            
 
             </ul>
         </aside>

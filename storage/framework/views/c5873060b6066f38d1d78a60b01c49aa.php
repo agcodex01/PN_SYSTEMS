@@ -56,12 +56,26 @@
         box-sizing: border-box;
         margin: 0;
         padding: 0;
+        font-family: 'Poppins', sans-serif !important;
     }
-    
+
+    /* Preserve icon fonts */
+    .fas, .far, .fal, .fab, .fa,
+    [class*="fa-"],
+    .material-icons,
+    .glyphicon {
+        font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 5 Free", "Font Awesome 5 Pro", "Material Icons", "Glyphicons Halflings" !important;
+    }
+
+    /* Preserve SVG icons */
+    svg {
+        font-family: inherit !important;
+    }
+
     body {
         margin: 0;
         padding: 0;
-        font-family: 'Poppins', sans-serif;
+        font-family: 'Poppins', sans-serif !important;
         background-color: #f1f5f9;
         min-height: 100vh;
         display: flex;
@@ -288,13 +302,6 @@
                         <img src="<?php echo e(asset('images/is.png')); ?>" alt="Intervention Status"> Intervention Status
                     </a>
                 </li>
-                <li>
-                    <a href="#">
-                        <img src="<?php echo e(asset('images/me.png')); ?>" alt="Profile"> Profile
-                    </a>
-                </li>
-
-            
 
             </ul>
         </aside>
@@ -320,8 +327,10 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Show loader on form submissions
         document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function() {
-                showLoader();
+            form.addEventListener('submit', function(e) {
+                if (form.checkValidity()) {
+                    showLoader();
+                }
             });
         });
 
@@ -329,6 +338,13 @@
         document.querySelectorAll('a:not([href^="#"]):not([href^="javascript:"]):not([target="_blank"]):not([href^="mailto:"]):not([href^="tel:"])').forEach(link => {
             link.addEventListener('click', function(e) {
                 if (!this.getAttribute('onclick') || this.getAttribute('href') !== '#') {
+                    const onclick = this.getAttribute('onclick');
+
+                    // If it has confirm() in onclick, don't show loader immediately
+                    if (onclick && onclick.includes('confirm(')) {
+                        return;
+                    }
+
                     showLoader();
                 }
             });
@@ -337,8 +353,26 @@
         // Show loader on button clicks that might navigate
         document.querySelectorAll('button[type="submit"], .btn[href], button[onclick*="location"], button[onclick*="window.location"]').forEach(button => {
             button.addEventListener('click', function() {
+                const onclick = this.getAttribute('onclick');
+
+                // If it has confirm() in onclick, don't show loader immediately
+                if (onclick && onclick.includes('confirm(')) {
+                    return;
+                }
+
                 showLoader();
             });
+        });
+
+        // Hide loader on browser back/forward navigation
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                hideLoader();
+            }
+        });
+
+        window.addEventListener('popstate', function() {
+            hideLoader();
         });
     });
 
@@ -349,6 +383,26 @@
             loader.classList.remove('hidden');
         }
     }
+
+    function hideLoader() {
+        const loader = document.getElementById('pageLoader');
+        if (loader) {
+            loader.classList.add('hidden');
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    // Enhanced confirm function that handles loader properly
+    window.confirmWithLoader = function(message, callback) {
+        if (confirm(message)) {
+            showLoader();
+            if (callback) callback();
+            return true;
+        }
+        return false;
+    };
 
     function toggleDropdown(event) {
         event.preventDefault();

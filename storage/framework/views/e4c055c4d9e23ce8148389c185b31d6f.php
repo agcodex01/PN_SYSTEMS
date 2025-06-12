@@ -3,14 +3,60 @@
     <div class="monitor-card">
         <div class="card-header-custom">
             <h2>Grade Submission Monitor</h2>
-            
+            <?php if(isset($schoolPagination) && $schoolPagination->has_pages): ?>
+                <p class="school-pagination-info">
+                    Showing school <?php echo e($schoolPagination->from); ?> of <?php echo e($schoolPagination->total); ?> schools
+                </p>
+            <?php endif; ?>
         </div>
 
         <div class="card-body-custom">
-            <?php if(isset($message)): ?>
-                <div class="alert-custom alert-warning-custom">
-                    <?php echo e($message); ?>
+            <!-- Enhanced Success and Error Messages -->
+            <?php if(session('success')): ?>
+                <div class="alert-custom alert-success-custom">
+                    <div class="alert-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <strong>Success!</strong>
+                        <p><?php echo e(session('success')); ?></p>
+                    </div>
+                </div>
+            <?php endif; ?>
 
+            <?php if(session('error')): ?>
+                <div class="alert-custom alert-error-custom">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <strong>Error!</strong>
+                        <p><?php echo e(session('error')); ?></p>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if(session('warning')): ?>
+                <div class="alert-custom alert-warning-custom">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <strong>Warning!</strong>
+                        <p><?php echo e(session('warning')); ?></p>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if(isset($message)): ?>
+                <div class="alert-custom alert-info-custom">
+                    <div class="alert-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <strong>Information</strong>
+                        <p><?php echo e($message); ?></p>
+                    </div>
                 </div>
             <?php endif; ?>
 
@@ -18,51 +64,62 @@
             <div class="filter-section">
                  <h3>Filter Submissions</h3>
                  <form action="<?php echo e(route('training.grade-submissions.index')); ?>" method="GET" class="filter-form-custom">
-                    <div class="form-group-custom filter-group">
-                        <label for="school_id" class="visually-hidden">School</label>
-                        <select name="school_id" id="school_id" class="form-control-custom" onchange="this.form.submit()">
-                            <option value="">All Schools</option>
-                            <?php $__currentLoopData = $schools; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $school): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($school->school_id); ?>" <?php echo e(request('school_id') == $school->school_id ? 'selected' : ''); ?>>
-                                    <?php echo e($school->name); ?>
-
-                                </option>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group-custom filter-group">
-                        <label for="class_id" class="visually-hidden">Class</label>
-                        <select name="class_id" id="class_id" class="form-control-custom" onchange="this.form.submit()">
-                            <option value="">All Classes</option>
-                            <?php if(request('school_id')): ?>
-                                <?php $__currentLoopData = $classesBySchool[request('school_id')]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $class): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($class->class_id); ?>" <?php echo e(request('class_id') == $class->class_id ? 'selected' : ''); ?>>
-                                        <?php echo e($class->class_name); ?>
+                    <div class="filter-dropdowns-container">
+                        <div class="form-group-custom filter-group">
+                            <label for="school_id" class="visually-hidden">School</label>
+                            <select name="school_id" id="school_id" class="form-control-custom" onchange="updateClassDropdown()">
+                                <option value="">All Schools</option>
+                                <?php $__currentLoopData = $allSchools; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $school): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($school->school_id); ?>" <?php echo e(request('school_id') == $school->school_id ? 'selected' : ''); ?>>
+                                        <?php echo e($school->name); ?>
 
                                     </option>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            <?php endif; ?>
-                        </select>
+                            </select>
+                        </div>
+
+                        <div class="form-group-custom filter-group">
+                            <label for="class_id" class="visually-hidden">Class</label>
+                            <select name="class_id" id="class_id" class="form-control-custom" onchange="clearSubmissionFilterAndSubmit()">
+                                <option value="">All Classes</option>
+                                <?php if(request('school_id') && isset($allClassesBySchool[request('school_id')])): ?>
+                                    <?php $__currentLoopData = $allClassesBySchool[request('school_id')]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $class): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($class->class_id); ?>" <?php echo e(request('class_id') == $class->class_id ? 'selected' : ''); ?>>
+                                            <?php echo e($class->class_name); ?>
+
+                                        </option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group-custom filter-group">
+                            <label for="filter_key" class="visually-hidden">Semester Term Academic Year</label>
+                            <select name="filter_key" id="filter_key" class="form-control-custom">
+                                <option value="">All Submissions</option>
+                                <?php $__currentLoopData = $filterOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($option['value']); ?>" <?php echo e(request('filter_key') == $option['value'] ? 'selected' : ''); ?>>
+                                        <?php echo e($option['display']); ?>
+
+                                        <?php if(!request('school_id') && !request('class_id')): ?>
+                                            - <?php echo e($option['school_name']); ?> (<?php echo e($option['class_name']); ?>)
+                                        <?php elseif(!request('class_id')): ?>
+                                            - <?php echo e($option['class_name']); ?>
+
+                                        <?php endif; ?>
+                                    </option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        </div>
+                        <div class="filter-buttons">
+                            <button type="submit" class="btn-custom btn-primary-custom">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                            <button type="button" onclick="location.href='<?php echo e(route('training.grade-submissions.index')); ?>'" class="btn-custom btn-secondary-custom">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                        </div>
                     </div>
-                    
-                     <div class="form-group-custom filter-group">
-                         <label for="filter_key" class="visually-hidden">Semester Term Academic Year</label>
-                         <select name="filter_key" id="filter_key" class="form-control-custom">
-                             <option value="">All Submissions</option>
-                             <?php $__currentLoopData = $filterOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $option): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                 <option value="<?php echo e($option); ?>" <?php echo e(request('filter_key') == $option ? 'selected' : ''); ?>><?php echo e($option); ?></option>
-                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                         </select>
-                     </div>
-                     <div class="filter-buttons">
-                         <button type="submit" class="btn-custom btn-primary-custom">
-                             <i class="fas fa-filter"></i> Filter
-                         </button>
-                         <button type="button" onclick="location.href='<?php echo e(route('training.grade-submissions.index')); ?>'" class="btn-custom btn-secondary-custom">
-                             <i class="fas fa-undo"></i> Reset
-                         </button>
-                     </div>
                  </form>
             </div>
         </div>
@@ -114,7 +171,13 @@
                         ?>
                         <div class="submission-section">
                             <div class="submission-header">
-                                <h4><?php echo e($gradeSubmission->semester); ?> <?php echo e($gradeSubmission->term); ?> <?php echo e($gradeSubmission->academic_year); ?></h4>
+                                <div class="submission-title">
+                                    <h4><?php echo e($gradeSubmission->semester); ?> <?php echo e($gradeSubmission->term); ?> <?php echo e($gradeSubmission->academic_year); ?></h4>
+                                    <div class="class-label">
+                                        <i class="fas fa-users"></i>
+                                        <span>Class: <?php echo e($gradeSubmission->classModel->class_name ?? 'N/A'); ?></span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="table-responsive-custom">
                                 <table class="grade-monitor-table">
@@ -310,34 +373,53 @@
         <?php endif; ?>
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-    <?php if(isset($submissions) && $submissions->hasPages()): ?>
-    <div class="pagination-container">
-        <div class="pagination-info">
-            Showing <?php echo e($submissions->firstItem()); ?> to <?php echo e($submissions->lastItem()); ?> of <?php echo e($submissions->total()); ?> entries
+    <!-- School Pagination -->
+    <?php if(isset($schoolPagination) && $schoolPagination->has_pages): ?>
+    <div class="school-pagination-container">
+        <div class="school-pagination-info">
+            <span class="pagination-text">
+                <i class="fas fa-school"></i>
+                Showing school <?php echo e($schoolPagination->from); ?> of <?php echo e($schoolPagination->total); ?> schools
+            </span>
         </div>
-        <div class="pagination-buttons">
-            <?php if($submissions->onFirstPage()): ?>
+        <div class="school-pagination-buttons">
+            <?php if($schoolPagination->on_first_page): ?>
                 <span class="pagination-button disabled">
-                    <i class="fas fa-chevron-left"></i> Previous
+                    <i class="fas fa-chevron-left"></i> Previous School
                 </span>
             <?php else: ?>
-                <a href="<?php echo e($submissions->previousPageUrl()); ?>" class="pagination-button">
-                    <i class="fas fa-chevron-left"></i> Previous
+                <?php
+                    $prevPage = $schoolPagination->current_page - 1;
+                    $currentUrl = request()->fullUrlWithQuery(['school_page' => $prevPage]);
+                ?>
+                <a href="<?php echo e($currentUrl); ?>" class="pagination-button">
+                    <i class="fas fa-chevron-left"></i> Previous School
                 </a>
             <?php endif; ?>
 
             <div class="page-info">
-                Page <?php echo e($submissions->currentPage()); ?> of <?php echo e($submissions->lastPage()); ?>
+                <span class="current-school">
+                    School <?php echo e($schoolPagination->current_page); ?> of <?php echo e($schoolPagination->last_page); ?>
 
+                </span>
+                <?php if($schools->isNotEmpty()): ?>
+                    <span class="school-name">
+                        (<?php echo e($schools->first()->name); ?>)
+                    </span>
+                <?php endif; ?>
             </div>
 
-            <?php if($submissions->hasMorePages()): ?>
-                <a href="<?php echo e($submissions->nextPageUrl()); ?>" class="pagination-button">
-                    Next <i class="fas fa-chevron-right"></i>
+            <?php if($schoolPagination->has_more_pages): ?>
+                <?php
+                    $nextPage = $schoolPagination->current_page + 1;
+                    $currentUrl = request()->fullUrlWithQuery(['school_page' => $nextPage]);
+                ?>
+                <a href="<?php echo e($currentUrl); ?>" class="pagination-button">
+                    Next School <i class="fas fa-chevron-right"></i>
                 </a>
             <?php else: ?>
                 <span class="pagination-button disabled">
-                    Next <i class="fas fa-chevron-right"></i>
+                    Next School <i class="fas fa-chevron-right"></i>
                 </span>
             <?php endif; ?>
         </div>
@@ -395,27 +477,137 @@
         font-size: 1.5rem;
         font-weight: 600;
     }
-     .submission-id-small {
+
+    .school-pagination-info {
         margin: 0;
         font-size: 0.9rem;
         opacity: 0.9;
-     }
+        color: var(--info-color);
+    }
+
+    .school-pagination-info i {
+        margin-right: 5px;
+    }
 
     .card-body-custom {
         padding: 20px;
     }
 
     .alert-custom {
-        padding: 10px 15px;
-        border-radius: 5px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px 20px;
         margin-bottom: 20px;
-        font-size: 0.9rem;
+        border-radius: 8px;
+        border-left: 4px solid;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        animation: slideInDown 0.3s ease-out;
     }
 
-     .alert-warning-custom {
+    .alert-success-custom {
+        background-color: #d4edda;
+        border-left-color: #28a745;
+        color: #155724;
+    }
+
+    .alert-error-custom {
+        background-color: #f8d7da;
+        border-left-color: #dc3545;
+        color: #721c24;
+    }
+
+    .alert-warning-custom {
         background-color: #fff3cd;
-        border: 1px solid #ffc107;
+        border-left-color: #ffc107;
         color: #856404;
+    }
+
+    .alert-info-custom {
+        background-color: #d1ecf1;
+        border-left-color: #17a2b8;
+        color: #0c5460;
+    }
+
+    .alert-icon {
+        flex-shrink: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 2px;
+    }
+
+    .alert-success-custom .alert-icon {
+        color: #28a745;
+    }
+
+    .alert-error-custom .alert-icon {
+        color: #dc3545;
+    }
+
+    .alert-warning-custom .alert-icon {
+        color: #ffc107;
+    }
+
+    .alert-info-custom .alert-icon {
+        color: #17a2b8;
+    }
+
+    .alert-icon i {
+        font-size: 18px;
+    }
+
+    .alert-content {
+        flex: 1;
+        line-height: 1.5;
+    }
+
+    .alert-content strong {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+
+    .alert-content p {
+        margin: 0;
+        font-size: 14px;
+    }
+
+    @keyframes slideInDown {
+        from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Auto-hide success messages */
+    .alert-success-custom {
+        position: relative;
+    }
+
+    .alert-success-custom::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: #28a745;
+        animation: progressBar 5s linear forwards;
+    }
+
+    @keyframes progressBar {
+        from {
+            width: 100%;
+        }
+        to {
+            width: 0%;
+        }
     }
 
     .filter-section {
@@ -426,36 +618,69 @@
     }
      .filter-section h3 {
         margin-top: 0;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         font-size: 1.25rem;
         color: var(--dark-text);
      }
 
-    .filter-form-custom {
+    .filter-dropdowns-container {
         display: flex;
-        align-items: center;
-        gap: 15px; /* Space between form elements */
-        flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+
+    @media (min-width: 768px) {
+        .filter-dropdowns-container {
+            flex-direction: row;
+            align-items: flex-end;
+            gap: 20px;
+        }
+    }
+
+    .filter-form-custom {
+        display: block;
     }
 
     .form-group-custom.filter-group {
         margin-bottom: 0; /* Remove margin from form group in flex container */
-        flex-grow: 1; /* Allow the select to grow */
-        max-width: 300px; /* Limit width for better layout */
+        flex: 1; /* Allow the select to grow equally */
+        min-width: 250px; /* Minimum width for readability */
+        max-width: 350px; /* Increased max width for better text visibility */
+    }
+
+    @media (min-width: 768px) {
+        .form-group-custom.filter-group {
+            flex: 1 1 280px; /* Flexible basis with minimum width */
+            max-width: 400px; /* Even larger max width on desktop */
+        }
     }
 
      .form-control-custom {
         width: 100%; /* Make select fill its container */
-        padding: 8px 10px;
+        padding: 10px 14px; /* Increased padding for better spacing */
         border: 1px solid var(--border-color);
         border-radius: 5px;
-        font-size: 1rem;
+        font-size: 1rem; /* Good readable font size */
         box-sizing: border-box;
+        white-space: nowrap; /* Prevent text wrapping */
+        overflow: hidden; /* Hide overflow */
+        text-overflow: ellipsis; /* Show ellipsis for long text */
+        min-height: 44px; /* Consistent height for all dropdowns */
      }
      .form-control-custom:focus {
          border-color: var(--primary-color);
          outline: none;
          box-shadow: 0 0 5px rgba(0, 123, 255, 0.25);
+     }
+
+     /* Dropdown option styling for better text visibility */
+     .form-control-custom option {
+         padding: 8px 12px;
+         font-size: 0.95rem;
+         white-space: nowrap;
+         overflow: hidden;
+         text-overflow: ellipsis;
      }
 
     .visually-hidden {
@@ -529,10 +754,20 @@
 
     .filter-buttons {
         display: flex;
-        gap: 4px;
-        margin-top: 8px;
-        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 0;
+        justify-content: flex-start;
         align-items: center;
+        flex-shrink: 0; /* Prevent buttons from shrinking */
+        min-width: 200px; /* Ensure buttons have enough space */
+    }
+
+    @media (max-width: 767px) {
+        .filter-buttons {
+            margin-top: 15px;
+            justify-content: center;
+            width: 100%;
+        }
     }
 
     .action-buttons {
@@ -765,6 +1000,11 @@
 
     .submission-section {
         margin-bottom: 30px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #fff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
     .submission-section:last-child {
@@ -772,14 +1012,53 @@
     }
 
     .submission-header {
-        margin-bottom: 15px;
+        background-color: var(--light-bg);
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 0;
+    }
+
+    .submission-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
     }
 
     .submission-header h4 {
         margin: 0;
         color: var(--dark-text);
         font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .class-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--primary-color);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
         font-weight: 500;
+        box-shadow: 0 2px 4px rgba(34, 187, 234, 0.2);
+    }
+
+    .class-label i {
+        font-size: 0.8rem;
+    }
+
+    @media (max-width: 768px) {
+        .submission-title {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .class-label {
+            align-self: flex-end;
+        }
     }
 
     /* Submission-specific pagination styles */
@@ -859,6 +1138,169 @@
             justify-content: center;
         }
     }
+
+    /* School Pagination Styles */
+    .school-pagination-container {
+        margin-top: 30px;
+        padding: 20px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid var(--primary-color);
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(34, 187, 234, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .school-pagination-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pagination-text {
+        color: var(--dark-text);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .pagination-text i {
+        color: var(--primary-color);
+        font-size: 1.1rem;
+    }
+
+    .school-pagination-buttons {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .current-school {
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+
+    .school-name {
+        color: var(--dark-text);
+        font-style: italic;
+        margin-left: 5px;
+        font-size: 0.9rem;
+    }
+
+    .page-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        text-align: center;
+    }
+
+    @media (max-width: 768px) {
+        .school-pagination-container {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .school-pagination-buttons {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 </style>
-<?php $__env->stopSection(); ?> 
+<?php $__env->stopSection(); ?>
+
+<script>
+// All classes data for dynamic filtering
+const allClassesBySchool = <?php echo json_encode($allClassesBySchool ?? [], 15, 512) ?>;
+
+function updateClassDropdown(autoSubmit = true) {
+    const schoolSelect = document.getElementById('school_id');
+    const classSelect = document.getElementById('class_id');
+    const submissionSelect = document.getElementById('filter_key');
+    const selectedSchoolId = schoolSelect.value;
+
+    // Clear current class options
+    classSelect.innerHTML = '<option value="">All Classes</option>';
+
+    if (selectedSchoolId && allClassesBySchool[selectedSchoolId]) {
+        // Add classes for selected school
+        allClassesBySchool[selectedSchoolId].forEach(function(classItem) {
+            const option = document.createElement('option');
+            option.value = classItem.class_id;
+            option.textContent = classItem.class_name;
+
+            // Maintain selected class if it belongs to the selected school
+            if (classItem.class_id === '<?php echo e(request("class_id")); ?>') {
+                option.selected = true;
+            }
+
+            classSelect.appendChild(option);
+        });
+    }
+
+    // Clear submission filter when school/class changes
+    if (autoSubmit) {
+        submissionSelect.value = '';
+    }
+
+    // Submit form to apply school filter only if requested
+    if (autoSubmit) {
+        schoolSelect.form.submit();
+    }
+}
+
+function clearSubmissionFilterAndSubmit() {
+    const submissionSelect = document.getElementById('filter_key');
+    const classSelect = document.getElementById('class_id');
+
+    // Clear submission filter when class changes
+    submissionSelect.value = '';
+
+    // Submit form
+    classSelect.form.submit();
+}
+
+function updateSubmissionFilter() {
+    const submissionSelect = document.getElementById('filter_key');
+
+    // Clear submission filter and submit form
+    submissionSelect.value = '';
+    submissionSelect.form.submit();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide success messages after 5 seconds
+    const successAlerts = document.querySelectorAll('.alert-success-custom');
+    successAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            alert.style.transition = 'opacity 0.5s ease-out';
+            alert.style.opacity = '0';
+            setTimeout(function() {
+                alert.remove();
+            }, 500);
+        }, 5000);
+    });
+
+    // Add click to dismiss functionality for all alerts
+    const allAlerts = document.querySelectorAll('.alert-custom');
+    allAlerts.forEach(function(alert) {
+        alert.style.cursor = 'pointer';
+        alert.title = 'Click to dismiss';
+        alert.addEventListener('click', function() {
+            this.style.transition = 'opacity 0.3s ease-out';
+            this.style.opacity = '0';
+            setTimeout(() => {
+                this.remove();
+            }, 300);
+        });
+    });
+
+    // Initialize class dropdown on page load (without auto-submit)
+    updateClassDropdown(false);
+});
+</script>
 <?php echo $__env->make('layouts.nav', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laravel\PNPH-CAPSTONE\resources\views/training/grade-submissions/monitor.blade.php ENDPATH**/ ?>

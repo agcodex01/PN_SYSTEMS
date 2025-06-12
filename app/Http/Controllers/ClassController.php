@@ -35,8 +35,38 @@ class ClassController extends Controller
             $validated = $request->validate([
                 'class_id' => 'required|string|unique:classes,class_id',
                 'class_name' => 'required|string',
-                'school_id' => 'required|exists:schools,school_id'
+                'school_id' => 'required|exists:schools,school_id',
+                'student_ids' => 'nullable|array',
+                'student_ids.*' => 'exists:pnph_users,user_id'
             ]);
+
+            // Check if any selected students are already in other classes
+            if ($request->has('student_ids') && !empty($request->student_ids)) {
+                $studentsAlreadyInClasses = DB::table('class_student')
+                    ->join('classes', 'class_student.class_id', '=', 'classes.id')
+                    ->join('pnph_users', 'class_student.user_id', '=', 'pnph_users.user_id')
+                    ->whereIn('class_student.user_id', $request->student_ids)
+                    ->select(
+                        'pnph_users.user_fname',
+                        'pnph_users.user_lname',
+                        'pnph_users.user_id',
+                        'classes.class_name',
+                        'classes.class_id'
+                    )
+                    ->get();
+
+                if ($studentsAlreadyInClasses->isNotEmpty()) {
+                    $errorMessages = [];
+                    foreach ($studentsAlreadyInClasses as $student) {
+                        $errorMessages[] = "{$student->user_fname} {$student->user_lname} ({$student->user_id}) is already enrolled in class '{$student->class_name}' ({$student->class_id})";
+                    }
+
+                    return back()
+                        ->withInput()
+                        ->with('error', 'Cannot add students who are already enrolled in other classes:')
+                        ->with('student_conflicts', $errorMessages);
+                }
+            }
 
             $class = new ClassModel();
             $class->class_id = $validated['class_id'];
@@ -49,9 +79,15 @@ class ClassController extends Controller
                 $class->students()->attach($request->student_ids);
             }
 
+            $message = 'Class created successfully.';
+            if ($request->has('student_ids') && !empty($request->student_ids)) {
+                $studentCount = count($request->student_ids);
+                $message .= " {$studentCount} student(s) have been enrolled in this class.";
+            }
+
             return redirect()
                 ->route('training.classes.index')
-                ->with('success', 'Class created successfully.');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             return redirect()
@@ -74,12 +110,47 @@ class ClassController extends Controller
             $validated = $request->validate([
                 'class_id' => 'required|string|unique:classes,class_id,' . $class->id,
                 'class_name' => 'required|string',
+                'student_ids' => 'nullable|array',
+                'student_ids.*' => 'exists:pnph_users,user_id'
             ]);
+
+            // Check if any selected students are already in other classes (excluding current class)
+            if ($request->has('student_ids') && !empty($request->student_ids)) {
+                $studentsAlreadyInClasses = DB::table('class_student')
+                    ->join('classes', 'class_student.class_id', '=', 'classes.id')
+                    ->join('pnph_users', 'class_student.user_id', '=', 'pnph_users.user_id')
+                    ->whereIn('class_student.user_id', $request->student_ids)
+                    ->where('classes.id', '!=', $class->id) // Exclude current class
+                    ->select(
+                        'pnph_users.user_fname',
+                        'pnph_users.user_lname',
+                        'pnph_users.user_id',
+                        'classes.class_name',
+                        'classes.class_id'
+                    )
+                    ->get();
+
+                if ($studentsAlreadyInClasses->isNotEmpty()) {
+                    $errorMessages = [];
+                    foreach ($studentsAlreadyInClasses as $student) {
+                        $errorMessages[] = "{$student->user_fname} {$student->user_lname} ({$student->user_id}) is already enrolled in class '{$student->class_name}' ({$student->class_id})";
+                    }
+
+                    return back()
+                        ->withInput()
+                        ->with('error', 'Cannot add students who are already enrolled in other classes:')
+                        ->with('student_conflicts', $errorMessages);
+                }
+            }
 
             $class->update([
                 'class_id' => $validated['class_id'],
                 'class_name' => $validated['class_name'],
             ]);
+
+            // Get current students for comparison
+            $currentStudents = $class->students->pluck('user_id')->toArray();
+            $newStudents = $request->student_ids ?? [];
 
             // Update students
             if ($request->has('student_ids')) {
@@ -88,8 +159,20 @@ class ClassController extends Controller
                 $class->students()->detach();
             }
 
-            $successMessage = 'Class information and student list have been updated successfully.';
-            
+            // Create detailed success message
+            $addedStudents = array_diff($newStudents, $currentStudents);
+            $removedStudents = array_diff($currentStudents, $newStudents);
+
+            $successMessage = 'Class information has been updated successfully.';
+
+            if (!empty($addedStudents)) {
+                $successMessage .= ' ' . count($addedStudents) . ' student(s) added to the class.';
+            }
+
+            if (!empty($removedStudents)) {
+                $successMessage .= ' ' . count($removedStudents) . ' student(s) removed from the class.';
+            }
+
             return redirect()->route('training.schools.show', ['school' => $class->school_id])
                 ->with('success', $successMessage);
 

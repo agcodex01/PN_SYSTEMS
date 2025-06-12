@@ -21,28 +21,79 @@ class GradeSubmissionController extends Controller
 {
     public function index(Request $request)
     {
-        // Get all schools
-        $schools = School::all();
-        
-        // Get classes for each school
-        $classesBySchool = collect();
-        foreach($schools as $school) {
-            $classesBySchool[$school->school_id] = ClassModel::where('school_id', $school->school_id)->get();
+        // Get current page for school pagination
+        $schoolPage = $request->get('school_page', 1);
+        $schoolsPerPage = 1; // 1 school per page as requested
+
+        // Get all schools for filtering dropdown (not paginated)
+        $allSchools = School::orderBy('name')->get();
+
+        // Get all classes grouped by school for filtering dropdown
+        $allClassesBySchool = collect();
+        foreach($allSchools as $school) {
+            $allClassesBySchool[$school->school_id] = ClassModel::where('school_id', $school->school_id)->get();
         }
-        
-        // Get submissions based on filters
-        $query = GradeSubmission::query();
-        
+
+        // Apply filters to determine which schools to show
+        // Start with only schools that have grade submissions
+        $schoolsWithSubmissions = GradeSubmission::distinct('school_id')->pluck('school_id');
+        $filteredSchoolIds = $schoolsWithSubmissions;
+
         // Apply school filter if selected
         if ($request->has('school_id') && $request->school_id) {
-            $query->where('school_id', $request->school_id);
+            // Only include the selected school if it has submissions
+            if ($schoolsWithSubmissions->contains($request->school_id)) {
+                $filteredSchoolIds = collect([$request->school_id]);
+            } else {
+                $filteredSchoolIds = collect(); // Empty if selected school has no submissions
+            }
         }
-        
-        // Apply class filter if selected
+
+        // Apply class filter if selected (this will determine which school to show)
+        if ($request->has('class_id') && $request->class_id) {
+            $classSchool = ClassModel::where('class_id', $request->class_id)->first();
+            if ($classSchool && $schoolsWithSubmissions->contains($classSchool->school_id)) {
+                $filteredSchoolIds = collect([$classSchool->school_id]);
+            } else {
+                $filteredSchoolIds = collect(); // Empty if class's school has no submissions
+            }
+        }
+
+        // Get filtered schools for pagination
+        $filteredSchools = $allSchools->whereIn('school_id', $filteredSchoolIds);
+        $filteredSchoolsCount = $filteredSchools->count();
+
+        // Apply pagination to filtered schools
+        $schoolsOffset = ($schoolPage - 1) * $schoolsPerPage;
+        $schools = $filteredSchools->skip($schoolsOffset)->take($schoolsPerPage);
+
+        // Create school pagination info based on filtered results
+        $schoolPagination = (object)[
+            'current_page' => $schoolPage,
+            'last_page' => ceil($filteredSchoolsCount / $schoolsPerPage),
+            'per_page' => $schoolsPerPage,
+            'total' => $filteredSchoolsCount,
+            'from' => $schoolsOffset + 1,
+            'to' => min($schoolsOffset + $schoolsPerPage, $filteredSchoolsCount),
+            'has_pages' => $filteredSchoolsCount > $schoolsPerPage,
+            'on_first_page' => $schoolPage == 1,
+            'has_more_pages' => $schoolPage < ceil($filteredSchoolsCount / $schoolsPerPage)
+        ];
+
+        // Build query for grade submissions (only for current schools)
+        $schoolIds = $schools->pluck('school_id')->toArray();
+        $query = GradeSubmission::with(['school', 'classModel']);
+
+        // Always filter by current schools
+        if (!empty($schoolIds)) {
+            $query->whereIn('school_id', $schoolIds);
+        }
+
+        // Apply additional filters
         if ($request->has('class_id') && $request->class_id) {
             $query->where('class_id', $request->class_id);
         }
-        
+
         // Apply semester/term/year filter if selected
         if ($request->has('filter_key') && $request->filter_key) {
             $filter = explode(',', $request->filter_key);
@@ -52,19 +103,33 @@ class GradeSubmissionController extends Controller
                     ->where('academic_year', $filter[2]);
             }
         }
-        
-        // Clone the query for filter options before pagination
-        $filterQuery = clone $query;
-        
-        // Get all submissions for filter options (without pagination)
-        $allSubmissions = $filterQuery->with(['students', 'proofs', 'subjects'])->get();
-        
-        // Get paginated submissions
+
+        // Get submissions for filter options based on current school/class filters
+        $submissionFilterQuery = GradeSubmission::with(['students', 'proofs', 'subjects']);
+
+        // Apply school filter to submission options if selected
+        if ($request->has('school_id') && $request->school_id) {
+            $submissionFilterQuery->where('school_id', $request->school_id);
+        }
+
+        // Apply class filter to submission options if selected
+        if ($request->has('class_id') && $request->class_id) {
+            $submissionFilterQuery->where('class_id', $request->class_id);
+        }
+
+        // If no specific school/class filter, show submissions from filtered schools
+        if (!$request->has('school_id') && !$request->has('class_id')) {
+            $submissionFilterQuery->whereIn('school_id', $filteredSchoolIds);
+        }
+
+        $allSubmissions = $submissionFilterQuery->get();
+
+        // Get submissions for current schools (no additional pagination since we're already limiting by school)
         $submissions = $query->with(['students', 'proofs', 'subjects'])
             ->orderBy('created_at', 'desc')
-            ->paginate(5);
+            ->get();
 
-        // Group paginated submissions by school
+        // Group submissions by school
         $submissionsBySchool = $submissions->groupBy('school_id');
 
         // Add pagination info for students within each submission
@@ -131,18 +196,25 @@ class GradeSubmissionController extends Controller
 
         $submissionsBySchool = $submissionsWithPagination;
 
-        // Get unique filter options from all submissions
+        // Get unique filter options from filtered submissions
         $filterOptions = $allSubmissions->map(function($submission) {
-            return $submission->semester . ',' . $submission->term . ',' . $submission->academic_year;
-        })->unique()->sortDesc()->values();
+            $termDisplay = ucfirst(str_replace('_', ' ', $submission->term));
+            return [
+                'value' => $submission->semester . ',' . $submission->term . ',' . $submission->academic_year,
+                'display' => $submission->semester . ' ' . $termDisplay . ' ' . $submission->academic_year,
+                'school_name' => $submission->school->name ?? 'Unknown School',
+                'class_name' => $submission->classModel->class_name ?? 'Unknown Class'
+            ];
+        })->unique('value')->sortByDesc('value')->values();
 
         return view('training.grade-submissions.monitor', compact(
-            'schools', 
-            'classesBySchool',
+            'schools',                  // Current page schools (for display)
             'submissionsBySchool',
             'filterOptions',
-            'submissions' // Pass the paginated results
+            'schoolPagination'          // Pass school pagination info
         ))
+        ->with('allSchools', $allSchools)              // All schools for filtering dropdown
+        ->with('allClassesBySchool', $allClassesBySchool)  // All classes for filtering dropdown
         ->with('filter_key', $request->filter_key)
         ->with('school_id', $request->school_id)
         ->with('class_id', $request->class_id);
@@ -165,17 +237,61 @@ class GradeSubmissionController extends Controller
     public function store(Request $request)
     {
         try {
+            // Enhanced validation with custom messages
             $validated = $request->validate([
                 'school_id' => 'required|exists:schools,school_id',
                 'class_id' => 'required|exists:classes,class_id',
-                'semester' => 'required|string',
-                'term' => 'required|string',
-                'academic_year' => 'required|string',
+                'semester' => 'required|string|max:50',
+                'term' => 'required|string|in:prelim,midterm,semi_final,final',
+                'academic_year' => 'required|string|max:20',
                 'subject_ids' => 'required|array|min:1',
                 'subject_ids.*' => 'exists:subjects,id',
+            ], [
+                'school_id.required' => 'Please select a school.',
+                'school_id.exists' => 'The selected school does not exist.',
+                'class_id.required' => 'Please select a class.',
+                'class_id.exists' => 'The selected class does not exist.',
+                'semester.required' => 'Please enter the semester.',
+                'term.required' => 'Please select a term.',
+                'term.in' => 'Please select a valid term (Prelim, Midterm, Semi Final, or Final).',
+                'academic_year.required' => 'Please enter the academic year.',
+                'subject_ids.required' => 'Please select at least one subject.',
+                'subject_ids.min' => 'Please select at least one subject.',
+                'subject_ids.*.exists' => 'One or more selected subjects do not exist.',
             ]);
 
+            // Check for duplicate grade submission
+            $existingSubmission = GradeSubmission::where([
+                'school_id' => $validated['school_id'],
+                'class_id' => $validated['class_id'],
+                'semester' => $validated['semester'],
+                'term' => $validated['term'],
+                'academic_year' => $validated['academic_year'],
+            ])->first();
+
+            if ($existingSubmission) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'A grade submission already exists for this class, semester, term, and academic year combination.');
+            }
+
             DB::beginTransaction();
+
+            // Get class and school information for detailed messages
+            $class = ClassModel::where('class_id', $validated['class_id'])->first();
+            if (!$class) {
+                throw new \Exception('The selected class could not be found. Please refresh the page and try again.');
+            }
+
+            $school = School::where('school_id', $validated['school_id'])->first();
+            if (!$school) {
+                throw new \Exception('The selected school could not be found. Please refresh the page and try again.');
+            }
+
+            $students = $class->students()->where('user_role', 'student')->get();
+            if ($students->isEmpty()) {
+                throw new \Exception("No students are enrolled in class '{$class->class_name}'. Please add students to the class before creating a grade submission.");
+            }
 
             // Create the grade submission
             $gradeSubmission = new GradeSubmission();
@@ -186,17 +302,6 @@ class GradeSubmissionController extends Controller
             $gradeSubmission->academic_year = $validated['academic_year'];
             $gradeSubmission->status = 'pending';
             $gradeSubmission->save();
-
-            // Get students from the class
-            $class = ClassModel::where('class_id', $validated['class_id'])->first();
-            if (!$class) {
-                throw new \Exception('Class not found.');
-            }
-
-            $students = $class->students()->where('user_role', 'student')->get();
-            if ($students->isEmpty()) {
-                throw new \Exception('No students found in the selected class.');
-            }
 
             // Initialize grade records for each student-subject combination
             $gradeRecords = [];
@@ -266,24 +371,63 @@ class GradeSubmissionController extends Controller
                 ]);
             }
 
+            // Create detailed success message
+            $subjectCount = count($validated['subject_ids']);
+            $studentCount = $students->count();
+            $termDisplay = ucfirst(str_replace('_', ' ', $validated['term']));
+
+            $successMessage = "Grade submission created successfully! ";
+            $successMessage .= "Created for {$school->name} - {$class->class_name} ";
+            $successMessage .= "({$validated['semester']} {$termDisplay} {$validated['academic_year']}) ";
+            $successMessage .= "with {$subjectCount} subject(s) and {$studentCount} student(s). ";
+            $successMessage .= "Students have been notified via email.";
+
             return redirect()
                 ->route('training.grade-submissions.index')
-                ->with('success', 'Grade submission created successfully and email notifications sent to students!');
+                ->with('success', $successMessage);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
+
+            // Log validation errors for debugging
+            \Log::warning('Grade Submission Validation Error', [
+                'errors' => $e->errors(),
+                'input' => $request->except(['_token'])
+            ]);
+
             return back()
                 ->withErrors($e->validator)
                 ->withInput()
-                ->with('error', 'Please check the form for errors.');
+                ->with('error', 'Please correct the errors below and try again.');
+
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Grade Submission Creation Error: ' . $e->getMessage());
-            \Log::error($e->getTraceAsString());
-            
+
+            // Log detailed error information
+            \Log::error('Grade Submission Creation Error', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'input' => $request->except(['_token']),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // User-friendly error message
+            $errorMessage = 'An error occurred while creating the grade submission. ';
+
+            if (str_contains($e->getMessage(), 'students')) {
+                $errorMessage .= 'There was an issue with the student enrollment. Please check that students are properly enrolled in the selected class.';
+            } elseif (str_contains($e->getMessage(), 'subject')) {
+                $errorMessage .= 'There was an issue with the selected subjects. Please refresh the page and try again.';
+            } elseif (str_contains($e->getMessage(), 'email')) {
+                $errorMessage .= 'The submission was created but there was an issue sending notifications. Students may not have been notified.';
+            } else {
+                $errorMessage .= 'Please try again. If the problem persists, contact the system administrator.';
+            }
+
             return back()
                 ->withInput()
-                ->with('error', 'An error occurred while creating the grade submission: ' . $e->getMessage());
+                ->with('error', $errorMessage);
         }
     }
 
@@ -654,17 +798,33 @@ class GradeSubmissionController extends Controller
 
     public function updateProofStatus(Request $request, GradeSubmission $gradeSubmission, $studentId)
     {
+        // Enhanced validation with custom messages
         $request->validate([
             'status' => 'required|in:approved,rejected,pending'
+        ], [
+            'status.required' => 'Please select a status.',
+            'status.in' => 'Please select a valid status (Approved, Rejected, or Pending).'
         ]);
 
         try {
+            // Get student information for detailed messages
+            $student = PNUser::where('user_id', $studentId)->first();
+            if (!$student) {
+                return back()->with('error', 'Student not found. Please refresh the page and try again.');
+            }
+
             $proof = $gradeSubmission->proofs()
                 ->where('user_id', $studentId)
                 ->first();
 
             if (!$proof) {
-                return back()->with('error', 'No proof found for this student.');
+                return back()->with('error', "No proof submission found for {$student->user_fname} {$student->user_lname}. The student may not have submitted their grades yet.");
+            }
+
+            // Check if status is already the same
+            if ($proof->status === $request->status) {
+                $statusDisplay = ucfirst($request->status);
+                return back()->with('warning', "The status for {$student->user_fname} {$student->user_lname} is already set to '{$statusDisplay}'.");
             }
 
             // First, get the grade submission subjects to update
@@ -715,18 +875,57 @@ class GradeSubmissionController extends Controller
             \Log::info('Student grade status updated:', [
                 'proof_id' => $proof->id,
                 'student_id' => $studentId,
+                'student_name' => $student->user_fname . ' ' . $student->user_lname,
+                'old_status' => $proof->status,
                 'new_status' => $request->status,
-                'updated_rows' => $updated
+                'updated_rows' => $updated,
+                'submission_id' => $gradeSubmission->id
             ]);
 
-            $message = $request->status === 'approved' 
-                ? 'Student grade approved successfully.' 
-                : 'Student grade status updated.';
+            // Create detailed success message based on action
+            $statusDisplay = ucfirst($request->status);
+            $studentName = $student->user_fname . ' ' . $student->user_lname;
+
+            switch ($request->status) {
+                case 'approved':
+                    $message = "✅ {$studentName}'s grade submission has been approved successfully. The student can now view their approved grades.";
+                    break;
+                case 'rejected':
+                    $message = "❌ {$studentName}'s grade submission has been rejected. The student will need to resubmit their grades.";
+                    break;
+                case 'pending':
+                    $message = "⏳ {$studentName}'s grade submission status has been reset to pending for review.";
+                    break;
+                default:
+                    $message = "Status for {$studentName} has been updated to {$statusDisplay}.";
+            }
 
             return back()->with('success', $message);
+
         } catch (\Exception $e) {
-            \Log::error('Error updating proof status: ' . $e->getMessage());
-            return back()->with('error', 'An error occurred while updating the proof status.');
+            // Log detailed error information
+            \Log::error('Error updating proof status', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'student_id' => $studentId,
+                'submission_id' => $gradeSubmission->id,
+                'requested_status' => $request->status,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            $studentName = $student->user_fname ?? 'Student';
+            $errorMessage = "An error occurred while updating {$studentName}'s grade status. ";
+
+            if (str_contains($e->getMessage(), 'database') || str_contains($e->getMessage(), 'connection')) {
+                $errorMessage .= 'There was a database connection issue. Please try again.';
+            } elseif (str_contains($e->getMessage(), 'permission')) {
+                $errorMessage .= 'You do not have permission to perform this action.';
+            } else {
+                $errorMessage .= 'Please try again. If the problem persists, contact the system administrator.';
+            }
+
+            return back()->with('error', $errorMessage);
         }
     }
 

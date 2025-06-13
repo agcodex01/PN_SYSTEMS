@@ -112,11 +112,11 @@
                             </select>
                         </div>
                         <div class="filter-buttons">
-                            <button type="submit" class="btn-custom btn-primary-custom">
-                                <i class="fas fa-filter"></i> Filter
+                            <button type="submit" class="btn-custom btn-primary-custom" title="Apply Filters">
+                                <i class="fas fa-filter"></i> <span class="btn-text">Filter</span>
                             </button>
-                            <button type="button" onclick="location.href='<?php echo e(route('training.grade-submissions.index')); ?>'" class="btn-custom btn-secondary-custom">
-                                <i class="fas fa-undo"></i> Reset
+                            <button type="button" onclick="location.href='<?php echo e(route('training.grade-submissions.index')); ?>'" class="btn-custom btn-secondary-custom" title="Reset Filters">
+                                <i class="fas fa-undo"></i> <span class="btn-text">Reset</span>
                             </button>
                         </div>
                     </div>
@@ -184,13 +184,13 @@
                                     <thead>
                                         <tr>
                                             <th class="text-center-custom" style="width: 80px">Student ID</th>
-                                            <th style="width: 180px">Name</th>
+                                            <th style="width: 160px">Name</th>
                                             <?php $__currentLoopData = $subjects; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $subject): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                <th class="text-center-custom"><?php echo e($subject->name); ?></th>
+                                                <th class="text-center-custom" style="min-width: 80px"><?php echo e($subject->name); ?></th>
                                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                            <th class="text-center-custom" style="width: 120px">Proof</th>
-                                            <th class="text-center-custom" style="width: 120px">Status</th>
-                                            <th class="text-center-custom" style="width: 120px">Action</th>
+                                            <th class="text-center-custom" style="width: 100px">Proof</th>
+                                            <th class="text-center-custom" style="width: 100px">Status</th>
+                                            <th class="text-center-custom" style="width: 180px">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -228,8 +228,9 @@
                                                     ?>
                                                     <?php if($proof): ?>
                                                         <a href="<?php echo e(route('training.grade-submissions.view-proof', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id])); ?>"
-                                                           class="btn-custom btn-primary-custom">
-                                                            <i class="fas fa-eye"></i> View Proof
+                                                           class="btn-custom btn-primary-custom"
+                                                           title="View Proof">
+                                                            <i class="fas fa-eye"></i> <span class="btn-text">View</span>
                                                         </a>
                                                     <?php else: ?>
                                                         <span class="text-muted-custom small-text">No proof</span>
@@ -287,15 +288,15 @@
                                                                  <form method="POST" action="<?php echo e(route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id])); ?>" class="d-inline">
                                                                      <?php echo csrf_field(); ?>
                                                                      <input type="hidden" name="status" value="approved">
-                                                                     <button type="submit" class="action-button btn-success-custom">
-                                                                         <i class="fas fa-check-circle"></i> Approve
+                                                                     <button type="submit" class="action-button btn-success-custom" title="Approve">
+                                                                         <i class="fas fa-check"></i> <span class="btn-text">Approve</span>
                                                                      </button>
                                                                  </form>
                                                                  <form method="POST" action="<?php echo e(route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id])); ?>" class="d-inline">
                                                                      <?php echo csrf_field(); ?>
                                                                      <input type="hidden" name="status" value="rejected">
-                                                                     <button type="submit" class="action-button btn-danger-custom">
-                                                                         <i class="fas fa-times-circle"></i> Reject
+                                                                     <button type="submit" class="action-button btn-danger-custom" title="Reject">
+                                                                         <i class="fas fa-times"></i> <span class="btn-text">Reject</span>
                                                                      </button>
                                                                  </form>
                                                              </div>
@@ -304,8 +305,8 @@
                                                                  <form method="POST" action="<?php echo e(route('training.grade-submissions.update-proof-status', ['gradeSubmission' => $gradeSubmission->id, 'student' => $student->user_id])); ?>" class="d-inline">
                                                                      <?php echo csrf_field(); ?>
                                                                      <input type="hidden" name="status" value="pending">
-                                                                      <button type="submit" class="action-button btn-warning-custom">
-                                                                          <i class="fas fa-edit"></i> Edit Status
+                                                                      <button type="submit" class="action-button btn-warning-custom" title="Edit Status">
+                                                                          <i class="fas fa-edit"></i> <span class="btn-text">Edit</span>
                                                                       </button>
                                                                  </form>
                                                              <?php else: ?>
@@ -634,7 +635,8 @@
         .filter-dropdowns-container {
             flex-direction: row;
             align-items: flex-end;
-            gap: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
         }
     }
 
@@ -645,14 +647,14 @@
     .form-group-custom.filter-group {
         margin-bottom: 0; /* Remove margin from form group in flex container */
         flex: 1; /* Allow the select to grow equally */
-        min-width: 250px; /* Minimum width for readability */
-        max-width: 350px; /* Increased max width for better text visibility */
+        min-width: 200px; /* Reduced minimum width */
+        max-width: 300px; /* Reduced max width to prevent overflow */
     }
 
     @media (min-width: 768px) {
         .form-group-custom.filter-group {
-            flex: 1 1 280px; /* Flexible basis with minimum width */
-            max-width: 400px; /* Even larger max width on desktop */
+            flex: 1 1 220px; /* Reduced flexible basis */
+            max-width: 320px; /* Reduced max width on desktop */
         }
     }
 
@@ -706,9 +708,9 @@
     }
 
     .btn-custom {
-        padding: 6px 12px;
+        padding: 6px 10px;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 500;
         transition: all 0.3s ease;
         border: none;
@@ -717,14 +719,18 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        min-width: 100px;
-        height: 32px;
+        gap: 4px;
+        min-width: 85px;
+        height: 30px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .btn-custom i {
-        font-size: 14px;
+        font-size: 13px;
+        flex-shrink: 0;
     }
 
     .btn-primary-custom {
@@ -754,12 +760,13 @@
 
     .filter-buttons {
         display: flex;
-        gap: 12px;
+        gap: 10px;
         margin-top: 0;
         justify-content: flex-start;
         align-items: center;
         flex-shrink: 0; /* Prevent buttons from shrinking */
-        min-width: 200px; /* Ensure buttons have enough space */
+        min-width: 180px; /* Reduced minimum width */
+        flex-wrap: wrap; /* Allow wrapping on very small screens */
     }
 
     @media (max-width: 767px) {
@@ -767,6 +774,15 @@
             margin-top: 15px;
             justify-content: center;
             width: 100%;
+            gap: 8px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .filter-buttons {
+            flex-direction: column;
+            gap: 8px;
+            align-items: stretch;
         }
     }
 
@@ -775,12 +791,18 @@
         gap: 4px;
         justify-content: center;
         align-items: center;
+        flex-wrap: wrap;
+        max-width: 180px;
+        margin: 0 auto;
     }
 
     .action-group {
         display: flex;
         gap: 4px;
         align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 180px;
     }
 
     /* Hover effects for table rows */
@@ -879,6 +901,28 @@
         box-shadow: none;
     }
 
+    /* Action button hover effects */
+    .action-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+
+    .action-button:focus {
+        outline: none;
+        box-shadow: 0 0 0 1px rgba(34, 187, 234, 0.3);
+    }
+
+    .action-button:active {
+        transform: translateY(0);
+        box-shadow: 0 0 1px rgba(0,0,0,0.1);
+    }
+
+    /* Ensure icons in action buttons are properly sized */
+    .action-button i {
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
     .inc-badge {
         background: #ff4444;
         color: white;
@@ -891,16 +935,28 @@
     /* Reduce padding for action buttons in table cells */
     .action-button {
         padding: 4px 8px;
-        min-width: 80px;
+        min-width: 85px;
         height: 28px;
         border-radius: 4px;
-        font-size: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
     }
 
     .table-responsive-custom {
         width: 100%;
         overflow-x: auto; /* Add horizontal scroll on small screens */
         margin-top: 20px; /* Space above the table */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
     }
 
     .grade-monitor-table {
@@ -1199,6 +1255,31 @@
         text-align: center;
     }
 
+    /* Responsive button text hiding */
+    @media (max-width: 1024px) {
+        .btn-text {
+            display: none;
+        }
+
+        .btn-custom {
+            min-width: 40px;
+            padding: 6px 8px;
+        }
+
+        .action-button {
+            min-width: 36px;
+            padding: 4px 6px;
+        }
+
+        .action-buttons {
+            max-width: 80px;
+        }
+
+        .action-group {
+            max-width: 80px;
+        }
+    }
+
     @media (max-width: 768px) {
         .school-pagination-container {
             flex-direction: column;
@@ -1208,6 +1289,52 @@
         .school-pagination-buttons {
             width: 100%;
             justify-content: center;
+        }
+
+        .grade-monitor-table th,
+        .grade-monitor-table td {
+            padding: 6px;
+            font-size: 0.8rem;
+        }
+
+        .action-buttons {
+            max-width: 120px;
+        }
+
+        .action-group {
+            max-width: 120px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .grade-monitor-table th,
+        .grade-monitor-table td {
+            padding: 4px;
+            font-size: 0.75rem;
+        }
+
+        .action-button {
+            min-width: 32px;
+            height: 26px;
+            font-size: 10px;
+            padding: 3px 4px;
+        }
+
+        .btn-custom {
+            min-width: 36px;
+            height: 28px;
+            font-size: 11px;
+            padding: 4px 6px;
+        }
+
+        .action-buttons {
+            max-width: 70px;
+            gap: 2px;
+        }
+
+        .action-group {
+            max-width: 70px;
+            gap: 2px;
         }
     }
 </style>

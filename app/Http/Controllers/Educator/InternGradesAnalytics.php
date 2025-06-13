@@ -107,7 +107,7 @@ class InternGradesAnalytics extends Controller
             'submissionPagination',
             'currentSubmissions',
             'submissionDates'
-        ));
+        ))->with('title', 'Internship Grades Progress Analytics');
     }
 
     public function getAnalyticsData(Request $request)
@@ -195,28 +195,28 @@ class InternGradesAnalytics extends Controller
         // Initialize datasets for each grade (1-4)
         $datasets = [
             [
-                'label' => 'Grade 1',
+                'label' => '1 - Fully Achieved',
                 'data' => [],
                 'backgroundColor' => '#10B981', // Green
                 'borderColor' => '#10B981',
                 'borderWidth' => 1
             ],
             [
-                'label' => 'Grade 2',
+                'label' => '2 - Partially Achieved',
                 'data' => [],
                 'backgroundColor' => '#F59E0B', // Yellow
                 'borderColor' => '#F59E0B',
                 'borderWidth' => 1
             ],
             [
-                'label' => 'Grade 3',
+                'label' => '3 - Barely Achieved',
                 'data' => [],
                 'backgroundColor' => '#F97316', // Orange
                 'borderColor' => '#F97316',
                 'borderWidth' => 1
             ],
             [
-                'label' => 'Grade 4',
+                'label' => '4 - No Achievement',
                 'data' => [],
                 'backgroundColor' => '#EF4444', // Red
                 'borderColor' => '#EF4444',

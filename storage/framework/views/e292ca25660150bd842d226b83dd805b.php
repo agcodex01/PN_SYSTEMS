@@ -1129,11 +1129,6 @@
                                 <img src="<?php echo e(asset('images/mu.png')); ?>" alt="Grade Submissions" class="menu-icon"> Grade Submissions
                             </a>
                         </li>
-                        <li class="<?php echo e(request()->routeIs('student.profile') ? 'active' : ''); ?>">
-                            <a href="<?php echo e(route('student.profile')); ?>">
-                                <img src="<?php echo e(asset('images/me.png')); ?>" alt="Profile" class="menu-icon"> My Profile
-                            </a>
-                        </li>
                     </ul>
 
                     <!-- Mobile Navigation Menu -->
@@ -1169,17 +1164,6 @@
                                            min-height: 56px; touch-action: manipulation; font-size: 16px; font-weight: <?php echo e(request()->routeIs('student.grade-submissions.*') ? '500' : 'normal'); ?>;">
                                 <img src="<?php echo e(asset('images/mu.png')); ?>" alt="Grade Submissions" style="width: 24px; height: 24px; margin-right: 12px;">
                                 <span>Grade Submissions</span>
-                            </button>
-                        </div>
-
-                        <!-- My Profile -->
-                        <div style="border-bottom: 1px solid #eee; margin: 0; padding: 0;" class="<?php echo e(request()->routeIs('student.profile') ? 'mobile-nav-active' : ''); ?>">
-                            <button onclick="closeMobileMenuAndNavigate('<?php echo e(route('student.profile')); ?>')"
-                                    style="width: 100%; background: <?php echo e(request()->routeIs('student.profile') ? '#e3f2fd' : 'white'); ?>; color: <?php echo e(request()->routeIs('student.profile') ? '#22bbea' : '#333'); ?>; padding: 18px 20px; border: none;
-                                           text-align: left; cursor: pointer; display: flex; align-items: center;
-                                           min-height: 56px; touch-action: manipulation; font-size: 16px; font-weight: <?php echo e(request()->routeIs('student.profile') ? '500' : 'normal'); ?>;">
-                                <img src="<?php echo e(asset('images/me.png')); ?>" alt="Profile" style="width: 24px; height: 24px; margin-right: 12px;">
-                                <span>My Profile</span>
                             </button>
                         </div>
 

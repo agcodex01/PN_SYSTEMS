@@ -142,7 +142,7 @@ public function index(Request $request)
 
     $userRole = Auth::user()->user_role;
 
-    return view('educator.students-info', compact('students', 'batches', 'userRole'));
+    return view('educator.students-info', compact('students', 'batches', 'userRole'))->with('title', 'Students Info');
 }
 
 public function viewStudent($user_id)
@@ -206,7 +206,7 @@ public function update(Request $request, $user_id)
         // Get all interventions with related data
         $interventions = $this->getInterventionData();
 
-        return view('educator.intervention', compact('interventions'));
+        return view('educator.intervention', compact('interventions'))->with('title', 'Intervention Status');
     }
 
     /**

@@ -14,24 +14,7 @@ use Illuminate\Validation\Rule;
 
 class StudentController extends Controller
 {
-    public function profile()
-    {
-        $user = Auth::user();
-        
-        // Load student details
-        $user->load('studentDetail');
-        
-        // Get classes for the user directly from the ClassModel
-        $classes = \App\Models\ClassModel::whereHas('students', function($query) use ($user) {
-            $query->where('class_student.user_id', $user->user_id);
-        })->whereNotIn('class_name', ['C2026', 'C2027'])
-        ->get();
-        
-        // Add the classes to the user object for the view
-        $user->setRelation('classes', $classes);
-        
-        return view('student.profile', compact('user'));
-    }
+
     public function grades(Request $request)
     {
         $user = Auth::user();
@@ -215,7 +198,7 @@ class StudentController extends Controller
             'filterKey',
             'statusCounts',
             'studentSchool'
-        ));
+        ))->with('title', 'My Grades');
     }
 
     protected function getSortedTerms()
@@ -400,7 +383,7 @@ class StudentController extends Controller
             'filterKey',
             'statusCounts',
             'subjectsWithGrades'
-        ));
+        ))->with('title', 'Student Dashboard');
     }
 
     public function showSubmissionForm($submissionId)
@@ -445,7 +428,7 @@ class StudentController extends Controller
         // Get the latest proof if it exists
         $proof = $gradeSubmission->proofs->first();
 
-        return view('student.submission_form', compact('gradeSubmission', 'subjects', 'proof'));
+        return view('student.submission_form', compact('gradeSubmission', 'subjects', 'proof'))->with('title', 'Submit Grades');
     }
 
     public function submitGrades(Request $request, $submissionId)
@@ -698,7 +681,7 @@ class StudentController extends Controller
             ->where('user_id', $user->user_id)
             ->first();
 
-        return view('student.view_submission', compact('gradeSubmission', 'studentSubjectEntries', 'proof'));
+        return view('student.view_submission', compact('gradeSubmission', 'studentSubjectEntries', 'proof'))->with('title', 'View Submission');
     }
 
     public function submissionsList(Request $request)
@@ -735,6 +718,6 @@ class StudentController extends Controller
         ->values()
         ->all();
 
-        return view('student.grade_submissions_list', compact('gradeSubmissions', 'filterOptions', 'filterKey'));
+        return view('student.grade_submissions_list', compact('gradeSubmissions', 'filterOptions', 'filterKey'))->with('title', 'Grade Submissions');
     }
 } 

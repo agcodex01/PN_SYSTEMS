@@ -212,7 +212,7 @@ class GradeSubmissionController extends Controller
             'submissionsBySchool',
             'filterOptions',
             'schoolPagination'          // Pass school pagination info
-        ))
+        ))->with('title', 'Grade Submissions Monitor')
         ->with('allSchools', $allSchools)              // All schools for filtering dropdown
         ->with('allClassesBySchool', $allClassesBySchool)  // All classes for filtering dropdown
         ->with('filter_key', $request->filter_key)
@@ -231,7 +231,7 @@ class GradeSubmissionController extends Controller
             $subjects = Subject::where('school_id', $request->school_id)->get();
         }
     
-        return view('training.grade-submissions.create', compact('schools', 'classes', 'subjects'));
+        return view('training.grade-submissions.create', compact('schools', 'classes', 'subjects'))->with('title', 'Create Grade Submission');
     }
 
     public function store(Request $request)
@@ -555,7 +555,7 @@ class GradeSubmissionController extends Controller
                 ];
             });
 
-        return view('training.grade-submissions.recent', compact('recentSubmissions'));
+        return view('training.grade-submissions.recent', compact('recentSubmissions'))->with('title', 'Recent Grade Submissions');
     }
 
     public function viewStudentSubmission(GradeSubmission $gradeSubmission, User $student)

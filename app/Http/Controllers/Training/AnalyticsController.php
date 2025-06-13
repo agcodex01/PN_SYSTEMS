@@ -21,6 +21,7 @@ class AnalyticsController extends Controller
         $school = School::select('passing_grade_min', 'passing_grade_max')->first();
         
         return view('training.analytics.class-grades', [
+            'title' => 'Class Grades Analytics',
             'defaultSchool' => $school
         ]);
     }
@@ -31,6 +32,7 @@ class AnalyticsController extends Controller
         $school = School::select('passing_grade_min', 'passing_grade_max')->first();
         
         return view('training.analytics.subject-progress', [
+            'title' => 'Subject Progress Analytics',
             'defaultSchool' => $school
         ]);
     }
@@ -41,6 +43,7 @@ class AnalyticsController extends Controller
         $school = School::select('passing_grade_min', 'passing_grade_max')->first();
         
         return view('training.analytics.subject-intervention', [
+            'title' => 'Subject Intervention Analytics',
             'defaultSchool' => $school
         ]);
     }
@@ -51,6 +54,7 @@ class AnalyticsController extends Controller
         $school = School::select('passing_grade_min', 'passing_grade_max')->first();
 
         return view('training.analytics.class-progress', [
+            'title' => 'Class Progress Analytics',
             'defaultSchool' => $school
         ]);
     }

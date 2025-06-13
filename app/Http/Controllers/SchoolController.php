@@ -16,7 +16,7 @@ class SchoolController extends Controller
     public function index()
     {
         $schools = School::with('subjects')->paginate(10);
-        return view('training.manage-students', compact('schools'));
+        return view('training.manage-students', compact('schools'))->with('title', 'Manage Students - Schools');
     }
 
     public function show(School $school)
@@ -33,13 +33,13 @@ class SchoolController extends Controller
             $school->terms = [];
         }
             
-        return view('training.schools.show', compact('school', 'classes'));
+        return view('training.schools.show', compact('school', 'classes'))->with('title', 'School Details');
     }
 
     public function create()
     {
         $batches = StudentDetail::select('batch')->distinct()->orderBy('batch')->get();
-        return view('training.schools.create', compact('batches'));
+        return view('training.schools.create', compact('batches'))->with('title', 'Create School');
     }
 
     public function store(Request $request)
@@ -241,7 +241,7 @@ class SchoolController extends Controller
         $school->load(['subjects', 'classes.students']);
         $batches = StudentDetail::select('batch')->distinct()->orderBy('batch')->get();
         $existingClasses = $school->classes; // Get existing classes
-        return view('training.schools.edit', compact('school', 'batches', 'existingClasses'));
+        return view('training.schools.edit', compact('school', 'batches', 'existingClasses'))->with('title', 'Edit School');
     }
 
     public function update(Request $request, School $school)

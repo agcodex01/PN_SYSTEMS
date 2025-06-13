@@ -88,7 +88,7 @@ class InterventionController extends Controller
                 'classes',
                 'subjects',
                 'submissions'
-            ));
+            ))->with('title', 'Intervention Status');
 
         } catch (\Exception $e) {
             Log::error('Educator Intervention Index Error', [
@@ -98,6 +98,7 @@ class InterventionController extends Controller
             ]);
 
             return view('educator.intervention', [
+                'title' => 'Intervention Status',
                 'interventions' => collect()->paginate(5),
                 'schools' => \App\Models\School::all(),
                 'classes' => collect(),

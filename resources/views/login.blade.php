@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <title>Login</title>
 
     <style>
@@ -68,6 +69,14 @@
     <div class="loader-overlay" id="pageLoader">
         <div class="loader"></div>
     </div>
+    <!-- Back Button -->
+    <div class="back-button-container">
+        <a href="{{ route('main-menu') }}" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            <span class="back-text">Back to Main Menu</span>
+        </a>
+    </div>
+
     <div class="login-container">
         <img src="{{ asset('images/pnlogo.png') }}" alt="Logo">
         <form action="{{ route('login') }}" method="POST">

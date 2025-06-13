@@ -602,14 +602,14 @@
                             <?php endif; ?>
                         </select>
                     </div>
-                    <?php if(request('filter_key')): ?>
+                    <!-- <?php if(request('filter_key')): ?>
                         <div class="filter-buttons">
                             <a href="<?php echo e(route('student.grade-submissions.list')); ?>" class="filter-btn filter-btn-secondary">
                                 <i class="fas fa-times"></i>
                                 Clear Filter
                             </a>
                         </div>
-                    <?php endif; ?>
+                    <?php endif; ?> -->
                 </div>
             </form>
         </div>

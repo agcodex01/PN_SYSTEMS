@@ -79,9 +79,9 @@
         </div>
 
         <div class="form-group">
-            <label for="gender">Gender</label>
+            <label for="gender">Sex</label>
             <select name="gender" id="gender" class="form-control" required>
-                <option value="">Select Gender</option>
+                <option value="">Select Sex</option>
                 <option value="Male" {{ ($student->studentDetail->gender ?? '') == 'Male' ? 'selected' : '' }}>Male</option>
                 <option value="Female" {{ ($student->studentDetail->gender ?? '') == 'Female' ? 'selected' : '' }}>Female</option>
             </select>

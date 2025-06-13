@@ -341,8 +341,12 @@
     </div>
 
     <script>
+    // Track page load state
+    let pageFullyLoaded = false;
+
     // Hide loader when page is loaded
     window.addEventListener('load', function() {
+        pageFullyLoaded = true;
         const loader = document.getElementById('pageLoader');
         if (loader) {
             loader.classList.add('hidden');
@@ -354,18 +358,21 @@
 
     // Show loader on user interactions
     document.addEventListener('DOMContentLoaded', function() {
-        // Show loader on form submissions
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                if (form.checkValidity()) {
-                    showLoader();
-                }
-            });
-        });
+        // Form submissions - loader disabled for forms
+        // document.querySelectorAll('form').forEach(form => {
+        //     form.addEventListener('submit', function(e) {
+        //         // Loader disabled for form submissions
+        //     });
+        // });
 
         // Show loader on navigation links
         document.querySelectorAll('a:not([href^="#"]):not([href^="javascript:"]):not([target="_blank"]):not([href^="mailto:"]):not([href^="tel:"])').forEach(link => {
             link.addEventListener('click', function(e) {
+                // Don't show loader if page hasn't fully loaded yet
+                if (!pageFullyLoaded) {
+                    return;
+                }
+
                 if (!this.getAttribute('onclick') || this.getAttribute('href') !== '#') {
                     const onclick = this.getAttribute('onclick');
 
@@ -379,9 +386,14 @@
             });
         });
 
-        // Show loader on button clicks that might navigate
-        document.querySelectorAll('button[type="submit"], .btn[href], button[onclick*="location"], button[onclick*="window.location"]').forEach(button => {
+        // Show loader on button clicks that might navigate (excluding submit buttons)
+        document.querySelectorAll('.btn[href], button[onclick*="location"], button[onclick*="window.location"]').forEach(button => {
             button.addEventListener('click', function() {
+                // Don't show loader if page hasn't fully loaded yet
+                if (!pageFullyLoaded) {
+                    return;
+                }
+
                 const onclick = this.getAttribute('onclick');
 
                 // If it has confirm() in onclick, don't show loader immediately

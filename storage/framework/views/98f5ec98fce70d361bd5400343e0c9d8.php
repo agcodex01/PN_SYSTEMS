@@ -1014,6 +1014,7 @@ h1 {
         margin-top: 10px;
         padding: 12px;
         font-size: 16px;
+        text-align: center;
     }
 }
 

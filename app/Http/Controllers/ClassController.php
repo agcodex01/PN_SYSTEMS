@@ -15,7 +15,7 @@ class ClassController extends Controller
     public function index()
     {
         $classes = ClassModel::with(['students', 'school'])->get();
-        return view('training.classes.index', compact('classes'));
+        return view('training.classes.index', compact('classes'))->with('title', 'Manage Students - Classes');
     }
 
     public function create(Request $request)
@@ -26,7 +26,7 @@ class ClassController extends Controller
         $students = PNUser::where('user_role', 'student')
             ->with('studentDetail')
             ->get();
-        return view('training.classes.create', compact('school', 'students'));
+        return view('training.classes.create', compact('school', 'students'))->with('title', 'Create Class');
     }
 
     public function store(Request $request)
@@ -101,7 +101,7 @@ class ClassController extends Controller
     {
         $class->load(['school', 'students']);
         $students = PNUser::where('user_role', 'student')->get();
-        return view('training.classes.edit', compact('class', 'students'));
+        return view('training.classes.edit', compact('class', 'students'))->with('title', 'Edit Class');
     }
 
     public function update(Request $request, ClassModel $class)
@@ -215,7 +215,7 @@ class ClassController extends Controller
     public function show(ClassModel $class)
     {
         $class->load(['school', 'students.studentDetail']);
-        return view('training.classes.show', compact('class'));
+        return view('training.classes.show', compact('class'))->with('title', 'Class Details');
     }
 
     public function getStudentsList(Request $request)

@@ -139,9 +139,19 @@
         display: flex;
         flex-direction: column;
         cursor: pointer;
-        transition: background-color 0.3s;
+        transition: all 0.3s ease;
         border-radius: 8px;
         margin: 0 10px;
+    }
+
+    .menu li:hover {
+        background-color: #f1f5f9;
+    }
+
+    .menu li.active {
+        background-color: #e3f2fd;
+        border-left: 4px solid #22bbea;
+        padding-left: 16px;
     }
 
     .menu li a {
@@ -152,12 +162,23 @@
         text-decoration: none;
         width: 100%;
         font-size: 15px;
+        transition: color 0.3s ease;
+    }
+
+    .menu li.active a {
+        color: #22bbea;
+        font-weight: 600;
     }
 
     .dropdown > a {
         display: flex;
         align-items: center;
         width: 100%;
+    }
+
+    .dropdown.active > a {
+        color: #22bbea;
+        font-weight: 600;
     }
 
     .dropdown-content {
@@ -178,7 +199,9 @@
         gap: 10px;
         text-decoration: none;
         font-size: 14px;
-        transition: background-color 0.2s;
+        transition: all 0.3s ease;
+        border-radius: 6px;
+        margin: 2px 10px;
     }
 
     .dropdown-content a img {
@@ -188,11 +211,15 @@
 
     .dropdown-content a:hover {
         background-color: #f1f5f9;
+        color: #22bbea;
     }
 
     .dropdown-content a.active {
-        background-color: #f1f5f9;
+        background-color: #e3f2fd;
+        color: #22bbea;
         font-weight: 600;
+        border-left: 3px solid #22bbea;
+        padding-left: 31px;
     }
 
     .dropdown > a::after {
@@ -268,7 +295,7 @@
                         <img src="<?php echo e(asset('images/Dashboard.png')); ?>" alt="Dashboard"> Dashboard
                     </a>
                 </li>
-                <li class="<?php echo e(request()->routeIs('educator.students-info') ? 'active' : ''); ?>">
+                <li class="<?php echo e(request()->routeIs('educator.students.index') || request()->routeIs('educator.students.*') ? 'active' : ''); ?>">
                     <a href="<?php echo e(route('educator.students.index')); ?>">
                         <img src="<?php echo e(asset('images/mu.png')); ?>" alt="Students Info"> Students Info
                     </a>
@@ -297,7 +324,7 @@
                         </a>
                     </div>
                 </li>
-                <li>
+                <li class="<?php echo e(request()->routeIs('educator.intervention') ? 'active' : ''); ?>">
                     <a href="<?php echo e(route('educator.intervention')); ?>">
                         <img src="<?php echo e(asset('images/is.png')); ?>" alt="Intervention Status"> Intervention Status
                     </a>
@@ -411,6 +438,14 @@
             dropdown.classList.toggle('active');
         }
     }
+
+    // Auto-open dropdown if any child is active
+    document.addEventListener('DOMContentLoaded', function() {
+        const activeDropdown = document.querySelector('.dropdown.active');
+        if (activeDropdown) {
+            activeDropdown.classList.add('active');
+        }
+    });
 
     
      function confirmLogout() {

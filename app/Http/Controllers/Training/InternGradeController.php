@@ -73,7 +73,7 @@ class InternGradeController extends Controller
             'paginatedGroupedGrades',
             'filterOptions',
             'classPagination'
-        ));
+        ))->with('title', 'Intern Grades');
     }
 
     private function getFilterOptions(Request $request)
@@ -108,7 +108,7 @@ class InternGradeController extends Controller
     public function create()
     {
         $schools = School::all();
-        return view('training.intern.create', compact('schools'));
+        return view('training.intern.create', compact('schools'))->with('title', 'Create Intern Grade');
     }
 
     public function store(Request $request)
@@ -241,7 +241,7 @@ class InternGradeController extends Controller
         \Log::info('InternGradeController@edit: InternGrade after loading relationships', ['internGrade' => $internGrade->toArray()]);
         \Log::info('InternGradeController@edit: InternGrade class relationship', ['class' => $internGrade->class]);
         $schools = School::all();
-        return view('training.intern.edit', compact('internGrade', 'schools'));
+        return view('training.intern.edit', compact('internGrade', 'schools'))->with('title', 'Edit Intern Grade');
     }
 
     public function update(Request $request, InternGrade $internGrade)

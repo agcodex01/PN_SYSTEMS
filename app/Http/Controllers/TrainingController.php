@@ -119,7 +119,7 @@ class TrainingController extends Controller
     // Pass the role to the view to conditionally show "Edit" button
     $userRole = Auth::user()->user_role;
 
-    return view('training.students-info', compact('students', 'batches', 'userRole'));
+    return view('training.students-info', compact('students', 'batches', 'userRole'))->with('title', 'Students Info');
 }
 
 

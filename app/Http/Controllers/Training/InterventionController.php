@@ -92,7 +92,7 @@ class InterventionController extends Controller
                 'classes',
                 'subjects',
                 'submissions'
-            ));
+            ))->with('title', 'Intervention Status');
 
         } catch (\Exception $e) {
             Log::error('Training Intervention Index Error', [

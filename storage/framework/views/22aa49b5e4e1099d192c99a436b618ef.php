@@ -155,13 +155,70 @@
             margin-bottom: 0;
         }
         
+        /* Mobile Responsiveness */
         @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+
             .menu-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+                margin-top: 1.5rem;
             }
-            
+
             .header h1 {
                 font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .menu-item {
+                padding: 1.5rem;
+            }
+
+            .menu-icon {
+                font-size: 2.5rem;
+            }
+
+            .menu-title {
+                font-size: 1.3rem;
+            }
+
+            .menu-desc {
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-container {
+                padding: 0.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .header p {
+                font-size: 0.9rem;
+            }
+
+            .menu-item {
+                padding: 1.2rem;
+            }
+
+            .menu-icon {
+                font-size: 2.2rem;
+            }
+
+            .menu-title {
+                font-size: 1.2rem;
+            }
+
+            .menu-desc {
+                font-size: 0.8rem;
             }
         }
     </style>

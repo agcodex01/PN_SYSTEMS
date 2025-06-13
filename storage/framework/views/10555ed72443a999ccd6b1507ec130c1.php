@@ -546,7 +546,12 @@
 
                 <?php $__currentLoopData = $submissionGroups; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $submissionNumber => $grades): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <div class="submission-section">
-                        <h3 class="submission-title"><?php echo e($submissionNumber); ?> Submission</h3>
+                        <h3 class="submission-title">
+                            <?php echo e($submissionNumber); ?> Submission
+                            <?php if($grades->first() && $grades->first()->submission_date): ?>
+                                <small class="text-muted"> - <?php echo e($grades->first()->submission_date->format('M d, Y')); ?></small>
+                            <?php endif; ?>
+                        </h3>
 
                         <?php
                             // Pagination for this submission table

@@ -52,7 +52,7 @@ class GradeSubmissionNotification extends Mailable
      */
     public function build()
     {
-        return $this->subject('New Grade Submission Available - Action Required')
+        return $this->subject('PNPh-SAMS: New Grade Submission Available - Action Required')
             ->view('emails.grade-submission-notification');
     }
 

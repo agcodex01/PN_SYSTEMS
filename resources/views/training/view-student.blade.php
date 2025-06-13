@@ -36,7 +36,7 @@
             <span class="detail-value">{{ $student->studentDetail->batch ?? 'N/A' }}</span>
         </div>
         <div class="detail-row">
-            <span class="detail-label">Gender:</span>
+            <span class="detail-label">Sex:</span>
             <span class="detail-value">{{ $student->studentDetail->gender ?? 'N/A' }}</span>
         </div>
         <div class="detail-row">

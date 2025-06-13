@@ -208,6 +208,10 @@ Route::middleware('auth')->group(function () {
             Route::get('/grade-submissions/{gradeSubmission}/proof/{student}', 'viewProof')->name('grade-submissions.view-proof');
             Route::post('/grade-submissions/{gradeSubmission}/proof/{student}/status', 'updateProofStatus')->name('grade-submissions.update-proof-status');
 
+            // AJAX endpoints for recent submissions filtering
+            Route::get('/grade-submissions/classes', 'getClasses')->name('grade-submissions.classes');
+            Route::get('/grade-submissions/submissions', 'getSubmissions')->name('grade-submissions.submissions');
+
             // Temporary route to fix subject associations for a submission
             Route::get('/grade-submissions/{gradeSubmission}/fix-subjects', 'fixSubmissionSubjects')->name('grade-submissions.fix-subjects');
         });

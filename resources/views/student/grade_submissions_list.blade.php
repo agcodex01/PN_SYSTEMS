@@ -604,14 +604,14 @@
                             @endif
                         </select>
                     </div>
-                    @if(request('filter_key'))
+                    <!-- @if(request('filter_key'))
                         <div class="filter-buttons">
                             <a href="{{ route('student.grade-submissions.list') }}" class="filter-btn filter-btn-secondary">
                                 <i class="fas fa-times"></i>
                                 Clear Filter
                             </a>
                         </div>
-                    @endif
+                    @endif -->
                 </div>
             </form>
         </div>

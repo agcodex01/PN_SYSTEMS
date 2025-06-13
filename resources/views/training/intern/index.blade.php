@@ -544,7 +544,12 @@
 
                 @foreach ($submissionGroups as $submissionNumber => $grades)
                     <div class="submission-section">
-                        <h3 class="submission-title">{{ $submissionNumber }} Submission</h3>
+                        <h3 class="submission-title">
+                            {{ $submissionNumber }} Submission
+                            @if($grades->first() && $grades->first()->submission_date)
+                                <small class="text-muted"> - {{ $grades->first()->submission_date->format('M d, Y') }}</small>
+                            @endif
+                        </h3>
 
                         @php
                             // Pagination for this submission table

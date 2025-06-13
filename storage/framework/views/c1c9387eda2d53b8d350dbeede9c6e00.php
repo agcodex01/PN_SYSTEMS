@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             tableHtml += `
-                                <th style="background-color: #22BBEA; color: white; border-color: #22BBEA; width: 100px;">Average</th>
+                                <!-- <th style="background-color: #22BBEA; color: white; border-color: #22BBEA; width: 100px;">Average</th> -->
                                 <th style="background-color: #22BBEA; color: white; border-color: #22BBEA; width: 100px;">Status</th>
                         </tr>
                     </thead>
@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 tableHtml += `
-                    <td class="text-center fw-bold">${averageDisplay}</td>
+                    <!-- <td class="text-center fw-bold">${averageDisplay}</td> -->
                     <td class="text-center fw-bold ${statusClass}">
                         ${statusText}
                         ${statusNote}

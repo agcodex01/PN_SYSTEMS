@@ -17,21 +17,29 @@ class TrainingController extends Controller
         $schoolsCount = \App\Models\School::count();
         $classesCount = \App\Models\ClassModel::count();
         
-        // Get all students count (regardless of status)
-        $studentsCount = PNUser::where('user_role', 'Student')->count();
-        
-        // Get active students count
-        $activeStudentsCount = PNUser::where('user_role', 'Student')
+        // Get active students count only (consistent with educator dashboard)
+        $studentsCount = PNUser::where('user_role', 'Student')
             ->where('status', 'active')
             ->count();
+
+        // Get gender distribution from student_details table (only active students)
+        $maleCount = \App\Models\StudentDetail::whereHas('user', function($query) {
+                $query->where('user_role', 'Student')->where('status', 'active');
+            })
+            ->where('gender', 'Male')
+            ->count();
+        $femaleCount = \App\Models\StudentDetail::whereHas('user', function($query) {
+                $query->where('user_role', 'Student')->where('status', 'active');
+            })
+            ->where('gender', 'Female')
+            ->count();
         
-        // Get gender distribution from student_details table
-        $maleCount = \App\Models\StudentDetail::where('gender', 'Male')->count();
-        $femaleCount = \App\Models\StudentDetail::where('gender', 'Female')->count();
-        
-        // Get students count by batch
+        // Get students count by batch (only active students)
         $batchCounts = StudentDetail::select('batch')
             ->selectRaw('count(*) as count')
+            ->whereHas('user', function($query) {
+                $query->where('user_role', 'Student')->where('status', 'active');
+            })
             ->groupBy('batch')
             ->orderBy('batch')
             ->get()
@@ -39,15 +47,21 @@ class TrainingController extends Controller
                 return [$item->batch => $item->count];
             });
 
-        // Get gender distribution by batch
+        // Get gender distribution by batch (only active students)
         $genderByBatch = [];
         $studentsByGenderByBatch = [];
         foreach ($batchCounts->keys() as $batch) {
             $male = StudentDetail::where('batch', $batch)
                 ->where('gender', 'Male')
+                ->whereHas('user', function($query) {
+                    $query->where('user_role', 'Student')->where('status', 'active');
+                })
                 ->count();
             $female = StudentDetail::where('batch', $batch)
                 ->where('gender', 'Female')
+                ->whereHas('user', function($query) {
+                    $query->where('user_role', 'Student')->where('status', 'active');
+                })
                 ->count();
             $genderByBatch[$batch] = [
                 'male' => $male,

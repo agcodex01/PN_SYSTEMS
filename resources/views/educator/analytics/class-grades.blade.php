@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
 
                     tableHtml += `
-                                        <th class="text-center" style="background-color: #22BBEA !important; color: white; border-color: #22BBEA !important;">Average</th>
+                                        <!-- <th class="text-center" style="background-color: #22BBEA !important; color: white; border-color: #22BBEA !important;">Average</th> -->
                                         <th class="text-center" style="background-color: #22BBEA !important; color: white; border-color: #22BBEA !important;">Status</th>
                                     </tr>
                                 </thead>
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     data.grades.forEach(student => {
                         tableHtml += `<tr>
-                                        <td class="text-center">${student.student_id}</td>
+                                      <td class="text-center">${student.student_id}</td>
                                         <td class="text-center">${student.student_name}</td>
                                         <td class="text-center">${student.gender}</td>`;
 
@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
 
                         tableHtml += `
-                                        <td class="text-center">${student.average_grade.toFixed(2)}</td>
+                                        <!-- <td class="text-center">${student.average_grade.toFixed(2)}</td> -->
                                         <td class="text-center ${studentRemarksClass}">${student.overall_status}</td>
                                     </tr>`;
                     });

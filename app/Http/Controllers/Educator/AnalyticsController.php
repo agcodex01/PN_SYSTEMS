@@ -213,10 +213,10 @@ class AnalyticsController extends Controller
                         } else {
                             // Handle non-numeric grades like INC, DR, NC for approved submissions
                             $remarks = $grade->grade;
-                            if ($grade->grade === 'INC' || $grade->grade === 'NC') {
+                            if ($grade->grade === 'INC') {
                                 $has_incomplete = true;
-                            } else if ($grade->grade === 'DR') {
-                                $has_failed = true;
+                            } else if ($grade->grade === 'DR' || $grade->grade === 'NC') {
+                                $has_failed = true; // NC is a failing grade, not incomplete
                             }
                         }
                     } elseif ($grade->status === 'rejected') {

@@ -229,10 +229,10 @@ class AnalyticsController extends Controller
                                 }
                             } else {
                                 // Non-numeric approved grades (INC, DR, NC)
-                                if ($gradeValue === 'INC' || $gradeValue === 'NC') {
+                                if ($gradeValue === 'INC') {
                                     $has_incomplete = true;
-                                } else if ($gradeValue === 'DR') {
-                                    $has_failed = true;
+                                } else if ($gradeValue === 'DR' || $gradeValue === 'NC') {
+                                    $has_failed = true; // NC is a failing grade, not incomplete
                                 }
                             }
                         } elseif ($gradeStatus === 'rejected') {

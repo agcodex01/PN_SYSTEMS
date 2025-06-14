@@ -125,20 +125,21 @@ unset($__errorArgs, $__bag); ?>
                         </div>
 
                         <div class="mb-3">
-                            <label for="remarks" class="form-label">Remarks</label>
-                            <textarea class="form-control <?php $__errorArgs = ['remarks'];
+                            <label for="intervention_details" class="form-label">Intervention Details <span class="text-danger">*</span></label>
+                            <textarea class="form-control <?php $__errorArgs = ['intervention_details'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
 $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
-unset($__errorArgs, $__bag); ?>" 
-                                      id="remarks" 
-                                      name="remarks" 
-                                      rows="4" 
-                                      placeholder="Add any additional notes or remarks about this intervention..."><?php echo e(old('remarks', $intervention->remarks)); ?></textarea>
-                            <?php $__errorArgs = ['remarks'];
+unset($__errorArgs, $__bag); ?>"
+                                      id="intervention_details"
+                                      name="intervention_details"
+                                      rows="5"
+                                      placeholder="Describe the specific interventions you implemented for the students (e.g., additional tutoring sessions, remedial activities, one-on-one mentoring, etc.)..."
+                                      required><?php echo e(old('intervention_details', $intervention->educator_assigned ? ($intervention->remarks ?? '') : '')); ?></textarea>
+                            <?php $__errorArgs = ['intervention_details'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
@@ -741,5 +742,6 @@ a:hover {
 }
 </style>
 <?php $__env->stopSection(); ?>
+
 
 <?php echo $__env->make('layouts.educator_layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laravel\PNPH-CAPSTONE\resources\views/educator/intervention-update.blade.php ENDPATH**/ ?>

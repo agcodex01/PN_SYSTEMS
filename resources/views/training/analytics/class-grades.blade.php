@@ -450,6 +450,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     statusClass = 'text-danger fw-bold'; // Red and bold for rejected
                 } else if (statusText.includes('Failed')) {
                     statusClass = 'text-danger'; // Red
+                } else if (statusText.includes('Conditional')) {
+                    statusClass = 'text-warning fw-bold'; // Orange and bold for conditional
                 } else if (statusText.includes('Pending') || statusText.includes('Not yet Approved')) {
                     statusClass = 'text-warning'; // Orange
                 } else if (statusText.includes('No Grades Submitted') || statusText.includes('No Calculable Average')) {

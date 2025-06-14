@@ -101,18 +101,21 @@
                                 User Role
                                 <span class="required">*</span>
                             </label>
-                            <input type="text"
-                                   name="user_role"
-                                   id="user_role"
-                                   class="form-input"
-                                   value="{{ old('user_role') }}"
-                                   placeholder="Enter user role (e.g., Admin, Training, Educator, Student)"
-                                   required
-                                   maxlength="50">
-                            <div class="input-help">
-                                <i class="fas fa-info-circle"></i>
-                                Common roles: Admin, Training, Educator, Student
-                            </div>
+                            <select name="user_role" id="user_role" class="form-select" required>
+                                <option value="">Select a role</option>
+                                <option value="Admin" {{ old('user_role') == 'Admin' ? 'selected' : '' }}>
+                                    <i class="fas fa-crown"></i> Admin
+                                </option>
+                                <option value="Training" {{ old('user_role') == 'Training' ? 'selected' : '' }}>
+                                    <i class="fas fa-chalkboard-teacher"></i> Training
+                                </option>
+                                <option value="Educator" {{ old('user_role') == 'Educator' ? 'selected' : '' }}>
+                                    <i class="fas fa-graduation-cap"></i> Educator
+                                </option>
+                                <option value="Student" {{ old('user_role') == 'Student' ? 'selected' : '' }}>
+                                    <i class="fas fa-user-graduate"></i> Student
+                                </option>
+                            </select>
                         </div>
                     </div>
                 </div>

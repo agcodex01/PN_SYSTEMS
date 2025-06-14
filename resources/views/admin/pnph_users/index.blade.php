@@ -26,15 +26,24 @@
     <div class="card">
         <div class="card-header">
             <form action="{{ route('admin.pnph_users.index') }}" method="GET" class="filter-form">
-                <div class="form-group">
-                    <select name="role" id="role" class="form-select" onchange="this.form.submit()">
-                        <option value="">All Roles</option>
-                        @foreach ($roles as $role)
-                            <option value="{{ $role }}" {{ $roleFilter == $role ? 'selected' : '' }}>
-                                {{ ucfirst($role) }}
-                            </option>
-                        @endforeach
-                    </select>
+                <div class="filter-group">
+                    <div class="form-group">
+                        <select name="role" id="role" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Roles</option>
+                            @foreach ($roles as $role)
+                                <option value="{{ $role }}" {{ $roleFilter == $role ? 'selected' : '' }}>
+                                    {{ ucfirst($role) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <select name="status" id="status" class="form-select" onchange="this.form.submit()">
+                            <option value="">All Status</option>
+                            <option value="active" {{ $statusFilter == 'active' ? 'selected' : '' }}>Active</option>
+                            <option value="inactive" {{ $statusFilter == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        </select>
+                    </div>
                 </div>
             </form>
         </div>
@@ -141,7 +150,7 @@
                             <i class="fas fa-chevron-left"></i> Previous
                         </span>
                     @else
-                        <a href="{{ $users->previousPageUrl() }}" class="pagination-button">
+                        <a href="{{ $users->appends(request()->query())->previousPageUrl() }}" class="pagination-button">
                             <i class="fas fa-chevron-left"></i> Previous
                         </a>
                     @endif
@@ -151,7 +160,7 @@
                     </div>
 
                     @if ($users->hasMorePages())
-                        <a href="{{ $users->nextPageUrl() }}" class="pagination-button">
+                        <a href="{{ $users->appends(request()->query())->nextPageUrl() }}" class="pagination-button">
                             Next <i class="fas fa-chevron-right"></i>
                         </a>
                     @else
@@ -586,6 +595,20 @@
 }
 
 /* Form Elements */
+.filter-form {
+    width: 100%;
+}
+
+.filter-group {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.form-group {
+    margin: 0;
+}
+
 .form-select {
     padding: 8px 12px;
     border: 1px solid #ddd;
@@ -609,13 +632,23 @@
         flex-direction: column;
         gap: 15px;
     }
-    
+
     .card-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 15px;
     }
-    
+
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .form-select {
+        min-width: 100%;
+    }
+
     .pagination-container {
         flex-direction: column;
         gap: 15px;

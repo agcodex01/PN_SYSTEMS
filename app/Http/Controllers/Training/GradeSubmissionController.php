@@ -531,30 +531,10 @@ class GradeSubmissionController extends Controller
         ));
     }
 
-    public function recent(Request $request)
+    public function recent()
     {
-        // Build query with filters
-        $query = GradeSubmission::with(['school', 'classModel', 'students']);
-
-        // Apply filters
-        if ($request->filled('school_id')) {
-            $query->where('school_id', $request->school_id);
-        }
-
-        if ($request->filled('class_id')) {
-            $query->where('class_id', $request->class_id);
-        }
-
-        if ($request->filled('submission_filter')) {
-            $filter = explode(',', $request->submission_filter);
-            if (count($filter) === 3) {
-                $query->where('semester', $filter[0])
-                    ->where('term', $filter[1])
-                    ->where('academic_year', $filter[2]);
-            }
-        }
-
-        $recentSubmissions = $query->orderBy('created_at', 'desc')
+        $recentSubmissions = GradeSubmission::with(['school', 'classModel', 'students'])
+            ->orderBy('created_at', 'desc')
             ->take(10)
             ->get()
             ->map(function ($submission) {
@@ -575,70 +555,7 @@ class GradeSubmissionController extends Controller
                 ];
             });
 
-        // Get filter data
-        $schools = \App\Models\School::all();
-        $classes = collect();
-        $submissions = collect();
-
-        if ($request->filled('school_id')) {
-            $classes = \App\Models\ClassModel::where('school_id', $request->school_id)->get();
-        }
-
-        if ($request->filled('class_id')) {
-            $submissions = GradeSubmission::where('school_id', $request->school_id)
-                ->where('class_id', $request->class_id)
-                ->get()
-                ->map(function($submission) {
-                    return [
-                        'value' => $submission->semester . ',' . $submission->term . ',' . $submission->academic_year,
-                        'display_name' => $submission->semester . ' - ' . $submission->term . ' (' . $submission->academic_year . ')'
-                    ];
-                })
-                ->unique('value')
-                ->values();
-        }
-
-        return view('training.grade-submissions.recent', compact('recentSubmissions', 'schools', 'classes', 'submissions'))->with('title', 'Recent Grade Submissions');
-    }
-
-    /**
-     * Get classes for a specific school (AJAX)
-     */
-    public function getClasses(Request $request)
-    {
-        if (!$request->filled('school_id')) {
-            return response()->json([]);
-        }
-
-        $classes = \App\Models\ClassModel::where('school_id', $request->school_id)
-            ->select('class_id', 'class_name')
-            ->get();
-
-        return response()->json($classes);
-    }
-
-    /**
-     * Get submissions for a specific school and class (AJAX)
-     */
-    public function getSubmissions(Request $request)
-    {
-        if (!$request->filled('school_id') || !$request->filled('class_id')) {
-            return response()->json([]);
-        }
-
-        $submissions = GradeSubmission::where('school_id', $request->school_id)
-            ->where('class_id', $request->class_id)
-            ->get()
-            ->map(function($submission) {
-                return [
-                    'value' => $submission->semester . ',' . $submission->term . ',' . $submission->academic_year,
-                    'display_name' => $submission->semester . ' - ' . $submission->term . ' (' . $submission->academic_year . ')'
-                ];
-            })
-            ->unique('value')
-            ->values();
-
-        return response()->json($submissions);
+        return view('training.grade-submissions.recent', compact('recentSubmissions'))->with('title', 'Recent Grade Submissions');
     }
 
     public function viewStudentSubmission(GradeSubmission $gradeSubmission, User $student)

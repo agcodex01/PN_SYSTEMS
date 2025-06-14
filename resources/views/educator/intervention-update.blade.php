@@ -83,13 +83,14 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="remarks" class="form-label">Remarks</label>
-                            <textarea class="form-control @error('remarks') is-invalid @enderror" 
-                                      id="remarks" 
-                                      name="remarks" 
-                                      rows="4" 
-                                      placeholder="Add any additional notes or remarks about this intervention...">{{ old('remarks', $intervention->remarks) }}</textarea>
-                            @error('remarks')
+                            <label for="intervention_details" class="form-label">Intervention Details <span class="text-danger">*</span></label>
+                            <textarea class="form-control @error('intervention_details') is-invalid @enderror"
+                                      id="intervention_details"
+                                      name="intervention_details"
+                                      rows="5"
+                                      placeholder="Describe the specific interventions you implemented for the students (e.g., additional tutoring sessions, remedial activities, one-on-one mentoring, etc.)..."
+                                      required>{{ old('intervention_details', $intervention->educator_assigned ? ($intervention->remarks ?? '') : '') }}</textarea>
+                            @error('intervention_details')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
@@ -684,3 +685,4 @@ a:hover {
 }
 </style>
 @endsection
+

@@ -83,6 +83,21 @@
     color: #6c757d !important;
 }
 
+/* Intervention Details Styling */
+.intervention-details {
+    font-style: italic;
+    line-height: 1.4;
+    max-width: 250px;
+    word-wrap: break-word;
+    display: block;
+    margin-top: 2px;
+}
+
+.text-info {
+    color: #22bbea !important;
+    font-weight: 600;
+}
+
 /* Filter Section Styling */
 .filter-inline-container {
     display: flex;
@@ -415,6 +430,10 @@
                                             <div>
                                                 <strong><?php echo e($intervention->educatorAssigned->user_fname); ?> <?php echo e($intervention->educatorAssigned->user_lname); ?></strong>
                                                 <br><small class="text-muted"><?php echo e($intervention->educatorAssigned->user_email); ?></small>
+                                                <?php if($intervention->remarks && trim($intervention->remarks) !== ''): ?>
+                                                    <br><small class="text-info"><strong>Intervention Details:</strong></small>
+                                                    <br><small class="text-muted intervention-details"><?php echo e(Str::limit($intervention->remarks, 100)); ?></small>
+                                                <?php endif; ?>
                                             </div>
                                         <?php else: ?>
                                             <span class="text-muted">Not Assigned</span>

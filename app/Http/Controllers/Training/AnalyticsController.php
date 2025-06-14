@@ -200,7 +200,7 @@ class AnalyticsController extends Controller
                 $grades_data = [];
                 $total_grade = 0;
                 $graded_subjects_count = 0;
-                $has_failed = false;
+                $failed_subjects_count = 0; // Count of failed subjects
                 $has_incomplete = false;
                 $has_pending = false;
                 $has_rejected = false;
@@ -225,14 +225,14 @@ class AnalyticsController extends Controller
                                 if ($numeric_grade >= $school->passing_grade_min && $numeric_grade <= $school->passing_grade_max) {
                                     // Passed
                                 } else {
-                                    $has_failed = true;
+                                    $failed_subjects_count++; // Count failed subjects
                                 }
                             } else {
                                 // Non-numeric approved grades (INC, DR, NC)
                                 if ($gradeValue === 'INC') {
                                     $has_incomplete = true;
                                 } else if ($gradeValue === 'DR' || $gradeValue === 'NC') {
-                                    $has_failed = true; // NC is a failing grade, not incomplete
+                                    $failed_subjects_count++; // NC and DR are failing grades
                                 }
                             }
                         } elseif ($gradeStatus === 'rejected') {
@@ -255,13 +255,15 @@ class AnalyticsController extends Controller
 
                 $average_grade = $graded_subjects_count > 0 ? $total_grade / $graded_subjects_count : null;
 
-                // Determine overall status
+                // Determine overall status based on failed subjects count
                 if ($has_pending) {
                     $overall_status = 'Not yet Approved';
                 } elseif ($has_rejected) {
                     $overall_status = 'Rejected';
-                } elseif ($has_failed) {
-                    $overall_status = 'Failed';
+                } elseif ($failed_subjects_count >= 3) {
+                    $overall_status = 'Failed'; // 3 or more failed subjects = Failed
+                } elseif ($failed_subjects_count >= 1 && $failed_subjects_count <= 2) {
+                    $overall_status = 'Conditional'; // 1-2 failed subjects = Conditional
                 } elseif ($has_incomplete) {
                     $overall_status = 'Incomplete Submission';
                 } else {

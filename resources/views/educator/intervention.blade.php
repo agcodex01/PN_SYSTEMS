@@ -100,6 +100,21 @@
     color: #6c757d !important;
 }
 
+/* Intervention Details Styling */
+.intervention-details {
+    font-style: italic;
+    line-height: 1.4;
+    max-width: 250px;
+    word-wrap: break-word;
+    display: block;
+    margin-top: 2px;
+}
+
+.text-info {
+    color: #22bbea !important;
+    font-weight: 600;
+}
+
 /* Filter Section Styling */
 .filter-inline-container {
     display: flex;
@@ -431,6 +446,10 @@
                                             <div>
                                                 <strong>{{ $intervention->educatorAssigned->user_fname }} {{ $intervention->educatorAssigned->user_lname }}</strong>
                                                 <br><small class="text-muted">{{ $intervention->educatorAssigned->user_email }}</small>
+                                                @if($intervention->remarks && trim($intervention->remarks) !== '')
+                                                    <br><small class="text-info"><strong>Intervention Details:</strong></small>
+                                                    <br><small class="text-muted intervention-details">{{ Str::limit($intervention->remarks, 100) }}</small>
+                                                @endif
                                             </div>
                                         @else
                                             <span class="text-muted">Not Assigned</span>
@@ -655,3 +674,5 @@ document.getElementById('filterForm').addEventListener('submit', function() {
 });
 </script>
 @endsection
+
+

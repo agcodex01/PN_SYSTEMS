@@ -309,16 +309,21 @@ class InterventionController extends Controller
                                 'grade_submission_id' => $submission->id,
                                 'student_count' => $studentCount,
                                 'status' => 'pending',
-                                'remarks' => $interventionReason,
+                                'remarks' => null, // Leave empty until educator updates
                                 'created_by' => Auth::user()->user_id ?? 'system'
                             ]);
                         } else {
-                            // Update student count and remarks if they have changed
-                            $existingIntervention->update([
+                            // Update student count but preserve existing intervention details
+                            // Only update remarks if it's still the default intervention reason
+                            $updateData = [
                                 'student_count' => $studentCount,
-                                'remarks' => $interventionReason,
                                 'updated_by' => Auth::user()->user_id ?? 'system'
-                            ]);
+                            ];
+
+                            // Don't update remarks - preserve educator-inputted intervention details
+                            // Remarks should only be updated by educators through the update form
+
+                            $existingIntervention->update($updateData);
                         }
                     } else {
                         // Remove intervention if it no longer needs intervention

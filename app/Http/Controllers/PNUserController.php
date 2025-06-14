@@ -17,15 +17,18 @@ class PNUserController extends Controller
     public function index(Request $request)
     {
         $roleFilter = $request->input('role');
+        $statusFilter = $request->input('status');
 
         $users = PNUser::when($roleFilter, function ($query, $roleFilter) {
             return $query->where('user_role', $roleFilter);
+        })->when($statusFilter, function ($query, $statusFilter) {
+            return $query->where('status', $statusFilter);
         })->paginate(8);
-    
+
         // Get all distinct roles
         $roles = PNUser::select('user_role')->distinct()->pluck('user_role');
-    
-        return view('admin.pnph_users.index', compact('users', 'roles', 'roleFilter'), ['title'=> 'Manage Users']);
+
+        return view('admin.pnph_users.index', compact('users', 'roles', 'roleFilter', 'statusFilter'), ['title'=> 'Manage Users']);
     }
 
     // Show the form for creating a new user

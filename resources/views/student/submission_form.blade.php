@@ -72,18 +72,36 @@
                                     <tr>
                                         <td>{{ $subject->name }}</td>
                                         <td>
-                                            <input type="text"
-                                               name="grades[{{ $subject->id }}]"
-                                               value="{{ $subject->grade ?? '' }}"
-                                               class="grade-input {{ $errors->has('grades.' . $subject->id) ? 'is-invalid' : '' }}"
-                                               pattern="^(5(\.0)?|[1-4](\.[0-9]{1,2})?|INC|NC|DR)$"
-                                               title="Please match requested format: 1.0-5.0 or INC, NC, DR"
-                                               required>
-                                        @error('grades.' . $subject->id)
-                                            <div class="invalid-feedback">
-                                                {{ $message }}
+                                            <div class="grade-input-wrapper">
+                                                <!-- Combined input with datalist for dropdown options -->
+                                                <input type="text"
+                                                       id="grade_input_{{ $subject->id }}"
+                                                       name="grades[{{ $subject->id }}]"
+                                                       value="{{ $subject->grade ?? '' }}"
+                                                       class="grade-input {{ $errors->has('grades.' . $subject->id) ? 'is-invalid' : '' }}"
+                                                       list="grade_options_{{ $subject->id }}"
+                                                       placeholder="1.0-5.0 or select"
+                                                       title="Enter a numeric grade (1.0-5.0) or select INC, NC, DR"
+                                                       oninput="validateGradeInput({{ $subject->id }})"
+                                                       required>
+
+                                                <!-- Datalist for dropdown options -->
+                                                <datalist id="grade_options_{{ $subject->id }}">
+                                                    <option value="INC">INC (Incomplete)</option>
+                                                    <option value="NC">NC (No Credit)</option>
+                                                    <option value="DR">DR (Dropped)</option>
+                                                </datalist>
+
+                                                <!-- Custom validation message -->
+                                                <div id="grade_error_{{ $subject->id }}" class="grade-error-message" style="display: none;">
+                                                    Please enter a valid grade (1.0-5.0) or select INC, NC, or DR
+                                                </div>
                                             </div>
-                                        @enderror
+                                            @error('grades.' . $subject->id)
+                                                <div class="invalid-feedback">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
                                         </td>
                                     </tr>
                                 @endforeach
@@ -252,10 +270,17 @@
         min-width: 100px;
     }
 
+    .grade-input-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
     .grade-input {
-        width: 70px;
-        min-width: 70px;
-        max-width: 70px;
+        width: 90px;
+        min-width: 90px;
+        max-width: 90px;
         padding: 8px 6px;
         border: 1px solid #ddd;
         border-radius: 4px;
@@ -264,12 +289,39 @@
         font-weight: 500;
         margin: 0 auto;
         display: block;
+        background-color: #fff;
     }
 
     .grade-input:focus {
         border-color: #22bbea;
         outline: none;
         box-shadow: 0 0 0 2px rgba(34, 187, 234, 0.2);
+    }
+
+    .grade-error-message {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #dc3545;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        z-index: 1000;
+        margin-top: 2px;
+    }
+
+    .grade-error-message::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-bottom: 4px solid #dc3545;
     }
 
     .form-text {
@@ -408,9 +460,9 @@
         }
 
         .grade-input {
-            width: 70px;
-            min-width: 70px;
-            max-width: 70px;
+            width: 85px;
+            min-width: 85px;
+            max-width: 85px;
             padding: 10px 6px;
             font-size: 16px; /* Prevent zoom on iOS */
         }
@@ -453,9 +505,9 @@
         }
 
         .grade-input {
-            width: 65px;
-            min-width: 65px;
-            max-width: 65px;
+            width: 80px;
+            min-width: 80px;
+            max-width: 80px;
             padding: 8px 4px;
             font-size: 16px;
         }
@@ -550,6 +602,66 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     console.log('File upload JavaScript initialized');
+});
+
+// Function to validate grade input (numeric or special grades)
+function validateGradeInput(subjectId) {
+    const input = document.getElementById(`grade_input_${subjectId}`);
+    const errorDiv = document.getElementById(`grade_error_${subjectId}`);
+    const value = input.value.trim().toUpperCase();
+
+    // Clear previous validation state
+    input.setCustomValidity('');
+    errorDiv.style.display = 'none';
+    input.classList.remove('is-invalid');
+
+    if (value === '') {
+        return; // Let HTML5 required validation handle empty values
+    }
+
+    // Check if it's a special grade
+    const specialGrades = ['INC', 'NC', 'DR'];
+    if (specialGrades.includes(value)) {
+        input.value = value; // Ensure uppercase
+        return; // Valid special grade
+    }
+
+    // Check if it's a numeric grade
+    const numericPattern = /^(5(\.0)?|[1-4](\.[0-9]{1,2})?)$/;
+    if (numericPattern.test(value)) {
+        return; // Valid numeric grade
+    }
+
+    // Invalid input
+    input.setCustomValidity('Please enter a valid grade (1.0-5.0) or select INC, NC, or DR');
+    input.classList.add('is-invalid');
+    errorDiv.style.display = 'block';
+}
+
+// Add form validation before submit
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('grade-submission-form');
+
+    form.addEventListener('submit', function(e) {
+        let hasErrors = false;
+
+        // Validate all grade inputs
+        const gradeInputs = form.querySelectorAll('input[name^="grades["]');
+        gradeInputs.forEach(function(input) {
+            const subjectId = input.id.replace('grade_input_', '');
+            validateGradeInput(subjectId);
+
+            if (input.classList.contains('is-invalid')) {
+                hasErrors = true;
+            }
+        });
+
+        if (hasErrors) {
+            e.preventDefault();
+            alert('Please correct the grade input errors before submitting.');
+            return false;
+        }
+    });
 });
 </script>
 @endsection

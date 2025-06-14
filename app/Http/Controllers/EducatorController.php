@@ -234,7 +234,10 @@ public function update(Request $request, $user_id)
             'status' => 'required|in:pending,done',
             'intervention_date' => 'nullable|date',
             'educator_assigned' => 'nullable|exists:pnph_users,user_id',
-            'remarks' => 'nullable|string|max:500'
+            'intervention_details' => 'required|string|max:1000'
+        ], [
+            'intervention_details.required' => 'Please provide details about the interventions you implemented.',
+            'intervention_details.max' => 'Intervention details cannot exceed 1000 characters.'
         ]);
 
         $intervention = Intervention::findOrFail($id);
@@ -243,12 +246,12 @@ public function update(Request $request, $user_id)
             'status' => $request->status,
             'intervention_date' => $request->intervention_date,
             'educator_assigned' => $request->educator_assigned,
-            'remarks' => $request->remarks,
+            'remarks' => $request->intervention_details, // Map intervention_details to remarks column
             'updated_by' => Auth::user()->user_id
         ]);
 
         return redirect()->route('educator.intervention')
-            ->with('success', 'Intervention updated successfully.');
+            ->with('success', 'Intervention details updated successfully.');
     }
 
     /**
@@ -326,14 +329,21 @@ public function update(Request $request, $user_id)
                             'grade_submission_id' => $submission->id,
                             'student_count' => $studentsNeedingIntervention,
                             'status' => 'pending',
+                            'remarks' => null, // Leave empty until educator updates
                             'created_by' => Auth::user()->user_id
                         ]);
                     } else {
-                        // Update student count if it has changed
-                        $existingIntervention->update([
+                        // Update student count but preserve existing intervention details
+                        // Only update remarks if it's still the default intervention reason
+                        $updateData = [
                             'student_count' => $studentsNeedingIntervention,
                             'updated_by' => Auth::user()->user_id
-                        ]);
+                        ];
+
+                        // Don't update remarks - preserve educator-inputted intervention details
+                        // Remarks should only be updated by educators through the update form
+
+                        $existingIntervention->update($updateData);
                     }
 
                     $interventionData[] = $existingIntervention->load(['subject', 'school', 'classModel', 'educatorAssigned']);

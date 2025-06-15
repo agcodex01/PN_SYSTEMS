@@ -275,8 +275,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const ctx = canvas.getContext('2d');
 
         // Define colors for the chart slices
-        const backgroundColors = ['#198754', '#dc3545', '#ffc107', '#6c757d']; // Green, Red, Orange, Muted
-        const borderColors = ['#ffffff', '#ffffff', '#ffffff', '#ffffff'];
+        const backgroundColors = ['#198754', '#dc3545', '#fd7e14', '#ffc107', '#6c757d']; // Green, Red, Orange (Conditional), Yellow (Pending), Muted
+        const borderColors = ['#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff'];
 
         myChart = new Chart(ctx, {
             type: 'pie',

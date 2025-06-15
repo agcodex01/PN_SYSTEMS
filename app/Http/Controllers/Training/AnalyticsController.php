@@ -676,6 +676,7 @@ class AnalyticsController extends Controller
             // Process student data and aggregate for pie chart
             $passedCount = 0;
             $failedCount = 0;
+            $conditionalCount = 0; // Add conditional count
             $pendingCount = 0;
             $noGradesCount = 0;
             $totalStudents = $students->count();
@@ -691,6 +692,7 @@ class AnalyticsController extends Controller
                 $gradedSubjects = 0;
                 $hasSubmittedGrades = false;
                 $hasApprovedGrades = false;
+                $hasIncomplete = false;
 
                 // Check if student has submitted any grades at all
                 if ($totalSubjects == 0) {
@@ -720,8 +722,12 @@ class AnalyticsController extends Controller
                                     $failedSubjects++;
                                 }
                             } else {
-                                // Non-numeric approved grades (INC, DR, NC) count as failed
-                                $failedSubjects++;
+                                // Non-numeric approved grades (INC, DR, NC)
+                                if ($grade->grade === 'INC') {
+                                    $hasIncomplete = true;
+                                } elseif ($grade->grade === 'DR' || $grade->grade === 'NC') {
+                                    $failedSubjects++; // NC and DR are failing grades
+                                }
                             }
                         } elseif ($grade->status === 'pending' || $grade->status === 'pending_approval' || $grade->status === 'submitted') {
                             $pendingSubjects++;
@@ -729,19 +735,25 @@ class AnalyticsController extends Controller
                     }
                 }
 
-                // Determine overall status for this student
+                // Determine overall status for this student using conditional logic
                 if (!$hasSubmittedGrades || $actualGradeCount == 0) {
                     // Student hasn't submitted any actual grades (only empty records or no records)
                     $noGradesCount++;
                 } elseif ($hasSubmittedGrades && !$hasApprovedGrades && $pendingSubjects > 0) {
                     // Student has submitted grades but none are approved yet (all are pending approval by training)
                     $pendingCount++;
-                } elseif ($hasApprovedGrades && $failedSubjects > 0) {
-                    // Student has approved grades and some are failed
+                } elseif ($hasApprovedGrades && $failedSubjects >= 3) {
+                    // Student has approved grades and 3 or more failed subjects = Failed
                     $failedCount++;
+                } elseif ($hasApprovedGrades && $failedSubjects >= 1 && $failedSubjects <= 2) {
+                    // Student has approved grades and 1-2 failed subjects = Conditional
+                    $conditionalCount++;
                 } elseif ($hasApprovedGrades && $passedSubjects > 0 && $failedSubjects == 0) {
                     // Student has approved grades and all are passed
                     $passedCount++;
+                } elseif ($hasIncomplete) {
+                    // Student has incomplete grades
+                    $pendingCount++;
                 } elseif ($hasSubmittedGrades && $pendingSubjects > 0) {
                     // Student has submitted grades that are pending
                     $pendingCount++;
@@ -754,21 +766,24 @@ class AnalyticsController extends Controller
             // Calculate percentages
             $passedPercentage = $totalStudents > 0 ? ($passedCount / $totalStudents) * 100 : 0;
             $failedPercentage = $totalStudents > 0 ? ($failedCount / $totalStudents) * 100 : 0;
+            $conditionalPercentage = $totalStudents > 0 ? ($conditionalCount / $totalStudents) * 100 : 0;
             $pendingPercentage = $totalStudents > 0 ? ($pendingCount / $totalStudents) * 100 : 0;
             $noGradesPercentage = $totalStudents > 0 ? ($noGradesCount / $totalStudents) * 100 : 0;
 
             // Prepare data for the pie chart
             $chartData = [
-                'labels' => ['Passed', 'Failed', 'Pending', 'No Grades Submitted'],
+                'labels' => ['Passed', 'Failed', 'Conditional', 'Pending', 'No Grades Submitted'],
                 'data' => [
                      round($passedPercentage, 2),
                      round($failedPercentage, 2),
+                     round($conditionalPercentage, 2),
                      round($pendingPercentage, 2),
                      round($noGradesPercentage, 2)
                 ],
                  'counts' => [
                     'Passed' => $passedCount,
                     'Failed' => $failedCount,
+                    'Conditional' => $conditionalCount,
                     'Pending' => $pendingCount,
                     'No Grades Submitted' => $noGradesCount
                  ],

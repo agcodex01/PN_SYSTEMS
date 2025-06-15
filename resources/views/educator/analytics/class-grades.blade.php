@@ -556,6 +556,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             studentRemarksClass = 'table-danger fw-bold';
                         } else if (student.overall_status === 'Failed' || student.overall_status === 'Need Intervention') {
                             studentRemarksClass = 'table-danger';
+                        } else if (student.overall_status === 'Conditional') {
+                            studentRemarksClass = 'table-warning fw-bold'; // Orange and bold for conditional
                         } else if (student.overall_status === 'Pending' || student.overall_status === 'Not yet Approved') {
                             studentRemarksClass = 'table-warning';
                         } else if (student.overall_status === 'Incomplete Submission') {
